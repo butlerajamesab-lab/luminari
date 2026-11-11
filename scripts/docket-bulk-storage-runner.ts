@@ -309,6 +309,10 @@ async function main(): Promise<void> {
         await assertBillReceiptCache(item.entry);
         console.log("PASS SOURCE RECEIPTS " + item.entry.archive +
           " " + stats.total + "/" + item.entry.json + " holds=" + stats.held);
+        if (stats.held > 0) {
+          console.log("DOCKET_SOURCE_CHRONOLOGY_HELD " + item.entry.archive +
+            " held=" + stats.held + " source-preserved; downstream activation blocked");
+        }
       } else {
         console.log("PASS OFFLINE PREFLIGHT " + item.entry.archive);
       }

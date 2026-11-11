@@ -119,7 +119,7 @@ for (const archive_path of archive_arguments) {
       });
       if (outcome.disposition === "inserted") counts.inserted += 1;
       if (outcome.disposition === "existing_preserved") counts.existing_preserved += 1;
-      if (member.hold_reason && outcome.disposition === "inserted") {
+      if (member.hold_reason && (outcome.disposition === "inserted" || outcome.activation_id)) {
         throw new Error("docket_bulk_held_chronology_was_activated_bill_id_" + member.id);
       }
       if (!member.hold_reason && outcome.disposition === "held_chronology") {
@@ -147,4 +147,14 @@ for (const archive_path of archive_arguments) {
 }
 writeFileSync(resolve(report_path), JSON.stringify(result, null, 2) + "\n");
 console.log("report=" + resolve(report_path));
-if (result.totals.held > 0) process.exitCode = 1;
+// A source-only archive may preserve bills without a known action date. Their
+// immutable receipts are marked held_chronology by the canonical Docket writer,
+// and these bills cannot enter the activation/projection path. Do not synthesize
+// dates from introduced-document timestamps or treat admission as publication.
+if (result.totals.held > 0) {
+  console.log(JSON.stringify({
+    source_chronology_holds: result.totals.held,
+    source_admission: "preserved_with_chronology_holds",
+    downstream_publication: "not_certified",
+  }));
+}

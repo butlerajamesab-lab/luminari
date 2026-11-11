@@ -22,7 +22,7 @@ const positiveBillId = 1895956;
 const heldBillId = 1895957;
 const reportAssertion = (result: ReturnType<typeof spawnSync>, report: string, phase: string) => {
   assert.equal(result.error, undefined, phase + ": process error");
-  assert.equal(result.status, 1, phase + ": precisely one reported chronology hold");
+  assert.equal(result.status, 0, phase + ": source-only admission preserves one held bill without error");
   assert.ok(existsSync(report), phase + ": report was not written; stderr=" + String(result.stderr).slice(0,800));
   const parsed = JSON.parse(readFileSync(report, "utf8"));
   assert.deepEqual(parsed.totals.held, 1, phase + ": source event date was not held");
@@ -107,6 +107,9 @@ try {
   assert.equal(await count("select count(*) from public.docket_legiscan_bulk_member_receipt"), 4);
   assert.equal(await count("select count(*) from public.docket_jurisdiction_activation_bill"), 1);
   assert.equal(await count("select count(*) from public.docket_bill_processing_queue"), 1);
+  // The held bill is source-preserved, not silently queued for activation.
+  assert.equal(await count("select count(*) from public.docket_jurisdiction_activation_bill where source_bill_id=" + heldBillId), 0);
+  assert.equal(await count("select count(*) from public.docket_bill_processing_queue where source_bill_id=" + heldBillId), 0);
 
   const held = (await pool.query(
     "select disposition from public.docket_legiscan_bulk_member_receipt where bill_id=$1",

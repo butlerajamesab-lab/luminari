@@ -92,14 +92,17 @@ export function receiptState(entry: BaselineArchive, counts: ReceiptCounts):
       counts.person > entry.types.people) {
     throw new Error("docket_storage_receipt_integrity_mismatch: " + entry.archive);
   }
-  if (counts.held > 0) return "held";
   if (counts.total === 0) return "not_started";
   if (counts.total === entry.json) {
     if (counts.bill !== entry.types.bill || counts.roll_call !== entry.types.vote ||
         counts.person !== entry.types.people) {
       throw new Error("docket_storage_receipt_kind_mismatch: " + entry.archive);
     }
+    // Source completeness is independent of legislative-event readiness:
+    // chronology-held bills retain immutable source receipts but cannot activate.
     return "complete";
   }
+  // A partial archive with a chronology hold must still stop for review.
+  if (counts.held > 0) return "held";
   return "partial";
 }

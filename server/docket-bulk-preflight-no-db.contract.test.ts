@@ -32,10 +32,14 @@ describe("LegiScan bulk preflight does not initialize Lighthouse database runtim
       .toBeGreaterThan(runner.indexOf("for (const file of members)"));
   });
 
-  it("preserves exact-manifest approval and negative archive holds", () => {
+  it("preserves exact-manifest approval and source-only chronology holds", () => {
     expect(runner).toContain("DOCKET_BULK_ARCHIVE_APPLY_APPROVED_SHA256");
     expect(runner).toContain("--acknowledge-docket-triggers");
     expect(runner).toContain('if (!applying) continue;');
-    expect(runner).toContain("if (result.totals.held > 0) process.exitCode = 1");
+    expect(runner).toContain('if (result.totals.held > 0) {');
+    expect(runner).toContain('source_admission: "preserved_with_chronology_holds"');
+    expect(runner).toContain('outcome.disposition === "inserted" || outcome.activation_id');
+    expect(runner).toContain('docket_bulk_unexpected_chronology_hold_bill_id_');
+    expect(runner).not.toContain("if (result.totals.held > 0) process.exitCode = 1");
   });
 });
