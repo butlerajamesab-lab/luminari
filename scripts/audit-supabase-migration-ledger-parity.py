@@ -394,6 +394,20 @@ APPROVED_REPOSITORY_ONLY = {
         "20261110220000_naming_repair_ledger_v1.sql",
         "ffbf15e4fe3dea99c1945384b353653895e4f212",
     ),
+    # Category pass ledger v1: creates the
+    # luminari_category_pass_classifications ledger the category
+    # pass runner writes before classifying remainder-population
+    # entities (deterministic tiers R2 / R3a-workbook / R4,
+    # fidelity-gated). The guarded individual-review revision table
+    # is not touched and no document family is registered — the
+    # pass inserts no entities. Repository-only pending the
+    # separately approved production installation that follows the
+    # merge. Exact Git blob pinned; no production installation or
+    # ledger rewrite is implied by this entry.
+    "20261110230000": (
+        "20261110230000_category_pass_ledger_v1.sql",
+        "1669d69a537e156df0614226ea5fc77dc65bc716",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
