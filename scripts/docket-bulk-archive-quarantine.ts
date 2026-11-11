@@ -26,6 +26,10 @@ const quarantinableSourceErrors = new Set([
   "docket_storage_archive_sha256_mismatch",
 ]);
 
+export function isArchiveLocalQuarantineReason(reason: string): boolean {
+  return quarantinableSourceErrors.has(reason);
+}
+
 export type ArchiveLocalPreflightFailure = {
   reason_code: string;
   member_path: string | null;
@@ -64,7 +68,7 @@ export function makeArchiveQuarantine(
   archive: BaselineArchive, reason: ArchiveLocalPreflightFailure,
   receipts: ReceiptCounts, createdAt: string,
 ): DocketArchiveQuarantine {
-  if (!quarantinableSourceErrors.has(reason.reason_code) ||
+  if (!isArchiveLocalQuarantineReason(reason.reason_code) ||
       !Number.isFinite(Date.parse(createdAt)) ||
       receipts.total < 0 || receipts.held > receipts.bill ||
       receipts.wrong_identity !== 0) throw new Error("docket_quarantine_unverified_local_failure");
@@ -90,7 +94,7 @@ export function validateArchiveQuarantine(
       q.version !== 1 || q.status !== "requires_operator_review" ||
       q.manifest_sha256 !== BASELINE_MANIFEST_SHA256 ||
       q.archive !== archive.archive || q.archive_sha256 !== archive.sha256 ||
-      typeof q.reason_code !== "string" || !quarantinableSourceErrors.has(q.reason_code) ||
+      typeof q.reason_code !== "string" || !isArchiveLocalQuarantineReason(q.reason_code) ||
       (q.member_path !== null && typeof q.member_path !== "string") ||
       !Number.isSafeInteger(q.receipt_count) || q.receipt_count !== receipts.total ||
       !Number.isSafeInteger(q.held_count) || q.held_count !== receipts.held ||
