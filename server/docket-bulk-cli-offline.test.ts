@@ -14,7 +14,9 @@ const root = "MT/2025-2025_Regular_Session";
 async function make_fixture(dir: string, withSourceDate = true) {
   const zip = new JSZip();
   zip.file(root + "/bill/HB1.json", JSON.stringify({
-    bill: { bill_id: 1895956, state: "MT", session_id: 2159, bill_number: "HB1", texts: [],
+    bill: { bill_id: 1895956, state: "MT", session_id: 2159, bill_number: "HB1", texts: withSourceDate ? [] : [
+        { doc_id: 3341478, type: "Introduced", date: "2026-01-29" }
+      ],
       ...(withSourceDate ? { status_date: "2026-06-01" } : {}),
     },
   }));
@@ -54,7 +56,7 @@ describe("LegiScan bulk CLI offline provider-parity", () => {
     }
   }, 30_000);
 
-  it("reports missing source chronology as a hold and exits nonzero before any DB import", async () => {
+  it("preserves source-only hold reports without inventing action chronology from text dates", async () => {
     const dir = mkdtempSync(join(tmpdir(), "docket-bulk-held-"));
     try {
       const paths = await make_fixture(dir, false);
@@ -67,7 +69,8 @@ describe("LegiScan bulk CLI offline provider-parity", () => {
         timeout: 25_000,
       });
       const report = JSON.parse(readFileSync(paths.reportPath, "utf8"));
-      expect(result.status).toBe(1);
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain('"source_admission":"preserved_with_chronology_holds"');
       expect(report.totals).toMatchObject({ bill: 1, held: 1, invalid: 0 });
       expect(report.archives[0].holds).toEqual([{
         bill_id: 1895956,
