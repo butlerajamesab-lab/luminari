@@ -364,24 +364,6 @@
   "source_text": "Nebraska Employment First / TANF (DHHS — 24-Month Limit!)\naccess.ne.gov. CRITICAL: $364/month not survivable alone. 24-MONTH STATE LIMIT — track at every intake. Pair IMMEDIATELY with SNAP, Heritage Health, child care (402-471-9278), LIHEAP, food banks.\nFamilies with children — $364/month family of 3. 24-MONTH STATE LIMIT. Work/education requirements.\naccess.ne.gov. CRITICAL: $364/month not survivable alone. 24-MONTH STATE LIMIT — track at every intake. Pair IMMEDIATELY with SNAP, Heritage Health, child care (402-471-9278), LIHEAP, food banks."
  },
  {
-  "entity_id": "021189ab-bc7e-5af1-1045-728534c698a3",
-  "canonical_id": "crp_fl_4fdd927d7de889458e81",
-  "resource_name": "IHS Nashville Area Office (FL tribes)",
-  "state": "FL",
-  "primary_category": "tribal",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'tribal health' in \"ihs.gov/nashville — referrals to tribal health facilities; Seminole and Miccosukee primarily use own tribal he\" @ xlsx:master_template_program:row:145",
-  "primary_quote": "tribal health",
-  "memberships": [],
-  "civic_object_uid": "corpus:8fbb2f3e2ad21ae48ec1d18b23407d36d78e2bae995f628e2f70d2762e40a00d",
-  "object_ref": "8fbb2f3e2ad21ae48ec1d18b23407d36d78e2bae995f628e2f70d2762e40a00d",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:145",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "IHS Nashville Area Office (FL tribes)\nAI/AN tribal members in Florida — IHS area office for Southeastern US including FL tribes\nihs.gov/nashville — referrals to tribal health facilities; Seminole and Miccosukee primarily use own tribal health systems"
- },
- {
   "entity_id": "0219d2dc-7f66-8954-edc9-d87daa7de24e",
   "canonical_id": "crp_de_de7a56944472fd509089",
   "resource_name": "DOL Wage and Hour Division — Philadelphia District Office (Serves Delaware)",
@@ -1001,24 +983,6 @@
   "before_category": "legal_aid",
   "before_layer": "layer_1",
   "source_text": "Oregon Law Help (Self-Help Portal)\noregonlawhelp.org — first stop for self-help. Find legal aid: oregonlawhelp.org/find-legal-help.\nAnyone in Oregon — legal information, court forms, referrals.\noregonlawhelp.org — first stop for self-help. Find legal aid: oregonlawhelp.org/find-legal-help."
- },
- {
-  "entity_id": "051df1f8-9fb0-d5d8-8d22-14c694310eee",
-  "canonical_id": "crp_fl_4852689a735086d7d0c8",
-  "resource_name": "State Programs — CRITICAL: Florida Has NOT Expanded Medicaid; 2026 Ballot Initiative Pending",
-  "state": "FL",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Medicaid' in \"State Programs — CRITICAL: Florida Has NOT Expanded Medicaid; 2026 Ballot Initiative Pending\" @ xlsx:master_template_program:row:146",
-  "primary_quote": "Medicaid",
-  "memberships": [],
-  "civic_object_uid": "corpus:af89ffdf814c89ed03f068bf17803d108a9b4bacb2fcd97126d5b411f54b5748",
-  "object_ref": "af89ffdf814c89ed03f068bf17803d108a9b4bacb2fcd97126d5b411f54b5748",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:146",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "State Programs — CRITICAL: Florida Has NOT Expanded Medicaid; 2026 Ballot Initiative Pending\nState Programs — CRITICAL: Florida Has NOT Expanded Medicaid; 2026 Ballot Initiative Pending\nState Programs — CRITICAL: Florida Has NOT Expanded Medicaid; 2026 Ballot Initiative Pending"
  },
  {
   "entity_id": "0526d65c-07c2-c90e-b2db-baebe1b6dcc4",
@@ -2706,24 +2670,6 @@
   "source_text": "Social Security Administration — Virginia Offices\nAdministers Social Security retirement, SSDI, and SSI for Virginia."
  },
  {
-  "entity_id": "0d7e6272-740f-179a-6cf3-cd5ec9485a4f",
-  "canonical_id": "crp_ct_bb51e3327f4ccd099e35",
-  "resource_name": "Connecticut Housing Finance Authority (CHFA) 999 W St, Rocky Hill, CT 06067 📞 860-571-3500 · chfa.org Eligibility: Low-income CT renters — Section 8/HCV, HOME, emergency rental assistance. Apply/Notes",
-  "state": "CT",
-  "primary_category": "housing",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'rental assistance' in \"Connecticut Housing Finance Authority (CHFA) 999 W St, Rocky Hill, CT 06067 📞 860-571-3500 · chfa.org Eligibil\" @ xlsx:master_template_program:row:349",
-  "primary_quote": "rental assistance",
-  "memberships": [],
-  "civic_object_uid": "corpus:45372d2d158c9cea116656030ca810f55f09e7dfeb374022c03874a78c05cb54",
-  "object_ref": "45372d2d158c9cea116656030ca810f55f09e7dfeb374022c03874a78c05cb54",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:349",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Connecticut Housing Finance Authority (CHFA) 999 W St, Rocky Hill, CT 06067 📞 860-571-3500 · chfa.org Eligibility: Low-income CT renters — Section 8/HCV, HOME, emergency rental assistance. Apply/Notes\nConnecticut Housing Finance Authority (CHFA) 999 W St, Rocky Hill, CT 06067 📞 860-571-3500 · chfa.org Eligibility: Low-income CT renters — Section 8/HCV, HOME, emergency rental assistance. Apply/Notes: chfa.org — Hartford Housing Authority: 860-723-8400. New Haven Housing Authority: 203-498-8800. Bridgeport Housing Authority: 203-337-8900."
- },
- {
   "entity_id": "0db44828-6f24-3566-e248-8100ef1fb542",
   "canonical_id": "crp_wa_e993ad6e91b57b2cb5b8",
   "resource_name": "Housing Justice Project (HJP — King County Eviction Defense)",
@@ -3681,24 +3627,6 @@
   "source_text": "Connecticut Fair Housing Center (CFHC)\nCT's primary fair housing organization. Handles housing discrimination complaints (race, disability, familial status, source of income, national origin, and all other protected classes in housing). Provides counseling, complaint filing with CHRO and HUD, and litigation. CT has some of the most segregated housing patterns in the US — CFHC is a critical resource. Source of income discrimination (discrimination against Section 8/voucher holders) is illegal in CT under CGS § 46a-64c."
  },
  {
-  "entity_id": "12d21f5d-e86a-ffea-7610-b5d2db78f9a2",
-  "canonical_id": "crp_fl_d02b5e2d5553ec86a6ac",
-  "resource_name": "Jacksonville Area Legal Aid (JALA)",
-  "state": "FL",
-  "primary_category": "legal_civil_rights",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'legal aid' in \"jaxlegalaid.org — Jacksonville area; one of most comprehensive legal aid programs in FL\" @ xlsx:master_template_program:row:253",
-  "primary_quote": "legal aid",
-  "memberships": [],
-  "civic_object_uid": "corpus:afe0a88556c7f518bbf30a885910b50a26d91f081ddfefe4bb4b158f86f12ead",
-  "object_ref": "afe0a88556c7f518bbf30a885910b50a26d91f081ddfefe4bb4b158f86f12ead",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:253",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Jacksonville Area Legal Aid (JALA)\nIncome-qualified, Duval (Jacksonville), Clay, Nassau, Baker, Putnam, St. Johns counties\njaxlegalaid.org — Jacksonville area; one of most comprehensive legal aid programs in FL"
- },
- {
   "entity_id": "12db07a0-c707-fa21-facd-376e8cd40b66",
   "canonical_id": "crp_tn_56aefa25b346a33b5e67",
   "resource_name": "U.S. District Court — Eastern District of Tennessee (Knoxville)",
@@ -4203,24 +4131,6 @@
   "source_text": "Oregon SNAP / Basic Food (ODHS — ONE.oregon.gov)\none.oregon.gov — single application covers SNAP, OHP, TANF, LIHEAP. Summer EBT: Oregon participates.\nIncome < 130% FPL. ABAWD work requirements active statewide (January 2026 rollout). Surface exemptions.\none.oregon.gov — single application covers SNAP, OHP, TANF, LIHEAP. Summer EBT: Oregon participates."
  },
  {
-  "entity_id": "15f0f4cd-3a16-3241-2945-94d00d4cf8ce",
-  "canonical_id": "crp_fl_697f58a93783d80560bd",
-  "resource_name": "FL Dept of Children and Families — Behavioral Health",
-  "state": "FL",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'mental health' in \"myflfamilies.com — find local mental health or SUD provider; also Baker Act mental health crisis: 800-342-0828\" @ xlsx:master_template_program:row:156",
-  "primary_quote": "mental health",
-  "memberships": [],
-  "civic_object_uid": "corpus:9c78456c2697ffb73c9954a2ece647a67b3ae85ddb3c1cc2423b22ffb7384332",
-  "object_ref": "9c78456c2697ffb73c9954a2ece647a67b3ae85ddb3c1cc2423b22ffb7384332",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:156",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "FL Dept of Children and Families — Behavioral Health\nFloridians with serious mental illness or substance use disorder — state-funded through managing entities and providers\nmyflfamilies.com — find local mental health or SUD provider; also Baker Act mental health crisis: 800-342-0828"
- },
- {
   "entity_id": "16419a96-9103-4a62-f819-b7c6835a4a8a",
   "canonical_id": "crp_az_2804695f7dcfa37ea2ef",
   "resource_name": "AHCCCS (Arizona Medicaid — Expanded)",
@@ -4273,42 +4183,6 @@
   "before_category": "Federal enforcement authority — HIPAA Privacy/Security Rule and 42 CFR Part 2 (SUD patient records confidentiality) enforcement",
   "before_layer": null,
   "source_text": "HHS Office for Civil Rights (OCR)\nEnforces HIPAA Privacy, Security, and Breach Notification Rules and, as of a 2025 delegation, enforces 42 CFR Part 2 (Confidentiality of Substance Use Disorder Patient Records); accepts and investigates complaints from patients whose SUD treatment records or health information privacy rights have been violated, and can pursue resolution agreements, corrective action plans, or civil monetary penalties.\nAddress, phone, and email confirmed via hhs.gov/ocr/about-us/contact-us/ and corroborated by the official OCR complaint form confirmation page (ocrportal.hhs.gov). The 2024 Part 2 Final Rule and its complaint provisions confirmed via hhs.gov/hipaa/for-professionals/regulatory-initiatives/fact-sheet-42-cfr-part-2-final-rule/index.html (updated January 30, 2026) and the HIPAA/Part 2 complaint-filing page (hhs.gov/hipaa/filing-a-complaint/complaint-process/index.html), which explicitly states individuals can file complaints for '42 CFR part 2 (\"Part 2\"), Confidentiality of Substance Use Disorder Patient Records' violations. The OCR-to-Part-2 enforcement transfer (moved from SAMHSA) was corroborated by a September 2025 Baker Donelson legal alert citing the August 26, 2025 Federal Register delegation, consistent with the task's stated CRITICAL rule."
- },
- {
-  "entity_id": "16f2a1a5-cd58-6d6d-d295-d603434ffb91",
-  "canonical_id": "crp_fl_19f5c1ed2675811738a9",
-  "resource_name": "Farmworker DV — Migrant Farmworker Justice Project (FL Legal Services)",
-  "state": "FL",
-  "primary_category": "legal_civil_rights",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Legal Services' in \"floridalegal.org — Florida Legal Services farmworker program; Belle Glade office covers Glades region\" @ xlsx:master_template_program:row:222",
-  "primary_quote": "Legal Services",
-  "memberships": [],
-  "civic_object_uid": "corpus:f1461120f327f3891bc025c163d6d158d3a2820103d331584c87d9084c18c007",
-  "object_ref": "f1461120f327f3891bc025c163d6d158d3a2820103d331584c87d9084c18c007",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:222",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Farmworker DV — Migrant Farmworker Justice Project (FL Legal Services)\nFarmworker DV survivors — legal aid + immigration relief for farmworker community in FL\nfloridalegal.org — Florida Legal Services farmworker program; Belle Glade office covers Glades region"
- },
- {
-  "entity_id": "16fbe227-82b8-38d3-f6e0-103333926eff",
-  "canonical_id": "crp_fl_7b018a9d6bd9e519c285",
-  "resource_name": "Tampa Bay / Southwest Florida Healthcare",
-  "state": "FL",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Healthcare' in \"Tampa Bay / Southwest Florida Healthcare\" @ xlsx:master_template_program:row:172",
-  "primary_quote": "Healthcare",
-  "memberships": [],
-  "civic_object_uid": "corpus:dde11c12ea7a621ff2541f8e93f0d08c402fac8e10d10aaaf00bab261ed5724d",
-  "object_ref": "dde11c12ea7a621ff2541f8e93f0d08c402fac8e10d10aaaf00bab261ed5724d",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:172",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Tampa Bay / Southwest Florida Healthcare\nTampa Bay / Southwest Florida Healthcare\nTampa Bay / Southwest Florida Healthcare"
  },
  {
   "entity_id": "171a9803-87e4-c43f-a0ed-8e792a303722",
@@ -4715,24 +4589,6 @@
   "source_text": "U.S. Bankruptcy Court — District of Idaho\nHandles all federal bankruptcy cases (Chapters 7, 11, 12, 13) in Idaho. Automatic stay stops most collection actions, foreclosures, and garnishments immediately upon filing."
  },
  {
-  "entity_id": "18890e86-1373-2564-cdd6-615cdfafad18",
-  "canonical_id": "crp_ct_a44a2eb16a444b68db16",
-  "resource_name": "Mashantucket Pequot Tribal Nation — Social Services 110 Pequot Trail, Mashantucket, CT 06338 860-396-6500 · mptn-nsn.gov Reports: Enrolled Mashantucket Pequot members — tribal social services, health",
-  "state": "CT",
-  "primary_category": "tribal",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Tribal Nation' in \"Mashantucket Pequot Tribal Nation — Social Services 110 Pequot Trail, Mashantucket, CT 06338 860-396-6500 · mp\" @ xlsx:master_template_program:row:361",
-  "primary_quote": "Tribal Nation",
-  "memberships": [],
-  "civic_object_uid": "corpus:9d0773639220e25d5f136b9fed795e9d566d19b3c65869b3a2b63b800ee4ce16",
-  "object_ref": "9d0773639220e25d5f136b9fed795e9d566d19b3c65869b3a2b63b800ee4ce16",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:361",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Mashantucket Pequot Tribal Nation — Social Services 110 Pequot Trail, Mashantucket, CT 06338 860-396-6500 · mptn-nsn.gov Reports: Enrolled Mashantucket Pequot members — tribal social services, health\nMashantucket Pequot Tribal Nation — Social Services 110 Pequot Trail, Mashantucket, CT 06338 860-396-6500 · mptn-nsn.gov Reports: Enrolled Mashantucket Pequot members — tribal social services, health (Mashantucket Pequot Health Dept), housing, education. Foxwoods revenue funds comprehensive services. Pathway: mptn-nsn.gov — Route enrolled members to tribal programs first. ICWA applies. SOL: 6 years Escalation: IHS Boston Area for coordination"
- },
- {
   "entity_id": "189cc33e-ff6c-d7e3-cb8d-0808e675d2e7",
   "canonical_id": "crp_la_37ff7eb973b76f765762",
   "resource_name": "Tunica-Biloxi Indian Tribe of Louisiana",
@@ -4797,24 +4653,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "Montana Department of Agriculture / Housing — Montana Board of Housing\nAdministers Montana Housing Choice Voucher Program (Section 8), affordable mortgage programs, and homeless assistance through the Montana Continuum of Care network."
- },
- {
-  "entity_id": "18d809f4-29bd-fc5f-3feb-db85a87c27f2",
-  "canonical_id": "crp_fl_d261f920e6bd87b40bc2",
-  "resource_name": "TECO (Tampa Electric) — Energy Neighbor Fund",
-  "state": "FL",
-  "primary_category": "utilities",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'LIHEAP' in \"tampaelectric.com — also connects to LIHEAP and SHARE programs\" @ xlsx:master_template_program:row:282",
-  "primary_quote": "LIHEAP",
-  "memberships": [],
-  "civic_object_uid": "corpus:625e4949b12c68ef906baf15bae541eb3581facd0ffe50eefb291be9f98f352e",
-  "object_ref": "625e4949b12c68ef906baf15bae541eb3581facd0ffe50eefb291be9f98f352e",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:282",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "TECO (Tampa Electric) — Energy Neighbor Fund\nTECO customers in need — emergency assistance funded by customer donations\ntampaelectric.com — also connects to LIHEAP and SHARE programs"
  },
  {
   "entity_id": "18e05371-d766-1b7d-7f1f-25a5e715278a",
@@ -5144,24 +4982,6 @@
   "before_category": "domestic_violence_safety",
   "before_layer": "layer_1",
   "source_text": "StrongHearts Native Helpline (Tribal DV — Michigan)\nstrongheartshelpline.org — 24/7. Tribal DV programs: contact tribal social services directly for enrolled members.\nAI/AN DV survivors in Michigan — 24/7 culturally specific support, tribal program referrals.\nstrongheartshelpline.org — 24/7. Tribal DV programs: contact tribal social services directly for enrolled members."
- },
- {
-  "entity_id": "1a670a52-460a-5b96-9b74-ebb03906787b",
-  "canonical_id": "crp_us_0c6c601a43df6a11d5a8",
-  "resource_name": "Basic Food (WA SNAP)",
-  "state": "US",
-  "primary_category": "food_nutrition",
-  "primary_tier": "R3a_workbook",
-  "primary_evidence": "workbook wa_resource_directory.service_category 'food_nutrition' @ xlsx:wa_resource_directory:row:3",
-  "primary_quote": "food_nutrition",
-  "memberships": [],
-  "civic_object_uid": "corpus:02644042750ddeb3dfae8566cd996094e756240596d20198d3030dee425fb2a8",
-  "object_ref": "02644042750ddeb3dfae8566cd996094e756240596d20198d3030dee425fb2a8",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:wa_resource_directory:row:3",
-  "before_category": "benefits_office",
-  "before_layer": "backbone_workbook",
-  "source_text": "Basic Food (WA SNAP)\nIncome-based, all households"
  },
  {
   "entity_id": "1a963a30-07a8-f128-b200-69371fc248e0",
@@ -5889,24 +5709,6 @@
   "source_text": "Ohio Supreme Court\nSeven justices. Final appellate authority on Ohio law including ORC Chapter 4112 civil rights and minimum wage constitutional amendment."
  },
  {
-  "entity_id": "1ed95c8d-ac05-d849-fabc-3a96ca590bf0",
-  "canonical_id": "crp_wa_45b2a644c127b94f9f58",
-  "resource_name": "State Legal Aid Programs",
-  "state": "WA",
-  "primary_category": "legal_civil_rights",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Legal Aid' in \"State Legal Aid Programs\" @ xlsx:master_template_program:row:95",
-  "primary_quote": "Legal Aid",
-  "memberships": [],
-  "civic_object_uid": "corpus:b6f4592e4cea65f2a2b99e34725095b6f1b50c7e795574426bace67cf3db7867",
-  "object_ref": "b6f4592e4cea65f2a2b99e34725095b6f1b50c7e795574426bace67cf3db7867",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:95",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "State Legal Aid Programs\nState Legal Aid Programs\nState Legal Aid Programs"
- },
- {
   "entity_id": "1efa589d-be6b-587a-ead4-64c25a542a57",
   "canonical_id": "crp_ct_4ee822ef0d8362288f74",
   "resource_name": "U.S. District Court — District of Connecticut, Bridgeport",
@@ -5994,24 +5796,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "Taos Pueblo\nTaos Pueblo — UNESCO World Heritage Site and one of the oldest continuously inhabited communities in North America. Tribal Council and court handle civil, criminal, and ICWA matters."
- },
- {
-  "entity_id": "1f8fdf17-01a5-38c6-871b-f2c0eb251592",
-  "canonical_id": "crp_ak_79c444e6485c03ba4363",
-  "resource_name": "Alaska DOLWD — UI Appeals",
-  "state": "AK",
-  "primary_category": "legal_civil_rights",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'legal aid' in \"Alaska DOLWD — UI Appeals | Function:: UI denial appeals — 30-day deadline (longest in registry, but contact l\" @ xlsx:master_template_program:row:309",
-  "primary_quote": "legal aid",
-  "memberships": [],
-  "civic_object_uid": "corpus:647c9f34a1ac8d68d99bdaafdaf36c3f0841cc528922c8667097b5180302296a",
-  "object_ref": "647c9f34a1ac8d68d99bdaafdaf36c3f0841cc528922c8667097b5180302296a",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:309",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Alaska DOLWD — UI Appeals\nAlaska DOLWD — UI Appeals | Function:: UI denial appeals — 30-day deadline (longest in registry, but contact legal aid at 15 days). | Statute of Limitations:: 30 days — FATAL (contact ALSC 907-272-9431 within 15 days) | Pathway:: jobs.alaska.gov/ui — appeals commission"
  },
  {
   "entity_id": "20b896d2-3eed-66b3-601a-907403d76f7f",
@@ -6350,36 +6134,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "Postpartum Support International HelpLine"
- },
- {
-  "entity_id": "21562853-cee5-2eb6-c53d-3cc5ba8ccecd",
-  "canonical_id": "crp_fl_b661cb646dbd8d177293",
-  "resource_name": "Florida Legal Services — Farmworker Project (serves AI/AN farmworkers)",
-  "state": "FL",
-  "primary_category": "legal_civil_rights",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'legal services' in \"floridalegal.org — AI/AN farmworkers who are not tribal members of FL tribes still may need farmworker legal s\" @ xlsx:master_template_program:row:263",
-  "primary_quote": "legal services",
-  "memberships": [
-   {
-    "category": "employment_labor",
-    "tier": "R4",
-    "tiers": [
-     "R4"
-    ],
-    "tag_only": false,
-    "evidence": [
-     "R4: eligibility_summary 'wage theft' in \"AI/AN farmworkers in Florida — wage theft, housing, immigration legal services\" @ xlsx:master_template_program:row:263"
-    ]
-   }
-  ],
-  "civic_object_uid": "corpus:f74d2532a5a67d457399e376cce059ba2dbde9c6f342ea17ad044f70d79c68f2",
-  "object_ref": "f74d2532a5a67d457399e376cce059ba2dbde9c6f342ea17ad044f70d79c68f2",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:263",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Florida Legal Services — Farmworker Project (serves AI/AN farmworkers)\nAI/AN farmworkers in Florida — wage theft, housing, immigration legal services\nfloridalegal.org — AI/AN farmworkers who are not tribal members of FL tribes still may need farmworker legal services"
  },
  {
   "entity_id": "21ff57f3-2fbb-b4a2-027e-6014db160bdf",
@@ -6728,42 +6482,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "U.S. Court of Appeals — Second Circuit (NYC — Serves CT)\nConnecticut is in the SECOND CIRCUIT — headquartered in Manhattan. Covers New York, Connecticut, and Vermont. Reviews all D. Conn. decisions. Key Second Circuit precedents from CT cases frequently shape national civil rights, insurance regulation, and ERISA law."
- },
- {
-  "entity_id": "23d0c7d6-fbe1-3275-394d-cac673074102",
-  "canonical_id": "crp_ct_02c5ac22cadd0ada567e",
-  "resource_name": "HUSKY Health / CT Medicaid (DSS) 55 Farmington Ave, Hartford, CT 06105 📞 877-284-8759 · huskyhealthct.org Eligibility: Adults 19–64 to 138% FPL (expanded); children, families, elderly, disabled. HUSKY",
-  "state": "CT",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Medicaid' in \"HUSKY Health / CT Medicaid (DSS) 55 Farmington Ave, Hartford, CT 06105 📞 877-284-8759 · huskyhealthct.org Elig\" @ xlsx:master_template_program:row:345",
-  "primary_quote": "Medicaid",
-  "memberships": [],
-  "civic_object_uid": "corpus:090c7f05f5cab479fb1638390bd92cacac8cd3a58f11e9014c0aed4ed4e6d99c",
-  "object_ref": "090c7f05f5cab479fb1638390bd92cacac8cd3a58f11e9014c0aed4ed4e6d99c",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:345",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "HUSKY Health / CT Medicaid (DSS) 55 Farmington Ave, Hartford, CT 06105 📞 877-284-8759 · huskyhealthct.org Eligibility: Adults 19–64 to 138% FPL (expanded); children, families, elderly, disabled. HUSKY\nHUSKY Health / CT Medicaid (DSS) 55 Farmington Ave, Hartford, CT 06105 📞 877-284-8759 · huskyhealthct.org Eligibility: Adults 19–64 to 138% FPL (expanded); children, families, elderly, disabled. HUSKY D for undocumented children. Apply/Notes: connect.ct.gov — apply online. AccessHealthCT for ACA marketplace. Verify managed care plan."
- },
- {
-  "entity_id": "2451c229-8e7a-20f8-da69-c48d6206ffd8",
-  "canonical_id": "crp_ar_3c702ac478ef6be93825",
-  "resource_name": "Arkansas Food Bank / NW Arkansas Food Bank",
-  "state": "AR",
-  "primary_category": "food_nutrition",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Food Bank' in \"Arkansas Food Bank / NW Arkansas Food Bank | What it covers:: Statewide food bank network — central and NW Ark\" @ xlsx:master_template_program:row:316",
-  "primary_quote": "Food Bank",
-  "memberships": [],
-  "civic_object_uid": "corpus:a0b45bae54c91d0c12abfbe1f790e9080308ecae194ed7322bb9f83936f17eca",
-  "object_ref": "a0b45bae54c91d0c12abfbe1f790e9080308ecae194ed7322bb9f83936f17eca",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:316",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Arkansas Food Bank / NW Arkansas Food Bank\nArkansas Food Bank / NW Arkansas Food Bank | What it covers:: Statewide food bank network — central and NW Arkansas | Who qualifies:: Anyone in need. arkansasfoodbank.org. NW Arkansas Food Bank (Bethel Heights: 479-872-8409). River Valley Regional Food Bank (Fort Smith: 479-785-0582). Mid-South Food Bank (Memphis covers N Delta: 901-527-0841). | Contact:: 📞 501-565-8121 · arkansasfoodbank.org"
  },
  {
   "entity_id": "2480abb2-5dd4-63ec-380e-76e726173365",
@@ -7208,24 +6926,6 @@
   "source_text": "ACLU of Kentucky\nLitigates civil rights cases. Focus: criminal justice reform, voting rights, LGBTQ+ rights, immigrants' rights, and Appalachian community rights."
  },
  {
-  "entity_id": "26c34618-74e2-1c02-fdae-d13d3ba42671",
-  "canonical_id": "crp_ar_2908e8b49b4fc414bf26",
-  "resource_name": "Arkansas Veterans Benefits (AR Veterans Commission)",
-  "state": "AR",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Medical Center' in \"Arkansas Veterans Benefits (AR Veterans Commission) | What it covers:: VA benefits navigation, state veterans \" @ xlsx:master_template_program:row:330",
-  "primary_quote": "Medical Center",
-  "memberships": [],
-  "civic_object_uid": "corpus:c77e3391697add7ca37d68f2d035d2c490f4626409b8b0e8a1b773d32bb77d8e",
-  "object_ref": "c77e3391697add7ca37d68f2d035d2c490f4626409b8b0e8a1b773d32bb77d8e",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:330",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Arkansas Veterans Benefits (AR Veterans Commission)\nArkansas Veterans Benefits (AR Veterans Commission) | What it covers:: VA benefits navigation, state veterans services, emergency assistance | Who qualifies:: AR veterans and families. Fayetteville VA Medical Center: 479-443-4301. Little Rock VAMC: 501-257-1000. | Contact:: 📞 501-683-2382 · veterans.arkansas.gov"
- },
- {
   "entity_id": "26cc91a8-6dc9-d41d-e387-80baec0938b2",
   "canonical_id": "crp_nc_b8c4eee7715e41aef590",
   "resource_name": "Food Bank CENC (Raleigh): 1924 Capital Boulevard, Raleigh NC 27604 (919-875-0707) | Second Harvest NW (Winston-Salem): 3655 Reed Street, Winston-Salem NC 27107 (336-784-5770)",
@@ -7342,24 +7042,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "ACLU of Massachusetts (ACLUM)\nACLUM is one of the most active ACLU state affiliates. Focus: immigrant rights (MA has large immigrant communities — Brazilian, Haitian, Guatemalan, Dominican, Cape Verdean; significant ICE detention at Bristol County Sheriff and Plymouth County HOC), criminal justice reform (MA bail reform, pretrial detention, drug laws), LGBTQ+ rights, racial justice (school discipline disparities, housing segregation), voting rights, and reproductive rights. Has litigated landmark immigration, civil rights, and constitutional cases."
- },
- {
-  "entity_id": "273a2722-976e-92a5-210a-a87c16ef1188",
-  "canonical_id": "crp_fl_b61cfd306cb9e7962feb",
-  "resource_name": "FL Statewide Medicaid Managed Care (SMMC)",
-  "state": "FL",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Medicaid' in \"myaccess.myflfamilies.com — FL requires all Medicaid recipients in managed care; appeals go through plan then \" @ xlsx:master_template_program:row:154",
-  "primary_quote": "Medicaid",
-  "memberships": [],
-  "civic_object_uid": "corpus:6b53c7e4600fc692a7b0f776ef189e045472b2bf9ae7f86e39f18adcf1d2053b",
-  "object_ref": "6b53c7e4600fc692a7b0f776ef189e045472b2bf9ae7f86e39f18adcf1d2053b",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:154",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "FL Statewide Medicaid Managed Care (SMMC)\nMedicaid-enrolled Floridians — all services delivered through managed care plans (LTC, behavioral health, medical)\nmyaccess.myflfamilies.com — FL requires all Medicaid recipients in managed care; appeals go through plan then DCF/DOAH"
  },
  {
   "entity_id": "275171a0-cb9f-4eb3-2767-83a7daf04e8c",
@@ -9163,24 +8845,6 @@
   "source_text": "Hawaii SNAP (DHS -- mybenefits.hawaii.gov)\nmybenefits.hawaii.gov -- apply online. DHS offices on all islands. H.R. 1 exemptions: disability, caregiving, pregnancy, school.\nIncome < 130% FPL. ABAWD active. H.R. 1 80hr/month work req (Nov 2025). Surface exemptions.\nmybenefits.hawaii.gov -- apply online. DHS offices on all islands. H.R. 1 exemptions: disability, caregiving, pregnancy, school."
  },
  {
-  "entity_id": "2f7c4e2e-5955-e837-1f74-2cbee5b91ca4",
-  "canonical_id": "crp_ct_9205638e0f0a95c9dd94",
-  "resource_name": "CT OAH — Benefits Appeals 165 Capitol Ave Rm G8A, Hartford, CT 06106 860-418-6050 · ct.gov/oah Reports: SNAP, HUSKY, TFA fair hearings Pathway: ct.gov/oah — 30-day appeal SOL: 30 days — FATAL Escalati",
-  "state": "CT",
-  "primary_category": "food_nutrition",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'SNAP' in \"CT OAH — Benefits Appeals 165 Capitol Ave Rm G8A, Hartford, CT 06106 860-418-6050 · ct.gov/oah Reports: SNAP, \" @ xlsx:master_template_program:row:359",
-  "primary_quote": "SNAP",
-  "memberships": [],
-  "civic_object_uid": "corpus:9c9977369dc42d5d72787e96709acc281aea9851331e190f287ae210b92b56f8",
-  "object_ref": "9c9977369dc42d5d72787e96709acc281aea9851331e190f287ae210b92b56f8",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:359",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "CT OAH — Benefits Appeals 165 Capitol Ave Rm G8A, Hartford, CT 06106 860-418-6050 · ct.gov/oah Reports: SNAP, HUSKY, TFA fair hearings Pathway: ct.gov/oah — 30-day appeal SOL: 30 days — FATAL Escalati\nCT OAH — Benefits Appeals 165 Capitol Ave Rm G8A, Hartford, CT 06106 860-418-6050 · ct.gov/oah Reports: SNAP, HUSKY, TFA fair hearings Pathway: ct.gov/oah — 30-day appeal SOL: 30 days — FATAL Escalation: CT Superior Court"
- },
- {
   "entity_id": "2fa728cd-a9ac-a921-03b0-db86d3fb7f33",
   "canonical_id": "crp_wa_f46c28e555df7df8e0b0",
   "resource_name": "Sea Mar Community Health Centers (FQHC — Latino + All)",
@@ -9705,24 +9369,6 @@
   "source_text": "Mississippi Supreme Court / Administrative Office of Courts — Self-Help\nMississippi has 82 counties each with a circuit court (felonies/civil) and county court (misdemeanors/limited civil). Self-help forms for domestic violence protection orders (Miss. Code § 93-21-7), divorce, custody available at courts.ms.gov."
  },
  {
-  "entity_id": "33ac595c-2773-b8ed-808b-fc476b852e9c",
-  "canonical_id": "crp_ak_188d9c7a84d3e032fb4c",
-  "resource_name": "Alaska Medicaid (DHSS / DPA)",
-  "state": "AK",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Medicaid' in \"Alaska Medicaid (DHSS / DPA) | What it covers:: Medicaid — expanded 2015, fee-for-service primary model | Who \" @ xlsx:master_template_program:row:290",
-  "primary_quote": "Medicaid",
-  "memberships": [],
-  "civic_object_uid": "corpus:e7d6a981628ea7c306e6dde35dcb5a2fee29540f6cf057346fb3601261d02aeb",
-  "object_ref": "e7d6a981628ea7c306e6dde35dcb5a2fee29540f6cf057346fb3601261d02aeb",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:290",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Alaska Medicaid (DHSS / DPA)\nAlaska Medicaid (DHSS / DPA) | What it covers:: Medicaid — expanded 2015, fee-for-service primary model | Who qualifies:: Adults 19–64 to 138% FPL. Children, families, elderly, disabled. myALASKA.gov. NOTE: PFD receipt in October may temporarily spike income — plan ahead for eligibility gap. | Contact:: 📞 800-780-9972 · dhss.alaska.gov/medicaid"
- },
- {
   "entity_id": "33cd0289-f246-aae0-891d-fa07cb72c09d",
   "canonical_id": "crp_me_e33a99e88dcf403198ee",
   "resource_name": "U.S. Court of Appeals -- First Circuit (Boston -- Serves Maine)",
@@ -9792,24 +9438,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "U.S. District Court — Northern District of Alabama (Birmingham)\nFederal trial court for northern Alabama. Handles civil rights, automotive industry employment, voting rights (active docket), and constitutional claims."
- },
- {
-  "entity_id": "348254f8-ec76-bb0d-5231-a34a65826cff",
-  "canonical_id": "crp_ct_36a265654fa41d2df05e",
-  "resource_name": "New Haven Legal Assistance Association (NHLAA) 205 Orange St, New Haven, CT 06510 📞 203-946-4811 · nhlaa.org Eligibility: New Haven and surrounding area — housing, family, benefits, DV. Apply/Notes: n",
-  "state": "CT",
-  "primary_category": "legal_civil_rights",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'legal aid' in \"New Haven Legal Assistance Association (NHLAA) 205 Orange St, New Haven, CT 06510 📞 203-946-4811 · nhlaa.org E\" @ xlsx:master_template_program:row:351",
-  "primary_quote": "legal aid",
-  "memberships": [],
-  "civic_object_uid": "corpus:cdbdea5be56105c27c070d444c6d7a6b4b38535310b763c5217a59483a279586",
-  "object_ref": "cdbdea5be56105c27c070d444c6d7a6b4b38535310b763c5217a59483a279586",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:351",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "New Haven Legal Assistance Association (NHLAA) 205 Orange St, New Haven, CT 06510 📞 203-946-4811 · nhlaa.org Eligibility: New Haven and surrounding area — housing, family, benefits, DV. Apply/Notes: n\nNew Haven Legal Assistance Association (NHLAA) 205 Orange St, New Haven, CT 06510 📞 203-946-4811 · nhlaa.org Eligibility: New Haven and surrounding area — housing, family, benefits, DV. Apply/Notes: nhlaa.org — New Haven primary legal aid hub."
  },
  {
   "entity_id": "34e70d60-efd6-93b4-c2d6-79bef9fb7ca8",
@@ -9953,24 +9581,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "Virginia Department of Medical Assistance Services (DMAS) — Medicaid / FAMIS\nAdministers Virginia Medicaid and FAMIS (Family Access to Medical Insurance Security — CHIP). Apply online at CommonHelp. Virginia expanded Medicaid under ACA (Cover Virginia — effective January 1, 2019)."
- },
- {
-  "entity_id": "35e19fc6-503b-407d-3239-e8162e3d1e55",
-  "canonical_id": "crp_fl_eedda1c46d2015201cc8",
-  "resource_name": "Orlando / Central Florida Healthcare",
-  "state": "FL",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Healthcare' in \"Orlando / Central Florida Healthcare\" @ xlsx:master_template_program:row:165",
-  "primary_quote": "Healthcare",
-  "memberships": [],
-  "civic_object_uid": "corpus:8c2298be38ef5ce2992d541029eeda05519b1f9e570ecbc53b55e8ba2af2e61a",
-  "object_ref": "8c2298be38ef5ce2992d541029eeda05519b1f9e570ecbc53b55e8ba2af2e61a",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:165",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Orlando / Central Florida Healthcare\nOrlando / Central Florida Healthcare\nOrlando / Central Florida Healthcare"
  },
  {
   "entity_id": "35f89e09-69a6-887c-c1e2-d59b91a05171",
@@ -12067,24 +11677,6 @@
   "source_text": "Pennsylvania Insurance Department (PID)\nRegulates insurance companies in Pennsylvania and helps consumers resolve claim denials and coverage disputes."
  },
  {
-  "entity_id": "408ca055-5e6c-3f2e-1428-18939bdc85f9",
-  "canonical_id": "crp_ct_7653dfc7a708636fcf67",
-  "resource_name": "Connecticut TFA (Temporary Family Assistance — TANF via DSS) 55 Farmington Ave, Hartford, CT 06105 📞 855-626-6632 · ct.gov/dss Eligibility: Families with children — up to $693/month for family of 3. 2",
-  "state": "CT",
-  "primary_category": "cash_assistance",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'TANF' in \"Connecticut TFA (Temporary Family Assistance — TANF via DSS) 55 Farmington Ave, Hartford, CT 06105 📞 855-626-6\" @ xlsx:master_template_program:row:352",
-  "primary_quote": "TANF",
-  "memberships": [],
-  "civic_object_uid": "corpus:4bfbfd2d906d67a72d93859765e0abc4ad27bb6e4871f6fd2bdfc7d876b38d3a",
-  "object_ref": "4bfbfd2d906d67a72d93859765e0abc4ad27bb6e4871f6fd2bdfc7d876b38d3a",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:352",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Connecticut TFA (Temporary Family Assistance — TANF via DSS) 55 Farmington Ave, Hartford, CT 06105 📞 855-626-6632 · ct.gov/dss Eligibility: Families with children — up to $693/month for family of 3. 2\nConnecticut TFA (Temporary Family Assistance — TANF via DSS) 55 Farmington Ave, Hartford, CT 06105 📞 855-626-6632 · ct.gov/dss Eligibility: Families with children — up to $693/month for family of 3. 21-month state lifetime limit (shorter than federal 60 months). Apply/Notes: connect.ct.gov — 21-month state TFA limit is shorter than federal 60-month TANF. After state TFA exhausted: Safety Net program available. Work requirement enforced."
- },
- {
   "entity_id": "40ca3ed8-db23-52b7-44dd-9ef0ab117499",
   "canonical_id": "crp_az_c28d387c218be3352210",
   "resource_name": "AZ Court Help (Self-Help Portal — Statewide)",
@@ -12630,24 +12222,6 @@
   "source_text": "StrongHearts Native Helpline (Urban AI/AN DV)\nstrongheartshelpline.org — 24/7. Route to NAICCO Columbus (614-443-3566) for additional AI/AN services.\nAI/AN DV survivors in Ohio — 24/7 culturally specific support.\nstrongheartshelpline.org — 24/7. Route to NAICCO Columbus (614-443-3566) for additional AI/AN services."
  },
  {
-  "entity_id": "431e766a-2b11-d447-c803-d3fcc9e7ae5d",
-  "canonical_id": "crp_ct_b01446a4ba5a50a1873c",
-  "resource_name": "CT Community Health Centers (FQHCs) 145 W Elm St, Hartford, CT 06114 📞 860-246-0090 · ctchc.com Eligibility: Anyone regardless of insurance — 15+ FQHCs statewide; sliding scale. Apply/Notes: ctchc.com",
-  "state": "CT",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Health Care' in \"CT Community Health Centers (FQHCs) 145 W Elm St, Hartford, CT 06114 📞 860-246-0090 · ctchc.com Eligibility: A\" @ xlsx:master_template_program:row:348",
-  "primary_quote": "Health Care",
-  "memberships": [],
-  "civic_object_uid": "corpus:ed446efd9242a4fc746242ca1e9883ab08cc9c38d3a42a5ad3cf665ec706d90a",
-  "object_ref": "ed446efd9242a4fc746242ca1e9883ab08cc9c38d3a42a5ad3cf665ec706d90a",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:348",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "CT Community Health Centers (FQHCs) 145 W Elm St, Hartford, CT 06114 📞 860-246-0090 · ctchc.com Eligibility: Anyone regardless of insurance — 15+ FQHCs statewide; sliding scale. Apply/Notes: ctchc.com\nCT Community Health Centers (FQHCs) 145 W Elm St, Hartford, CT 06114 📞 860-246-0090 · ctchc.com Eligibility: Anyone regardless of insurance — 15+ FQHCs statewide; sliding scale. Apply/Notes: ctchc.com / findahealthcenter.hrsa.gov — Key: Charter Oak Health Center (Hartford: 860-550-7500), Fair Haven Community Health Care (New Haven: 203-777-7411 — large immigrant population), Optimus Health Care (Bridgeport: 203-551-7400)."
- },
- {
   "entity_id": "43208cfe-7aab-0a4f-ec7e-26bb6d4ddf8a",
   "canonical_id": "crp_wi_7425854b8f6dfdc75d72",
   "resource_name": "EEOC Milwaukee Area Office (Serves Wisconsin — Under Chicago District)",
@@ -12814,24 +12388,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "Children's Mental Health Wraparound\ndcyf.wa.gov"
- },
- {
-  "entity_id": "43b44934-507d-3319-1721-76c8fe731f60",
-  "canonical_id": "crp_fl_fd9078115d5081f611b2",
-  "resource_name": "Jackson Memorial Charity Care / Gold Card",
-  "state": "FL",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Medicaid' in \"jacksonhealth.org — apply at Jackson; critical alternative to missing Medicaid expansion\" @ xlsx:master_template_program:row:159",
-  "primary_quote": "Medicaid",
-  "memberships": [],
-  "civic_object_uid": "corpus:9a920ee75e95adadadc601c53a437869de02d9e2c2c0551d43d0e506101ca7a8",
-  "object_ref": "9a920ee75e95adadadc601c53a437869de02d9e2c2c0551d43d0e506101ca7a8",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:159",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Jackson Memorial Charity Care / Gold Card\nMiami-Dade low-income residents — discounted access to Jackson Health facilities\njacksonhealth.org — apply at Jackson; critical alternative to missing Medicaid expansion"
  },
  {
   "entity_id": "43c03d05-24d6-bd13-627a-fbd9113cfde2",
@@ -13017,24 +12573,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "U.S. Attorney — District of South Carolina (Columbia / Charleston / Greenville / Florence)\nCivil rights enforcement for all of South Carolina. Active civil rights and ADA docket. SC has ONE federal judicial district with multiple divisions."
- },
- {
-  "entity_id": "44d0aaba-3190-dafe-21a0-c278d27b2a89",
-  "canonical_id": "crp_us_a9d1a6d31732d5b739f7",
-  "resource_name": "USDA SNAP Retailer Locator",
-  "state": "US",
-  "primary_category": "food_nutrition",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'SNAP' in \"Where SNAP benefits can be used. Useful for food desert mapping.\" @ xlsx:federal_resource_directory:row:5",
-  "primary_quote": "SNAP",
-  "memberships": [],
-  "civic_object_uid": "corpus:a278f3dbd60d9d9799d51e22f8b9cfd11a8bc54bee470fbed61059b2ac7fb840",
-  "object_ref": "a278f3dbd60d9d9799d51e22f8b9cfd11a8bc54bee470fbed61059b2ac7fb840",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:federal_resource_directory:row:5",
-  "before_category": "resource",
-  "before_layer": "backbone_workbook",
-  "source_text": "USDA SNAP Retailer Locator\nWhere SNAP benefits can be used. Useful for food desert mapping."
  },
  {
   "entity_id": "4519e130-1700-e53d-bba9-ec1990869f5c",
@@ -13322,24 +12860,6 @@
   "source_text": "FEMA Individual Assistance (Disaster Recovery)\ndisasterassistance.gov -- screen for ongoing disaster recovery at every intake. FEMA appeal: 60 days from determination. SLPR for FEMA disputes (787-728-9645).\nHouseholds in declared disaster areas -- Maria and earthquake recovery programs.\ndisasterassistance.gov -- screen for ongoing disaster recovery at every intake. FEMA appeal: 60 days from determination. SLPR for FEMA disputes (787-728-9645)."
  },
  {
-  "entity_id": "48208c2c-b474-2c66-97f6-1a05346d719d",
-  "canonical_id": "crp_fl_04c0ae52d279fdc2c7fe",
-  "resource_name": "CSFP (Commodity Supplemental Food Program)",
-  "state": "FL",
-  "primary_category": "food_nutrition",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'food bank' in \"Contact local food bank through Feeding Florida network\" @ xlsx:master_template_program:row:119",
-  "primary_quote": "food bank",
-  "memberships": [],
-  "civic_object_uid": "corpus:5c73945e11cbc1a61954f8f559ffb22eb720f0436ace73f1be9844cdda0a0cca",
-  "object_ref": "5c73945e11cbc1a61954f8f559ffb22eb720f0436ace73f1be9844cdda0a0cca",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:119",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "CSFP (Commodity Supplemental Food Program)\nLow-income seniors 60+ — monthly USDA commodity food packages\nContact local food bank through Feeding Florida network"
- },
- {
   "entity_id": "4825c497-5c5b-f195-86d3-e7ac511f2b1f",
   "canonical_id": "crp_va_ccf756a36222aca77fcf",
   "resource_name": "VA Huntington Health Care System (Huntington) / Louis A. Johnson VA (Clarksburg)",
@@ -13625,24 +13145,6 @@
   "before_category": "disability_services",
   "before_layer": "vocational_rehabilitation_and_disability_rights",
   "source_text": "Use vocational-rehabilitation programs or Rehabilitation Act rights\nThe Rehabilitation Act of 1973 is the foundational federal disability rights statute. Title I authorizes the federal-state Vocational Rehabilitation (VR) program, funding state agencies that help people with disabilities prepare for, obtain, and keep employment. Other key provisions include Section 501 (federal employment), Section 503 (federal contractors), Section 504 (federally funded programs), Section 508 (federal ICT accessibility), Title II (disability research via NIDILRR), and Title VII (independent living). It predates and heavily influenced the ADA. Filing Deadlines: VR applicants/recipients may pursue mediation and an impartial due-process hearing through the state VR agency (timeframes set by state VR procedures) and receive assistance from the Client Assistance Program. Section 504-based discrimination complaints follow the applicable funding agency's ~180-day administrative deadline (Title VI remedies). Recent amendments: The most recent statutory revision of the Rehabilitation Act came in 2014 via WIOA (Pub. L. 113-128), which amended Title I VR and moved NIDILRR (Title II) and the Independent Living programs (Title VII) from the Dept. of Education to the Administra\nUse this for vocational-rehabilitation services, disability employment programs, or disability discrimination covered by the Rehabilitation Act.\nChoose from 1 reviewed source-backed route option."
- },
- {
-  "entity_id": "4a871d1c-61fe-f438-83fb-e11f692d6bcf",
-  "canonical_id": "crp_ct_1275a018e358bd99a0c9",
-  "resource_name": "Connecticut LIHEAP / Energy Assistance (DSS + Community Action) 55 Farmington Ave, Hartford, CT 06105 📞 855-626-6632 · ct.gov/dss/energy Eligibility: Income < 60% state median — heating, cooling, weat",
-  "state": "CT",
-  "primary_category": "utilities",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'LIHEAP' in \"Connecticut LIHEAP / Energy Assistance (DSS + Community Action) 55 Farmington Ave, Hartford, CT 06105 📞 855-62\" @ xlsx:master_template_program:row:354",
-  "primary_quote": "LIHEAP",
-  "memberships": [],
-  "civic_object_uid": "corpus:1479b7f258f68fe92418c01443bb6a0c30b198e3b76794abcdd5ed9e1439121e",
-  "object_ref": "1479b7f258f68fe92418c01443bb6a0c30b198e3b76794abcdd5ed9e1439121e",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:354",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Connecticut LIHEAP / Energy Assistance (DSS + Community Action) 55 Farmington Ave, Hartford, CT 06105 📞 855-626-6632 · ct.gov/dss/energy Eligibility: Income < 60% state median — heating, cooling, weat\nConnecticut LIHEAP / Energy Assistance (DSS + Community Action) 55 Farmington Ave, Hartford, CT 06105 📞 855-626-6632 · ct.gov/dss/energy Eligibility: Income < 60% state median — heating, cooling, weatherization, crisis shutoff prevention. Apply/Notes: ct.gov/dss/energy — apply through local Community Action Agency. Connecticut has a winter shutoff moratorium (November 1 – May 1) — utility companies cannot terminate service for low-income customers who enter payment arrangement. This is a signi"
  },
  {
   "entity_id": "4a8c7a68-97e6-eab5-0006-121ab3c14f10",
@@ -14342,24 +13844,6 @@
   "source_text": "U.S. District Court — District of Idaho (Coeur d'Alene / Northern Division)\nFederal trial court serving northern Idaho counties. Civil rights and employment discrimination cases from the panhandle counties."
  },
  {
-  "entity_id": "4e594416-4326-f2fc-e1ca-5838607bdd41",
-  "canonical_id": "crp_fl_f3b5c3a3678cd1ff37d4",
-  "resource_name": "ACA Marketplace (FL — HealthCare.gov)",
-  "state": "FL",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'healthcare' in \"healthcare.gov — FL uses federal marketplace; find local Navigator at floridanavigators.com or 800-318-2596\" @ xlsx:master_template_program:row:151",
-  "primary_quote": "healthcare",
-  "memberships": [],
-  "civic_object_uid": "corpus:cd83bcb260a0715c9978d61bb90fe9040dbe73f79959a9245041384fea6abfca",
-  "object_ref": "cd83bcb260a0715c9978d61bb90fe9040dbe73f79959a9245041384fea6abfca",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:151",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "ACA Marketplace (FL — HealthCare.gov)\nFloridians 100–400% FPL — ACA subsidies; enhanced subsidies expired Dec 31 2025; silver plans now significantly more expensive above 250% FPL\nhealthcare.gov — FL uses federal marketplace; find local Navigator at floridanavigators.com or 800-318-2596"
- },
- {
   "entity_id": "4e81ddfa-4874-4552-f8f5-3ff10f1326a3",
   "canonical_id": "crp_ma_cb3074f8a72a1a69dcd3",
   "resource_name": "Legal Aid of Western MA (Worcester + Springfield)",
@@ -14845,24 +14329,6 @@
   "source_text": "Check disability-discrimination rights and enforcement options\nThe ADA is the nation's most comprehensive civil rights law prohibiting discrimination against people with disabilities. It bars discrimination in employment (Title I), in state and local government services and programs (Title II), and in privately operated public accommodations (Title III), and mandates accessible telecommunications (Title IV). The 2008 ADA Amendments Act broadened the definition of 'disability' to reverse restrictive Supreme Court interpretations, directing that the term be construed broadly in favor of coverage. The statute requires reasonable accommodations/modifications and accessibility unless doing so imposes undue hardship or fundamentally alters a program. Filing Deadlines: Title I (employment): file a charge with the EEOC within 180 days of the discriminatory act, extended to 300 days where a state/local fair-employment agency also covers the conduct. Title II: complaints to DOJ generally within 180 days of the alleged discrimination (transportation-related Title II complaints to FTA within 180 days). Title III: no fixed federal administrative filing deadline; private suits borrow the analogous state personal-injury statute of limitations (typically 2-4 \nUse this when disability discrimination or an accessibility barrier may involve employment, public services, or public accommodations.\nChoose from 1 reviewed source-backed route option."
  },
  {
-  "entity_id": "512294a2-03b5-9f0d-dff6-cc4502b1e73a",
-  "canonical_id": "crp_fl_843fc3cdfb9fd80f1cc8",
-  "resource_name": "Tribal Health — Florida",
-  "state": "FL",
-  "primary_category": "tribal",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Tribal Health' in \"Tribal Health — Florida\" @ xlsx:master_template_program:row:179",
-  "primary_quote": "Tribal Health",
-  "memberships": [],
-  "civic_object_uid": "corpus:adf16447e9ea0c495375524c7b0af7519a545e9ea09b99a0732d360760ca2ea8",
-  "object_ref": "adf16447e9ea0c495375524c7b0af7519a545e9ea09b99a0732d360760ca2ea8",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:179",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Tribal Health — Florida\nTribal Health — Florida\nTribal Health — Florida"
- },
- {
   "entity_id": "51245e16-37c6-af93-c4e9-28c3470845bb",
   "canonical_id": "crp_il_842889039d5001aff54d",
   "resource_name": "WIC Illinois",
@@ -15193,24 +14659,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "U.S. Bankruptcy Courts — Districts of Louisiana\nHandles all Louisiana federal bankruptcy cases. Automatic stay stops most collection actions, foreclosures, and wage garnishments immediately upon filing."
- },
- {
-  "entity_id": "527eece6-0e86-eefc-0c14-b3ce21fc4816",
-  "canonical_id": "crp_fl_1c182ff0c20f0ee1b241",
-  "resource_name": "Second Harvest Food Bank of Central Florida (Orlando metro)",
-  "state": "FL",
-  "primary_category": "food_nutrition",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'SNAP' in \"secondharvestcfl.org — find nearest distribution site; also SNAP outreach and enrollment\" @ xlsx:master_template_program:row:129",
-  "primary_quote": "SNAP",
-  "memberships": [],
-  "civic_object_uid": "corpus:a2936bda658f59ea6df454bfc67665a1584072f6a939e574d3f771c98d79a92d",
-  "object_ref": "a2936bda658f59ea6df454bfc67665a1584072f6a939e574d3f771c98d79a92d",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:129",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Second Harvest Food Bank of Central Florida (Orlando metro)\nAnyone in need, 6-county Central Florida area including Orange, Osceola, Seminole, Lake, Brevard, Volusia\nsecondharvestcfl.org — find nearest distribution site; also SNAP outreach and enrollment"
  },
  {
   "entity_id": "52d33dbf-d8a0-ba1b-8994-02915706fdf5",
@@ -16602,19 +16050,7 @@
   "primary_tier": "R4",
   "primary_evidence": "wb:service_type 'HOMELESSNESS' in \"HOUSING, RENT & HOMELESSNESS\" @ xlsx:resource_master:row:2218",
   "primary_quote": "HOMELESSNESS",
-  "memberships": [
-   {
-    "category": "tribal",
-    "tier": "R4",
-    "tiers": [
-     "R4"
-    ],
-    "tag_only": false,
-    "evidence": [
-     "R4: eligibility_summary 'Native American' in \"Urban Native Americans\" @ xlsx:master_template_program:row:63"
-    ]
-   }
-  ],
+  "memberships": [],
   "civic_object_uid": "corpus:47b2ac4cb3fdf3aa0a0d3783eb66adebdba259705577a51e9889b41cc3603345",
   "object_ref": "47b2ac4cb3fdf3aa0a0d3783eb66adebdba259705577a51e9889b41cc3603345",
   "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
@@ -16663,24 +16099,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "NJ Institute for Social Justice\nCombines policy advocacy, public education, and litigation on racial justice (particularly NJ's racial wealth gap and criminal justice reform). Key issues: expungement reform, driver's license restoration for FTA suspensions, predatory debt collection, housing segregation. Does not handle individual cases; connects systemically with LSNJ and VLJ for direct services."
- },
- {
-  "entity_id": "5a4d13fa-ad77-7a36-0f3c-d817342e6a62",
-  "canonical_id": "crp_ar_6ca98fae2282acdbd4fa",
-  "resource_name": "Arkansas DV Hotline",
-  "state": "AR",
-  "primary_category": "safety_crisis",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'crisis line' in \"Arkansas DV Hotline | What it covers:: 24/7 DV crisis line and shelter referral statewide | Who qualifies:: An\" @ xlsx:master_template_program:row:329",
-  "primary_quote": "crisis line",
-  "memberships": [],
-  "civic_object_uid": "corpus:3edbe1e968982be448098be78d7aeaa8a96b3a7393c299f9f32d1b54cc7a2f8d",
-  "object_ref": "3edbe1e968982be448098be78d7aeaa8a96b3a7393c299f9f32d1b54cc7a2f8d",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:329",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Arkansas DV Hotline\nArkansas DV Hotline | What it covers:: 24/7 DV crisis line and shelter referral statewide | Who qualifies:: Anyone experiencing DV. Domestic Peace (Little Rock: 501-376-3219). Center for Women in Transition (Fayetteville: 479-443-6500). | Contact:: 📞 1-800-332-4443 · domesticpeace.com"
  },
  {
   "entity_id": "5a4fc4be-5fcb-0753-9dae-23a5a83848ad",
@@ -17074,24 +16492,6 @@
   "before_category": "housing",
   "before_layer": "layer_1",
   "source_text": "Minnesota Indian Women's Resource Center (MIWRC — Urban Native Women)\nmiwrc.org — critical Twin Cities urban Native women's resource. DV shelter, housing advocacy, cultural services. Also American Indian Family Center Saint Paul (651-793-3803 · aifcmn.org).\nUrban AI/AN women and families — Twin Cities. DV services, housing, cultural support, crisis services.\nmiwrc.org — critical Twin Cities urban Native women's resource. DV shelter, housing advocacy, cultural services. Also American Indian Family Center Saint Paul (651-793-3803 · aifcmn.org)."
- },
- {
-  "entity_id": "5c046157-a703-c7de-3ca2-1fcb2cc25406",
-  "canonical_id": "crp_ar_414ae30d544ac3313f02",
-  "resource_name": "Arkansas Civil Rights Commission (ACRC)",
-  "state": "AR",
-  "primary_category": "legal_civil_rights",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Civil Rights' in \"Arkansas Civil Rights Commission (ACRC) | Function:: Employment and housing discrimination — AR Civil Rights A\" @ xlsx:master_template_program:row:331",
-  "primary_quote": "Civil Rights",
-  "memberships": [],
-  "civic_object_uid": "corpus:7c3973917944056cc5e4283d37cb2686b304b5bd0826a956437f404e1ba4842f",
-  "object_ref": "7c3973917944056cc5e4283d37cb2686b304b5bd0826a956437f404e1ba4842f",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:331",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Arkansas Civil Rights Commission (ACRC)\nArkansas Civil Rights Commission (ACRC) | Function:: Employment and housing discrimination — AR Civil Rights Act. 180-day SOL. LGBTQ+ not expressly covered under state law — use EEOC (post-Bostock) for sexual orientation/gender identity. | Statute of Limitations:: 180 days — FATAL. File EEOC simultaneously for federal protections. | Pathway:: arkansasag.gov/acrc — complaint form"
  },
  {
   "entity_id": "5c07b662-fb9a-d942-5b3f-73efae19cfcf",
@@ -17751,24 +17151,6 @@
   "before_category": "Federal statute — Requires parity between mental health/substance use disorder benefits and medical/surgical benefits in group health plans and insurance",
   "before_layer": null,
   "source_text": "Mental Health Parity and Addiction Equity Act (MHPAEA) — as applied to SUD benefits\nMHPAEA requires that group health plans and insurers offering mental health or substance use disorder (SUD) benefits provide those benefits with financial requirements (copays, deductibles) and treatment limitations (visit limits, prior authorization) no more restrictive than those applied to medical/surgical benefits. It bans separate, more restrictive annual or lifetime dollar limits on SUD treatment compared with medical care. As amended by the Consolidated Appropriations Act, 2021, plans must perform and document comparative analyses of non-quantitative treatment limitations (NQTLs, e.g., prior authorization or network adequacy standards) and provide them to regulators on request within 45 days if deficient. Plans found non-compliant must notify all enrollees within 7 days of a final determination. This law is central to ensuring people can access SUD treatment (including inpatient rehab, outpatient counseling, and medication-assisted treatment) on par with physical health coverage."
- },
- {
-  "entity_id": "5ec12ff0-54dc-1451-e804-4d208564db4d",
-  "canonical_id": "crp_ak_79f1c641d73e5df10454",
-  "resource_name": "Providence Alaska Medical Center (Anchorage)",
-  "state": "AK",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Medical Center' in \"Providence Alaska Medical Center (Anchorage) | What it covers:: Major regional medical center — charity care, \" @ xlsx:master_template_program:row:292",
-  "primary_quote": "Medical Center",
-  "memberships": [],
-  "civic_object_uid": "corpus:b6a4ac83d99be0b71646e1363aede833e12a4ceae5b77cd580bf77acbc22a195",
-  "object_ref": "b6a4ac83d99be0b71646e1363aede833e12a4ceae5b77cd580bf77acbc22a195",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:292",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Providence Alaska Medical Center (Anchorage)\nProvidence Alaska Medical Center (Anchorage) | What it covers:: Major regional medical center — charity care, Level 2 trauma (ANMC is Level 1 for Alaska Native) | Who qualifies:: Anchorage. Charity care income < 200% FPL. Also Fairbanks Memorial Hospital (907-452-8181). Bartlett Regional (Juneau: 907-796-8900). | Contact:: 📞 907-562-2211 · providence.org/locations/ak/alaska-medical-center"
  },
  {
   "entity_id": "5ec7546f-9301-daa1-6ba5-47a90a65f44c",
@@ -18600,19 +17982,7 @@
   "primary_tier": "R4",
   "primary_evidence": "wb:service_type 'HEALTHCARE' in \"HEALTHCARE\" @ xlsx:resource_master:row:2192",
   "primary_quote": "HEALTHCARE",
-  "memberships": [
-   {
-    "category": "housing",
-    "tier": "R4",
-    "tiers": [
-     "R4"
-    ],
-    "tag_only": false,
-    "evidence": [
-     "R4: eligibility_summary 'homeless' in \"Low-income and homeless individuals\" @ xlsx:master_template_program:row:42"
-    ]
-   }
-  ],
+  "memberships": [],
   "civic_object_uid": "corpus:528079ed8a5053c558aac15acf3494c6d714fb566eaadab76af9699527af9a0b",
   "object_ref": "528079ed8a5053c558aac15acf3494c6d714fb566eaadab76af9699527af9a0b",
   "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
@@ -18620,24 +17990,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "Pioneer Square Clinic (Union Gospel Mission)\nugm.org/health-care"
- },
- {
-  "entity_id": "62fc69ea-0692-54d2-d94e-84f01f603c89",
-  "canonical_id": "crp_fl_bf35d5e7ea758b0048d7",
-  "resource_name": "LIHEAP / LIHEAP-EAP (Florida — Low Income Home Energy Assistance)",
-  "state": "FL",
-  "primary_category": "utilities",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'liheap' in \"myfloridacfo.com/division/liheap — find local CAA for LIHEAP; FL prioritizes cooling given extreme heat; apply\" @ xlsx:master_template_program:row:276",
-  "primary_quote": "liheap",
-  "memberships": [],
-  "civic_object_uid": "corpus:780ff37e7bdfdb693ceefa441b422cce21b8bdb742588cfa549eaecae7a15f2f",
-  "object_ref": "780ff37e7bdfdb693ceefa441b422cce21b8bdb742588cfa549eaecae7a15f2f",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:276",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "LIHEAP / LIHEAP-EAP (Florida — Low Income Home Energy Assistance)\nIncome < 60% SMI — COOLING assistance is FL's primary use; apply through local Community Action Agency\nmyfloridacfo.com/division/liheap — find local CAA for LIHEAP; FL prioritizes cooling given extreme heat; apply April–September"
  },
  {
   "entity_id": "634644c7-2dc8-d418-9a3b-0293dbde2260",
@@ -18656,24 +18008,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "Seattle Housing Authority (SHA)\nseattlehousing.org"
- },
- {
-  "entity_id": "635b7f0e-6164-c881-9e72-4dabb2a9e04a",
-  "canonical_id": "crp_wa_380c43324365141fba1e",
-  "resource_name": "WIC – Washington State",
-  "state": "WA",
-  "primary_category": "food_nutrition",
-  "primary_tier": "R3a_workbook",
-  "primary_evidence": "workbook wa_resource_directory.service_category 'food_nutrition' @ xlsx:wa_resource_directory:row:5",
-  "primary_quote": "food_nutrition",
-  "memberships": [],
-  "civic_object_uid": "corpus:fa3162be3732329ad9e92802a48fe506326caf23c2aa5015f11868f03f9650ea",
-  "object_ref": "fa3162be3732329ad9e92802a48fe506326caf23c2aa5015f11868f03f9650ea",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:wa_resource_directory:row:5",
-  "before_category": "benefits_office",
-  "before_layer": "backbone_workbook",
-  "source_text": "WIC - Washington State\nPregnant/postpartum women, children under 5"
  },
  {
   "entity_id": "637a491a-a6fd-e879-50ae-113d4cc767ad",
@@ -19205,24 +18539,6 @@
   "source_text": "Iowa Judicial Branch — Self-Help\nIowa has 8 judicial districts covering 99 counties. Self-help forms for domestic abuse protective orders (Iowa Code § 236.5), divorce, custody, and small claims at iowacourts.gov."
  },
  {
-  "entity_id": "66b373fa-09a2-4397-cfb0-1fc356c050f9",
-  "canonical_id": "crp_ar_8deac23ef3ce3306ae39",
-  "resource_name": "UAMS Medical Center (Little Rock Safety Net)",
-  "state": "AR",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Medical Center' in \"UAMS Medical Center (Little Rock Safety Net) | What it covers:: Academic medical center — charity care, Level \" @ xlsx:master_template_program:row:319",
-  "primary_quote": "Medical Center",
-  "memberships": [],
-  "civic_object_uid": "corpus:34f3d6e86d532c80fa7da8651c7f0cb2efbd18b3019a07a5b80ba2c4c4796bb8",
-  "object_ref": "34f3d6e86d532c80fa7da8651c7f0cb2efbd18b3019a07a5b80ba2c4c4796bb8",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:319",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "UAMS Medical Center (Little Rock Safety Net)\nUAMS Medical Center (Little Rock Safety Net) | What it covers:: Academic medical center — charity care, Level 1 trauma center | Who qualifies:: Central Arkansas. Charity care income < 200% FPL. Also Baptist Health (LR: 501-202-2000). CHI St. Vincent (LR: 501-552-3000). | Contact:: 📞 501-686-7000 · uamshealth.com"
- },
- {
   "entity_id": "66b72ec5-17dd-ea35-22da-a3ddb32df23c",
   "canonical_id": "crp_us_2c52ce47b8b3b3c5bc55",
   "resource_name": "Supreme Court of the Virgin Islands -- Highest VI Court",
@@ -19499,24 +18815,6 @@
   "before_category": "cash_assistance_income",
   "before_layer": "layer_1",
   "source_text": "Arizona Unemployment Insurance (UI)\ndes.az.gov/ui — apply online. CRITICAL: 15-DAY APPEAL DEADLINE from mailing date — contact legal aid same day as any denial. Document mailing date on envelope.\nRecently unemployed AZ workers — up to $320/week, 26-week max. Must register with AZ Job Connection.\ndes.az.gov/ui — apply online. CRITICAL: 15-DAY APPEAL DEADLINE from mailing date — contact legal aid same day as any denial. Document mailing date on envelope."
- },
- {
-  "entity_id": "68024e09-ee2e-867d-9a13-8867e89928d1",
-  "canonical_id": "crp_us_f24467cab9f7db5a8d02",
-  "resource_name": "National Reentry Resource Center",
-  "state": "US",
-  "primary_category": "legal_civil_rights",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'expungement' in \"Reentry services for people leaving incarceration — housing, employment, ID recovery, expungement.\" @ xlsx:federal_resource_directory:row:15",
-  "primary_quote": "expungement",
-  "memberships": [],
-  "civic_object_uid": "corpus:2e1522b47f5ad85f040d2560547125b63966fe66c1b3be2d9378568f216478d8",
-  "object_ref": "2e1522b47f5ad85f040d2560547125b63966fe66c1b3be2d9378568f216478d8",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:federal_resource_directory:row:15",
-  "before_category": "resource",
-  "before_layer": "backbone_workbook",
-  "source_text": "National Reentry Resource Center\nReentry services for people leaving incarceration — housing, employment, ID recovery, expungement."
  },
  {
   "entity_id": "680333a6-ed86-077a-9c54-7ee1dac30078",
@@ -20873,24 +20171,6 @@
   "source_text": "Missouri Bar — Lawyer Referral Service\nConnects Missourians to private attorneys. $25 initial 30-minute consultation fee in most categories."
  },
  {
-  "entity_id": "6fcd4cf2-917c-39ba-54f2-03d3d4f61f46",
-  "canonical_id": "crp_fl_283e83725ab8981bcfb1",
-  "resource_name": "LIHEAP Emergency (FL — crisis energy assistance)",
-  "state": "FL",
-  "primary_category": "utilities",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'LIHEAP' in \"211 or local Community Action Agency — request emergency LIHEAP; cooling equipment replacement also available\" @ xlsx:master_template_program:row:277",
-  "primary_quote": "LIHEAP",
-  "memberships": [],
-  "civic_object_uid": "corpus:fb8f37bf1cd025830ee7b8abff65133b5c4413b3b08e292abe5642e7d2610281",
-  "object_ref": "fb8f37bf1cd025830ee7b8abff65133b5c4413b3b08e292abe5642e7d2610281",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:277",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "LIHEAP Emergency (FL — crisis energy assistance)\nAnyone in FL utility crisis with heat/safety emergency — year-round emergency grants through CAAs\n211 or local Community Action Agency — request emergency LIHEAP; cooling equipment replacement also available"
- },
- {
   "entity_id": "6ff03d94-c8c3-f748-ac93-c5953577bfdf",
   "canonical_id": "crp_az_705b306e90830838c21a",
   "resource_name": "ACLU of Arizona",
@@ -21117,15 +20397,13 @@
   "memberships": [
    {
     "category": "housing",
-    "tier": "R4",
+    "tier": "R3b",
     "tiers": [
-     "R3b",
-     "R4"
+     "R3b"
     ],
-    "tag_only": false,
+    "tag_only": true,
     "evidence": [
-     "workbook resource_master.category_tags tag 'housing,legal_services,immigration,financial_assistance' @ xlsx:resource_master:row:2298",
-     "R4: eligibility_summary 'eviction' in \"King County renters facing eviction\" @ xlsx:master_template_program:row:57"
+     "workbook resource_master.category_tags tag 'housing,legal_services,immigration,financial_assistance' @ xlsx:resource_master:row:2298"
     ]
    }
   ],
@@ -21136,24 +20414,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "Housing Justice Project (eviction defense)\ntenantlawcenter.org — courthouse-based legal help"
- },
- {
-  "entity_id": "70d583f2-9d96-0a73-9d17-c0a18a642e2f",
-  "canonical_id": "crp_fl_4e1332f0171dae1eb11c",
-  "resource_name": "Miami-Dade / South Florida Healthcare",
-  "state": "FL",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Healthcare' in \"Miami-Dade / South Florida Healthcare\" @ xlsx:master_template_program:row:157",
-  "primary_quote": "Healthcare",
-  "memberships": [],
-  "civic_object_uid": "corpus:28930d951ce9117ffd949cf9e58813de657b4fe95ebd44341035a4374cf710be",
-  "object_ref": "28930d951ce9117ffd949cf9e58813de657b4fe95ebd44341035a4374cf710be",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:157",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Miami-Dade / South Florida Healthcare\nMiami-Dade / South Florida Healthcare\nMiami-Dade / South Florida Healthcare"
  },
  {
   "entity_id": "7178e329-4834-7215-cd63-031babd346e3",
@@ -21527,36 +20787,6 @@
   "source_text": "Find family support for disability and complex health needs\nFamily Voices is a family-led nonprofit that transforms systems of care to work better for all children and youth, especially those with special health care needs or disabilities. It supports a national network of family-led and family-serving organizations and provides technical assistance to state Family-to-Family Health Information Centers (F2Fs), which give families direct, peer-based information and support in navigating health care and services. Hours: National office business hours; F2F hours vary by state Languages: English and Spanish (resources in both, with more languages in development)\nUse this when a family needs peer navigation for disability, healthcare, or complex support systems.\nChoose from 1 reviewed source-backed route option."
  },
  {
-  "entity_id": "73941cb9-c311-c4df-9910-5c3f78a0c16a",
-  "canonical_id": "crp_fl_87a9b9e840b058a9735d",
-  "resource_name": "FL UI Appeal Deadline — 20 DAYS",
-  "state": "FL",
-  "primary_category": "legal_civil_rights",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'legal aid' in \"contact legal aid within 10 days of any UI denial — 20-day deadline is hard; BALS, CLSMF, LSGM can all assist\" @ xlsx:master_template_program:row:270",
-  "primary_quote": "legal aid",
-  "memberships": [
-   {
-    "category": "cash_assistance",
-    "tier": "R4",
-    "tiers": [
-     "R4"
-    ],
-    "tag_only": false,
-    "evidence": [
-     "R4: eligibility_summary 'Unemployment Insurance' in \"FL Unemployment Insurance appeal deadline is 20 days from determination mailing — SHORT; and with only 12 week\" @ xlsx:master_template_program:row:270"
-    ]
-   }
-  ],
-  "civic_object_uid": "corpus:e306d5b7b80b155b31d053ea39f78fd0ccc1bdb14c815379e3dcefd841e82235",
-  "object_ref": "e306d5b7b80b155b31d053ea39f78fd0ccc1bdb14c815379e3dcefd841e82235",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:270",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "FL UI Appeal Deadline — 20 DAYS\nFL Unemployment Insurance appeal deadline is 20 days from determination mailing — SHORT; and with only 12 weeks max and $275/week cap, FL UI is among the weakest in the country\ncontact legal aid within 10 days of any UI denial — 20-day deadline is hard; BALS, CLSMF, LSGM can all assist"
- },
- {
   "entity_id": "73b6ae30-9ebc-894d-27cc-bc65558a0c43",
   "canonical_id": "crp_in_f3c0c0128936e3eada5c",
   "resource_name": "Indiana Housing and Community Development Authority (IHCDA)",
@@ -21904,24 +21134,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "Northwestern Band of the Shoshone Nation\nNorthwestern Band of the Shoshone Nation at Brigham City in northern Utah. Tribal government handles civil and ICWA matters."
- },
- {
-  "entity_id": "754a85b5-1b47-62ed-a4d6-602c000af9bb",
-  "canonical_id": "crp_ar_84bb73e99858fa0c0da1",
-  "resource_name": "Legal Aid of Arkansas (NE / Delta)",
-  "state": "AR",
-  "primary_category": "legal_civil_rights",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Legal Aid' in \"Legal Aid of Arkansas (NE / Delta) | What it covers:: Free civil legal aid — NE Arkansas and Delta counties | \" @ xlsx:master_template_program:row:324",
-  "primary_quote": "Legal Aid",
-  "memberships": [],
-  "civic_object_uid": "corpus:fa69175124a2ca69d27a1c759b87d8938c22ff1982585e7f930b4c2edd5b873e",
-  "object_ref": "fa69175124a2ca69d27a1c759b87d8938c22ff1982585e7f930b4c2edd5b873e",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:324",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Legal Aid of Arkansas (NE / Delta)\nLegal Aid of Arkansas (NE / Delta) | What it covers:: Free civil legal aid — NE Arkansas and Delta counties | Who qualifies:: Income < 200% FPL. arlegalaid.org. Primary resource for Arkansas Delta region. | Contact:: 📞 870-932-5765 · arlegalaid.org"
  },
  {
   "entity_id": "756ca3ed-91df-8d21-b01f-eb30b88e5e93",
@@ -22358,24 +21570,6 @@
   "source_text": "KCHA – Section 184 Indian Home Loan (WA)\nkcha.org or HUD-approved lender"
  },
  {
-  "entity_id": "7757f27a-5892-6899-8947-1a528f9dd387",
-  "canonical_id": "crp_fl_833639442fee7b5d39f8",
-  "resource_name": "Miami-Dade Public Housing and Community Development (PHCD)",
-  "state": "FL",
-  "primary_category": "housing",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'rental assistance' in \"miamidade.gov/housing — apply when waitlist open; also SHIP emergency rental assistance\" @ xlsx:master_template_program:row:191",
-  "primary_quote": "rental assistance",
-  "memberships": [],
-  "civic_object_uid": "corpus:262363692c71b78eaf5ac05cd892261756f333295e6916e305ec31db3c005273",
-  "object_ref": "262363692c71b78eaf5ac05cd892261756f333295e6916e305ec31db3c005273",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:191",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Miami-Dade Public Housing and Community Development (PHCD)\nIncome < 50% AMI, Miami-Dade County — public housing and HCV; most waitlists closed\nmiamidade.gov/housing — apply when waitlist open; also SHIP emergency rental assistance"
- },
- {
   "entity_id": "7759b717-8743-044f-3823-31a0aa2ff428",
   "canonical_id": "crp_us_95702c8c542c2ab67030",
   "resource_name": "Mohegan Tribe — Uncasville, CT (Federally Recognized)",
@@ -22522,24 +21716,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "American Association for Geriatric Psychiatry (AAGP)"
- },
- {
-  "entity_id": "78140cda-1950-ebd5-84d5-bf8d66e8c601",
-  "canonical_id": "crp_fl_0fa241b3095bf9e25738",
-  "resource_name": "FL TANF FAMILY CAP — Newborns Excluded",
-  "state": "FL",
-  "primary_category": "cash_assistance",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'TANF' in \"MyACCESS Florida — document existing family size at TANF application; advocate for repeal of family cap policy\" @ xlsx:master_template_program:row:266",
-  "primary_quote": "TANF",
-  "memberships": [],
-  "civic_object_uid": "corpus:b4aeff21fff0719f763ebcf6326c00997baca30014752dc141873f06c9e9a982",
-  "object_ref": "b4aeff21fff0719f763ebcf6326c00997baca30014752dc141873f06c9e9a982",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:266",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "FL TANF FAMILY CAP — Newborns Excluded\nCRITICAL: Florida still has a TANF 'family cap' law that excludes newborn children born while family is already on TANF from receiving additional benefits. One of a small number of states still maintaining this policy.\nMyACCESS Florida — document existing family size at TANF application; advocate for repeal of family cap policy"
  },
  {
   "entity_id": "783e9434-d286-53f7-5644-32bee8867be3",
@@ -23076,24 +22252,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "ACLU of Iowa\nLitigates civil rights and constitutional cases in Iowa. Focus: gender identity (in light of Chapter 216 changes), LGBTQ+ rights, criminal justice reform, voting rights, and immigrant rights."
- },
- {
-  "entity_id": "7aa8ace4-8046-85ad-ece6-871695080b62",
-  "canonical_id": "crp_ar_f7ae330a0fcd9eaf4390",
-  "resource_name": "Arkansas SNAP / DHS Food Assistance",
-  "state": "AR",
-  "primary_category": "food_nutrition",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Food Assistance' in \"Arkansas SNAP / DHS Food Assistance | What it covers:: Monthly food assistance — county DHS offices | Who qual\" @ xlsx:master_template_program:row:315",
-  "primary_quote": "Food Assistance",
-  "memberships": [],
-  "civic_object_uid": "corpus:50696c54480576efdf76b190a065be9caa8c15fc8c1aada80cc30d07f5fd7db5",
-  "object_ref": "50696c54480576efdf76b190a065be9caa8c15fc8c1aada80cc30d07f5fd7db5",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:315",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Arkansas SNAP / DHS Food Assistance\nArkansas SNAP / DHS Food Assistance | What it covers:: Monthly food assistance — county DHS offices | Who qualifies:: Income < 130% FPL. access.arkansas.gov. Pulaski County (Little Rock): 501-682-8375. Benton County (Bentonville): 479-254-0360. Washington County (Fayetteville): 479-521-8400. Crittenden County (Delta): 870-735-6600. | Contact:: 📞 501-682-8375 · access.arkansas.gov"
  },
  {
   "entity_id": "7ab72733-f9c1-1501-fedf-d3408f17ad54",
@@ -24110,24 +23268,6 @@
   "source_text": "Community Mental Health Centers Construction Act of 1963 (Mental Retardation Facilities and Community Mental Health Centers Construction Act)"
  },
  {
-  "entity_id": "7f654ea3-bf02-d061-e95d-72b7a1bfe09d",
-  "canonical_id": "crp_ct_4b5dff46dd3a17ad0d2b",
-  "resource_name": "Connecticut Food Bank (Statewide) 2 Research Pkwy, Wallingford, CT 06492 📞 203-469-5000 · ctfoodbank.org Eligibility: Statewide — primary CT food bank network. Apply/Notes: ctfoodbank.org — also foods",
-  "state": "CT",
-  "primary_category": "food_nutrition",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Food Bank' in \"Connecticut Food Bank (Statewide) 2 Research Pkwy, Wallingford, CT 06492 📞 203-469-5000 · ctfoodbank.org Eligi\" @ xlsx:master_template_program:row:343",
-  "primary_quote": "Food Bank",
-  "memberships": [],
-  "civic_object_uid": "corpus:232ef1b129f5fec20d1f9203c99fd5217817a0fe4b4821a66195bedd03a5159c",
-  "object_ref": "232ef1b129f5fec20d1f9203c99fd5217817a0fe4b4821a66195bedd03a5159c",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:343",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Connecticut Food Bank (Statewide) 2 Research Pkwy, Wallingford, CT 06492 📞 203-469-5000 · ctfoodbank.org Eligibility: Statewide — primary CT food bank network. Apply/Notes: ctfoodbank.org — also foods\nConnecticut Food Bank (Statewide) 2 Research Pkwy, Wallingford, CT 06492 📞 203-469-5000 · ctfoodbank.org Eligibility: Statewide — primary CT food bank network. Apply/Notes: ctfoodbank.org — also foodshare.org (Hartford area: 860-286-9999)."
- },
- {
   "entity_id": "7faf6aa4-8a54-63f0-6453-75b1dfc3f4af",
   "canonical_id": "crp_tx_73fa58b5e7a475d02377",
   "resource_name": "Texas SNAP / Food Assistance (HHSC — YourTexasBenefits.com)",
@@ -24399,24 +23539,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "TANF (Temporary Assistance for Needy Families – WA)\nWashingtonConnection.org or local CSO"
- },
- {
-  "entity_id": "805e1e5e-22b1-7fe6-0bab-df061af168cc",
-  "canonical_id": "crp_ar_2618cbf274e06fac4be1",
-  "resource_name": "Arkansas Insurance Department (AID)",
-  "state": "AR",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Medicaid' in \"Arkansas Insurance Department (AID) | Function:: Private insurance complaints. ARHOME managed care: 90-day app\" @ xlsx:master_template_program:row:336",
-  "primary_quote": "Medicaid",
-  "memberships": [],
-  "civic_object_uid": "corpus:f692da1792aadf1bf4ec3945208255ed2398a2f47148439a1e8ca9f4ae53f767",
-  "object_ref": "f692da1792aadf1bf4ec3945208255ed2398a2f47148439a1e8ca9f4ae53f767",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:336",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Arkansas Insurance Department (AID)\nArkansas Insurance Department (AID) | Function:: Private insurance complaints. ARHOME managed care: 90-day appeal internally. | Statute of Limitations:: 180 days private / 90 days Medicaid managed care | Pathway:: insurance.arkansas.gov — complaint portal"
  },
  {
   "entity_id": "80c7fae7-9193-9228-882b-2b43800249e8",
@@ -24894,42 +24016,6 @@
   "source_text": "Wisconsin WHEAP / Home Energy Assistance (DHS + CAAs)\nhomeenergyplus.wi.gov — apply through local CAA. Opens October 1. Wisconsin Winter Utility Shutoff Protection (Nov 1–Apr 15): PSC 888-816-3831 · psc.wi.gov. We Energies Milwaukee (800-242-9137). Madison Gas and Electric (608-252-7222). Focus on Energy weatherization: 800-762-7077. MILWAUKEE — North Side + South Side + County Resources MILWAUKEE: Among most racially segregated US cities. North Side (Amani, Metcalfe Park, Harambee, Sherman Park) — Black poverty 35%+. South Side — largest Latino/Mexican community in WI. Legal Aid Society Milwaukee (414-727-5820) same-day eviction triage. COA Youth and Family Centers for North Side wraparound.\nIncome < 60% state median — heating, cooling, crisis shutoff prevention, weatherization.\nhomeenergyplus.wi.gov — apply through local CAA. Opens October 1. Wisconsin Winter Utility Shutoff Protection (Nov 1–Apr 15): PSC 888-816-3831 · psc.wi.gov. We Energies Milwaukee (800-242-9137). Madison Gas and Electric (608-252-7222). Focus on Energy weatherization: 800-762-7077. MILWAUKEE — North Side + South Side + County Resources MILWAUKEE: Among most racially segregated US cities. North Side (Amani, Metcalfe Park, Harambee, Sherman Park) — Black poverty 35%+. South Side — largest Latino/Mexican community in WI. Legal Aid Society Milwaukee (414-727-5820) same-day eviction triage. COA Youth and Family Centers for North Side wraparound."
  },
  {
-  "entity_id": "8387ad48-b2c0-795f-3ced-b6d78495a227",
-  "canonical_id": "crp_fl_44ef9caed57b2ff7acf2",
-  "resource_name": "Duke Energy Florida — SHARE (Sarasota/Tampa/Orlando area)",
-  "state": "FL",
-  "primary_category": "utilities",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'LIHEAP' in \"duke-energy.com/home/products/share — also LIHEAP enrollment assistance\" @ xlsx:master_template_program:row:281",
-  "primary_quote": "LIHEAP",
-  "memberships": [],
-  "civic_object_uid": "corpus:84c8aa621aed6cad6b6b64750514fe062c603169468e2a8d8414baec7e6c22ce",
-  "object_ref": "84c8aa621aed6cad6b6b64750514fe062c603169468e2a8d8414baec7e6c22ce",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:281",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Duke Energy Florida — SHARE (Sarasota/Tampa/Orlando area)\nDuke Energy FL customers — SHARE assistance fund for income-qualified customers\nduke-energy.com/home/products/share — also LIHEAP enrollment assistance"
- },
- {
-  "entity_id": "838b91cb-130a-77bb-9c8a-70ccf35b3d07",
-  "canonical_id": "crp_wa_df68ac6637aac883729d",
-  "resource_name": "Seattle / King County Healthcare",
-  "state": "WA",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Healthcare' in \"Seattle / King County Healthcare\" @ xlsx:master_template_program:row:31",
-  "primary_quote": "Healthcare",
-  "memberships": [],
-  "civic_object_uid": "corpus:0eb5d585bd34ac873af10305d3ff9de9b146e42d62338609f75a6e6edb9c659d",
-  "object_ref": "0eb5d585bd34ac873af10305d3ff9de9b146e42d62338609f75a6e6edb9c659d",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:31",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Seattle / King County Healthcare\nSeattle / King County Healthcare\nSeattle / King County Healthcare"
- },
- {
   "entity_id": "83915122-a302-e3a1-a7d4-67765d8bf80e",
   "canonical_id": "crp_ks_87a65f1853fcde8997e7",
   "resource_name": "Kansas Human Rights Commission (KHRC)",
@@ -25322,24 +24408,6 @@
   "source_text": "U.S. Court of Appeals — First Circuit (Boston — Serves RI)\nFirst Circuit headquartered in Boston covers RI, MA, ME, NH, and Puerto Rico. Reviews all D.R.I. decisions. Notable First Circuit precedent arising from RI: Guckenberger v. Brown University (ADA in higher education), and major immigration and civil rights decisions that apply throughout the circuit."
  },
  {
-  "entity_id": "85fd27ea-c669-cfa5-f376-cdfc03e32c38",
-  "canonical_id": "crp_fl_e3c9c14e68d07481fb83",
-  "resource_name": "Henderson Mental Health (Broward County LMHA)",
-  "state": "FL",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'behavioral health' in \"hendersonmentalhealth.org — AHCA contract for Broward behavioral health\" @ xlsx:master_template_program:row:164",
-  "primary_quote": "behavioral health",
-  "memberships": [],
-  "civic_object_uid": "corpus:d8b9b1e946f8e71b4d9896a801760830c378710326dcc6892b865bbcafa24b3d",
-  "object_ref": "d8b9b1e946f8e71b4d9896a801760830c378710326dcc6892b865bbcafa24b3d",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:164",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Henderson Mental Health (Broward County LMHA)\nBroward County residents — mental health, substance use, crisis — 24/7: 954-463-0911\nhendersonmentalhealth.org — AHCA contract for Broward behavioral health"
- },
- {
   "entity_id": "8627fd79-ba86-5bfc-883d-abb4e204014f",
   "canonical_id": "crp_us_035671049d1e8f992acc",
   "resource_name": "Disaster Distress Helpline",
@@ -25616,42 +24684,6 @@
   "before_category": "cash_assistance_income",
   "before_layer": "layer_1",
   "source_text": "Hi-Line Corridor Key Resources\nMLSA PHONE ONLY (800-666-6899 · montanalegal.org — all 56 counties by phone). High Plains Food Bank Havre (406-265-6478 · highplainsfoodbank.org — Hi-Line distribution). DPHHS Hill County Havre (SNAP/Medicaid: 406-265-5567). DPHHS Valley County Glasgow (406-228-9214). DPHHS Roosevelt County Wolf Point (Fort Peck corridor: 406-653-6230). Blackfeet Tribe Social Services Browning (406-338-7777 · blackfeetnation.com). Fort Peck Tribes Social Services Poplar (406-768-5155 · fortpecktribes.org). Fort Belknap Indian Community Social Services Harlem (406-353-8303 · fortbelknapnation.org). Chippewa Cree Rocky Boy's Social Services Box Elder (406-395-4282). IHS Billings Area (406-247-7107 · ihs.gov/billings). StrongHearts DV (844-762-8483). Telemedicine: Montana Medicaid covers telehealth — primary care via video critical for Hi-Line. Montana PSC for utility emergencies (406-444-6199). NOTE: Phone intake mandatory — do not assume any in-person access for Hi-Line clients. BILLINGS / YELLOWSTONE COUNTY — Primary Eastern Montana Metro BILLINGS: Primary eastern Montana metro (~185,000). Billings Clinic Level I Trauma is the only Level I in a 500-mile radius. MLSA Billings (406-248-7113) is prima\nHill (Havre), Blaine (Chinook), Phillips (Malta), Valley (Glasgow), Roosevelt (Wolf Point/Poplar), Glacier (Cut Bank), Liberty, Toole counties.\nMLSA PHONE ONLY (800-666-6899 · montanalegal.org — all 56 counties by phone). High Plains Food Bank Havre (406-265-6478 · highplainsfoodbank.org — Hi-Line distribution). DPHHS Hill County Havre (SNAP/Medicaid: 406-265-5567). DPHHS Valley County Glasgow (406-228-9214). DPHHS Roosevelt County Wolf Point (Fort Peck corridor: 406-653-6230). Blackfeet Tribe Social Services Browning (406-338-7777 · blackfeetnation.com). Fort Peck Tribes Social Services Poplar (406-768-5155 · fortpecktribes.org). Fort Belknap Indian Community Social Services Harlem (406-353-8303 · fortbelknapnation.org). Chippewa Cree Rocky Boy's Social Services Box Elder (406-395-4282). IHS Billings Area (406-247-7107 · ihs.gov/billings). StrongHearts DV (844-762-8483). Telemedicine: Montana Medicaid covers telehealth — primary care via video critical for Hi-Line. Montana PSC for utility emergencies (406-444-6199). NOTE: Phone intake mandatory — do not assume any in-person access for Hi-Line clients. BILLINGS / YELLOWSTONE COUNTY — Primary Eastern Montana Metro BILLINGS: Primary eastern Montana metro (~185,000). Billings Clinic Level I Trauma is the only Level I in a 500-mile radius. MLSA Billings (406-248-7113) is prima"
- },
- {
-  "entity_id": "86b34b45-d4f6-246e-e626-1f347f7c9173",
-  "canonical_id": "crp_fl_a36db629070f88cf3c72",
-  "resource_name": "Section 8 / HCV (FL PHAs)",
-  "state": "FL",
-  "primary_category": "housing",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Public Housing' in \"floridahousing.org — find local Public Housing Authority; apply to multiple PHAs; many waitlists closed\" @ xlsx:master_template_program:row:186",
-  "primary_quote": "Public Housing",
-  "memberships": [],
-  "civic_object_uid": "corpus:798401abaaa12d5facc78c08c25c941c0b1e28f6c70468d28d17e5ae8ffc7c20",
-  "object_ref": "798401abaaa12d5facc78c08c25c941c0b1e28f6c70468d28d17e5ae8ffc7c20",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:186",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Section 8 / HCV (FL PHAs)\nIncome < 50% AMI — waitlists; FL has some of most oversubscribed waiting lists in country\nfloridahousing.org — find local Public Housing Authority; apply to multiple PHAs; many waitlists closed"
- },
- {
-  "entity_id": "870d0372-692d-e906-ae46-c7aa211a36d1",
-  "canonical_id": "crp_ar_b1b7e7690a7890fa0c46",
-  "resource_name": "COMPIE — Center for Marshallese and Pacific Islander Excellence",
-  "state": "AR",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Medicaid' in \"COMPIE — Center for Marshallese and Pacific Islander Excellence | What it covers:: Marshallese and Pacific Isl\" @ xlsx:master_template_program:row:321",
-  "primary_quote": "Medicaid",
-  "memberships": [],
-  "civic_object_uid": "corpus:a0537e6ce7ac9f57a84cceb4b7d56b80eaecaab9529cdbe2cfe08b8459860b01",
-  "object_ref": "a0537e6ce7ac9f57a84cceb4b7d56b80eaecaab9529cdbe2cfe08b8459860b01",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:321",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "COMPIE — Center for Marshallese and Pacific Islander Excellence\nverify post-2020 federal fix.\nCOMPIE — Center for Marshallese and Pacific Islander Excellence | What it covers:: Marshallese and Pacific Islander services — Springdale (largest Marshallese community outside Pacific) | Who qualifies:: Marshallese and COFA migrants in NW Arkansas. compie.org. COFA Medicaid eligibility: verify post-2020 federal fix. | Contact:: 📞 479-316-0050 · compie.org"
  },
  {
   "entity_id": "8724ee59-4ade-5f72-1487-5dada3d771d7",
@@ -26358,19 +25390,7 @@
   "primary_tier": "R2",
   "primary_evidence": "section 'FOOD & NUTRITION' @ lines:114-119",
   "primary_quote": "FOOD & NUTRITION",
-  "memberships": [
-   {
-    "category": "healthcare",
-    "tier": "R4",
-    "tiers": [
-     "R4"
-    ],
-    "tag_only": false,
-    "evidence": [
-     "R4: apply_notes 'clinic' in \"azdhs.gov/azwic — find local clinic by county\" @ xlsx:substrate_az_program:row:6"
-    ]
-   }
-  ],
+  "memberships": [],
   "civic_object_uid": "corpus:56f8d89f0d5f309a84dc95dea76e30370e3706e9bae99f36b485995ad8478626",
   "object_ref": "56f8d89f0d5f309a84dc95dea76e30370e3706e9bae99f36b485995ad8478626",
   "artifact_key": "State Enriched Registry bucket/luminari-arizona-ENRICHED-PASS3-2026-1.docx",
@@ -26607,24 +25627,6 @@
   "source_text": "Second Harvest Food Bank of Middle Tennessee / Mid-South Food Bank (Memphis)\nRegional food banks serving Tennessee counties. SNAP enrollment assistance."
  },
  {
-  "entity_id": "8b9bb653-c14a-1087-cea6-2c7229df5611",
-  "canonical_id": "crp_fl_0418a658931777d02edc",
-  "resource_name": "USDA Summer Food Service Program (FL — fills Summer EBT gap)",
-  "state": "FL",
-  "primary_category": "food_nutrition",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'food bank' in \"summerfood.usda.gov — find site; also contact local food bank; critical given FL's Summer EBT opt-out\" @ xlsx:master_template_program:row:120",
-  "primary_quote": "food bank",
-  "memberships": [],
-  "civic_object_uid": "corpus:470aa4d30055a8f1cb327af062e97002fa6c2095b7c5c0c5b6cef696d11b4b64",
-  "object_ref": "470aa4d30055a8f1cb327af062e97002fa6c2095b7c5c0c5b6cef696d11b4b64",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:120",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "USDA Summer Food Service Program (FL — fills Summer EBT gap)\nChildren 18 and under in low-income areas — free summer meals at approved sites statewide\nsummerfood.usda.gov — find site; also contact local food bank; critical given FL's Summer EBT opt-out"
- },
- {
   "entity_id": "8bb00d4b-351e-abca-eac4-31bb210a1c65",
   "canonical_id": "crp_nm_8617fbaf5a9990c5870e",
   "resource_name": "NM Medicaid / Centennial Care (HSD)",
@@ -26812,36 +25814,6 @@
   "before_category": "cash_assistance_income",
   "before_layer": "layer_1",
   "source_text": "Arkansas LIHEAP (DHS / Community Action Agencies)\nApply through local county DHS or community action agency. 211 for nearest CAA. Delta Community Action (LIHEAP + services: 870-295-4778). Community Services of NW AR (479-872-7479). Entergy Arkansas: 800-368-3749. Arkansas Oklahoma Gas: 800-427-1064. NORTHWEST ARKANSAS — Walmart/Tyson Corridor + Marshallese + Latino NW ARKANSAS: Fastest-growing metro in Arkansas. Marshallese (~15,000 in Springdale) and Latino (~50,000+) communities. COMPIE is the primary Marshallese navigation hub. Canopy NWA for immigrant legal services. CALS Fayetteville for civil legal aid. Washington Regional Medical is primary hospital.\nIncome < 60% state median — heating, cooling, crisis shutoff prevention.\nApply through local county DHS or community action agency. 211 for nearest CAA. Delta Community Action (LIHEAP + services: 870-295-4778). Community Services of NW AR (479-872-7479). Entergy Arkansas: 800-368-3749. Arkansas Oklahoma Gas: 800-427-1064. NORTHWEST ARKANSAS — Walmart/Tyson Corridor + Marshallese + Latino NW ARKANSAS: Fastest-growing metro in Arkansas. Marshallese (~15,000 in Springdale) and Latino (~50,000+) communities. COMPIE is the primary Marshallese navigation hub. Canopy NWA for immigrant legal services. CALS Fayetteville for civil legal aid. Washington Regional Medical is primary hospital."
- },
- {
-  "entity_id": "8ca8577f-3bf3-e204-f6ed-8097f5bcd40a",
-  "canonical_id": "crp_fl_ef02da2d74266104422d",
-  "resource_name": "Seminole Tribe of Florida — Social Services (Hollywood)",
-  "state": "FL",
-  "primary_category": "tribal",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'tribal government' in \"semtribe.com/social-services — Seminole Tribe is one of wealthiest tribal governments in US; operates own comp\" @ xlsx:master_template_program:row:142",
-  "primary_quote": "tribal government",
-  "memberships": [
-   {
-    "category": "cash_assistance",
-    "tier": "R4",
-    "tiers": [
-     "R4"
-    ],
-    "tag_only": false,
-    "evidence": [
-     "R4: eligibility_summary 'TANF' in \"Seminole tribal members — social services, Tribal TANF, food programs; 6 reservations across FL\" @ xlsx:master_template_program:row:142"
-    ]
-   }
-  ],
-  "civic_object_uid": "corpus:4a785804a1aba8d31173e7b1332c9bbd5dd533ce7b3d1836bdea6daa2fcecfa3",
-  "object_ref": "4a785804a1aba8d31173e7b1332c9bbd5dd533ce7b3d1836bdea6daa2fcecfa3",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:142",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Seminole Tribe of Florida — Social Services (Hollywood)\nSeminole tribal members — social services, Tribal TANF, food programs; 6 reservations across FL\nsemtribe.com/social-services — Seminole Tribe is one of wealthiest tribal governments in US; operates own comprehensive programs"
  },
  {
   "entity_id": "8ce81132-e5c8-c772-b11a-3b6f08f9bc06",
@@ -29219,24 +28191,6 @@
   "source_text": "WIC Oregon (OHA)\noha.oregon.gov/wic — find local WIC clinic. Spanish-language services statewide.\nPregnant/postpartum women, infants, children under 5 — income < 185% FPL.\noha.oregon.gov/wic — find local WIC clinic. Spanish-language services statewide."
  },
  {
-  "entity_id": "9ba236f5-2cbb-812a-d8c4-9612ce01d14f",
-  "canonical_id": "crp_wa_142095bcfe193eeb0b9b",
-  "resource_name": "Tribal Housing (WA State)",
-  "state": "WA",
-  "primary_category": "tribal",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Tribal Housing' in \"Tribal Housing (WA State)\" @ xlsx:master_template_program:row:67",
-  "primary_quote": "Tribal Housing",
-  "memberships": [],
-  "civic_object_uid": "corpus:08db2ff57cde4924956ade0e564d4ec25c3a85b239fc6da13a7d2d32e150d3a7",
-  "object_ref": "08db2ff57cde4924956ade0e564d4ec25c3a85b239fc6da13a7d2d32e150d3a7",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:67",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Tribal Housing (WA State)\nTribal Housing (WA State)\nTribal Housing (WA State)"
- },
- {
   "entity_id": "9ba46593-be0c-edd5-2c12-4c875c8c0766",
   "canonical_id": "crp_us_3d43c41fe6a527f4d4ac",
   "resource_name": "District Court of the Virgin Islands -- St. Croix Division",
@@ -29591,54 +28545,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "Gleaners Food Bank of Indiana / Second Harvest Food Bank of East Central Indiana\nRegional food banks serving Indiana counties through partner pantries. SNAP enrollment assistance."
- },
- {
-  "entity_id": "9d0b32d7-2d6b-87b7-66dc-1acf5ef65f85",
-  "canonical_id": "crp_ak_fd56d4c73abb26ac4442",
-  "resource_name": "Alaska Veterans Services (VSO / VA)",
-  "state": "AK",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'healthcare' in \"Alaska Veterans Services (VSO / VA) | What it covers:: VA healthcare, benefits navigation, state veterans serv\" @ xlsx:master_template_program:row:302",
-  "primary_quote": "healthcare",
-  "memberships": [],
-  "civic_object_uid": "corpus:a1311b6eba1d07f69c0a0adb9eb02740832edf5d01e1d2e7f4caab5a9e1ee373",
-  "object_ref": "a1311b6eba1d07f69c0a0adb9eb02740832edf5d01e1d2e7f4caab5a9e1ee373",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:302",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Alaska Veterans Services (VSO / VA)\nAlaska Veterans Services (VSO / VA) | What it covers:: VA healthcare, benefits navigation, state veterans services | Who qualifies:: AK veterans and families. Anchorage VA Medical Center: 907-257-4700. Fairbanks CBOC: 907-361-6000. Juneau CBOC: 907-586-2920. | Contact:: 📞 907-257-4700 · alaska.va.gov"
- },
- {
-  "entity_id": "9d159246-4e51-175c-7867-d71917bbebda",
-  "canonical_id": "crp_fl_84824dc7383cfac4ddd9",
-  "resource_name": "Legal Services of Greater Miami (LSGM) — housing",
-  "state": "FL",
-  "primary_category": "legal_civil_rights",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'legal aid' in \"legalservicesmiami.org — primary civil legal aid for Miami-Dade; multilingual; online intake\" @ xlsx:master_template_program:row:192",
-  "primary_quote": "legal aid",
-  "memberships": [
-   {
-    "category": "housing",
-    "tier": "R4",
-    "tiers": [
-     "R4"
-    ],
-    "tag_only": false,
-    "evidence": [
-     "R4: eligibility_summary 'eviction' in \"Income-qualified Miami-Dade County residents — eviction defense, habitability, DV housing, immigration\" @ xlsx:master_template_program:row:192"
-    ]
-   }
-  ],
-  "civic_object_uid": "corpus:55702ede59c1cc9d8831223fe0ceb1dd0d47fadc5e9aa20cc95707e88332f07a",
-  "object_ref": "55702ede59c1cc9d8831223fe0ceb1dd0d47fadc5e9aa20cc95707e88332f07a",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:192",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Legal Services of Greater Miami (LSGM) — housing\nIncome-qualified Miami-Dade County residents — eviction defense, habitability, DV housing, immigration\nlegalservicesmiami.org — primary civil legal aid for Miami-Dade; multilingual; online intake"
  },
  {
   "entity_id": "9d272f77-c2cf-22f8-68c5-5f53c9e1ee73",
@@ -30135,24 +29041,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "Immigrant Legal Center (ILC) — Nebraska and Iowa\nFree and low-cost immigration legal services for immigrants throughout Nebraska and Iowa. Key resource for Nebraska's large Latino agricultural worker community. VAWA self-petition, U visa, DACA, asylum, and family immigration."
- },
- {
-  "entity_id": "9fea247f-5b59-0762-7f8d-cdd4a6a005db",
-  "canonical_id": "crp_fl_b503d64355238078149c",
-  "resource_name": "Aspire Health Partners (Central FL LMHA)",
-  "state": "FL",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'behavioral health' in \"aspirehealthpartners.com — managing entity for Central FL behavioral health\" @ xlsx:master_template_program:row:170",
-  "primary_quote": "behavioral health",
-  "memberships": [],
-  "civic_object_uid": "corpus:72ea3dae42487d2418ce879ddbb91a3db034b1040ecea689b2ffdf303f598da2",
-  "object_ref": "72ea3dae42487d2418ce879ddbb91a3db034b1040ecea689b2ffdf303f598da2",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:170",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Aspire Health Partners (Central FL LMHA)\nOrange, Osceola, Seminole counties — mental health, substance use, crisis — 24/7: 407-875-3700\naspirehealthpartners.com — managing entity for Central FL behavioral health"
  },
  {
   "entity_id": "a01d66bc-e2c4-eb6c-da3d-f685b8b27125",
@@ -31144,24 +30032,6 @@
   "source_text": "Controlled Substances Act\nThe Controlled Substances Act (CSA) is the core federal law regulating the manufacture, distribution, dispensing, and possession of controlled substances, including the medications used to treat substance use disorder (e.g., methadone, buprenorphine, naltrexone). It establishes five drug schedules (I-V) based on medical use and abuse potential, sets registration requirements for practitioners and pharmacies who prescribe or dispense controlled substances, and defines criminal penalties for unlawful manufacture, distribution, or possession. For people in SUD treatment, the CSA governs who may legally prescribe medications for opioid use disorder and under what registration and recordkeeping conditions, and its registration/telemedicine provisions (21 U.S.C. §§ 823, 829, 831) intersect directly with the Ryan Haight Act and the MAT Act's waiver elimination. It also underlies DEA's authority over prescription drug monitoring, take-back programs, and diversion control efforts central to the opioid crisis response."
  },
  {
-  "entity_id": "a5364b7b-acfe-2e3b-cf2c-43d206b7c733",
-  "canonical_id": "crp_ar_da40c4e8fb0066b4c558",
-  "resource_name": "Arkansas LIHEAP (DHS / Community Action)",
-  "state": "AR",
-  "primary_category": "utilities",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'LIHEAP' in \"Arkansas LIHEAP (DHS / Community Action) | What it covers:: Heating, cooling, crisis energy assistance | Who q\" @ xlsx:master_template_program:row:327",
-  "primary_quote": "LIHEAP",
-  "memberships": [],
-  "civic_object_uid": "corpus:eb8268f07932007e394733a803adffa54af40f16614d537a3d3379d80f2ac2fd",
-  "object_ref": "eb8268f07932007e394733a803adffa54af40f16614d537a3d3379d80f2ac2fd",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:327",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Arkansas LIHEAP (DHS / Community Action)\nArkansas LIHEAP (DHS / Community Action) | What it covers:: Heating, cooling, crisis energy assistance | Who qualifies:: Income < 60% state median. Apply through community action agencies. Delta Community Action (870-295-4778). Community Services of NW AR (479-872-7479). | Contact:: 📞 501-682-8375 · ace.arkansas.gov"
- },
- {
   "entity_id": "a54624ff-9619-5e05-8be3-27dcd3dfac63",
   "canonical_id": "crp_va_7a8905347b433346709d",
   "resource_name": "U.S. District Court — Southern District of West Virginia (Charleston / Beckley / Bluefield / Huntington)",
@@ -31884,24 +30754,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "Office of Public Defense (OPD) – civil legal resources\nopd.wa.gov/legal-assistance"
- },
- {
-  "entity_id": "a96e3ec5-4f75-d927-fa86-a4fbb0b00213",
-  "canonical_id": "crp_fl_9822f85b2ed9c726140b",
-  "resource_name": "Seminole Tribe — Legal Department / Tribal Court",
-  "state": "FL",
-  "primary_category": "tribal",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'tribal government' in \"semtribe.com — Seminole Tribe has sophisticated tribal government with own legal system; wealthy tribal govern\" @ xlsx:master_template_program:row:260",
-  "primary_quote": "tribal government",
-  "memberships": [],
-  "civic_object_uid": "corpus:a640256e99d9121152009e2d2534cc69548f5ef56da5f438dfd24726ce78feb7",
-  "object_ref": "a640256e99d9121152009e2d2534cc69548f5ef56da5f438dfd24726ce78feb7",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:260",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Seminole Tribe — Legal Department / Tribal Court\nSeminole tribal members — tribal court, legal matters on reservation; own sovereign court system\nsemtribe.com — Seminole Tribe has sophisticated tribal government with own legal system; wealthy tribal government"
  },
  {
   "entity_id": "a98a95e9-ed69-80cf-2a16-874366bcbc91",
@@ -33124,54 +31976,6 @@
   "source_text": "Disability Rights New Jersey (DRNJ) — P&A Organization\nNJ's federally designated P&A organization. Authorized by federal law to investigate abuse and neglect of individuals with disabilities in institutions, enforce rights under the ADA and Section 504, and provide legal advocacy. Priority: Medicaid managed care, employment discrimination (ADA), special education, voting access, and institutional abuse."
  },
  {
-  "entity_id": "afe8852b-8ee8-d36a-bc8b-227a513897ec",
-  "canonical_id": "crp_fl_f883156e95069c961617",
-  "resource_name": "Farmworker Justice (national — FL programs)",
-  "state": "FL",
-  "primary_category": "legal_civil_rights",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Legal Services' in \"farmworkerjustice.org — coordinates with FRLS and Florida Legal Services for FL farmworker cases\" @ xlsx:master_template_program:row:258",
-  "primary_quote": "Legal Services",
-  "memberships": [
-   {
-    "category": "employment_labor",
-    "tier": "R4",
-    "tiers": [
-     "R4"
-    ],
-    "tag_only": false,
-    "evidence": [
-     "R4: eligibility_summary 'wage theft' in \"Farmworkers statewide — wage theft, housing, pesticide exposure, immigration legal services coordination\" @ xlsx:master_template_program:row:258"
-    ]
-   }
-  ],
-  "civic_object_uid": "corpus:3703d6ec7a39a403cd9b1a2989f998cd573de4bd2ba54780f4a291a352446ac3",
-  "object_ref": "3703d6ec7a39a403cd9b1a2989f998cd573de4bd2ba54780f4a291a352446ac3",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:258",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Farmworker Justice (national — FL programs)\nFarmworkers statewide — wage theft, housing, pesticide exposure, immigration legal services coordination\nfarmworkerjustice.org — coordinates with FRLS and Florida Legal Services for FL farmworker cases"
- },
- {
-  "entity_id": "afeb4614-4c31-43c5-7f70-31c2b72eba48",
-  "canonical_id": "crp_ak_e89b6854cae321c68257",
-  "resource_name": "Alaska Legal Services Corporation (ALSC)",
-  "state": "AK",
-  "primary_category": "legal_civil_rights",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'legal aid' in \"Alaska Legal Services Corporation (ALSC) | What it covers:: ONLY statewide civil legal aid — covers all Bush A\" @ xlsx:master_template_program:row:294",
-  "primary_quote": "legal aid",
-  "memberships": [],
-  "civic_object_uid": "corpus:e81392f07963f468568664d80950acd7fc7e1b59354916aade895af72bb882c6",
-  "object_ref": "e81392f07963f468568664d80950acd7fc7e1b59354916aade895af72bb882c6",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:294",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Alaska Legal Services Corporation (ALSC)\nAlaska Legal Services Corporation (ALSC) | What it covers:: ONLY statewide civil legal aid — covers all Bush Alaska by phone intake | Who qualifies:: Statewide including all 229 tribal villages. 800-478-9431 toll-free. Phone intake essential for Bush communities. Housing, family, benefits, DV, tribal, consumer. | Contact:: 📞 907-272-9431 · alsc-law.org"
- },
- {
   "entity_id": "b00fe9e6-ceaa-6d4e-b4ee-26d6d29d64df",
   "canonical_id": "crp_la_ce04549134d523a5b0f3",
   "resource_name": "U.S. Attorney's Office — Eastern District of Louisiana (New Orleans)",
@@ -34086,24 +32890,6 @@
   "source_text": "Little Traverse Bay Bands of Odawa Indians\nLittle Traverse Bay Bands of Odawa Indians in northwest Lower Peninsula. Tribal Court handles civil, criminal, and ICWA matters. Strong 1836 Treaty off-reservation rights presence."
  },
  {
-  "entity_id": "b5bf74ef-a513-7524-e97d-2743a354a417",
-  "canonical_id": "crp_fl_c64f246ff4b456d90d9e",
-  "resource_name": "Summer EBT / SUN Bucks — FLORIDA OPTED OUT 2025",
-  "state": "FL",
-  "primary_category": "food_nutrition",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'food bank' in \"Navigate FL children to local summer meal programs: USDA Summer Food Service Program (summerfood.usda.gov); co\" @ xlsx:master_template_program:row:115",
-  "primary_quote": "food bank",
-  "memberships": [],
-  "civic_object_uid": "corpus:a3ae6e719469f454dd4599e39f1b8a42665571140b6de40ca23ff6dc17934c95",
-  "object_ref": "a3ae6e719469f454dd4599e39f1b8a42665571140b6de40ca23ff6dc17934c95",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:115",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Summer EBT / SUN Bucks — FLORIDA OPTED OUT 2025\nFlorida is one of a small number of states that OPTED OUT of Summer EBT in 2025 — 2M+ children lost $259M in summer food assistance. No state equivalent exists.\nNavigate FL children to local summer meal programs: USDA Summer Food Service Program (summerfood.usda.gov); contact local food bank for summer distribution sites"
- },
- {
   "entity_id": "b5c9437d-12c0-7c58-47cc-4257b0f3a310",
   "canonical_id": "crp_pr_cbac45fc046e3af5fde9",
   "resource_name": "Casa Pensamiento de Mujer / DV Services Network PR [Casa-PR] ★",
@@ -34967,36 +33753,6 @@
   "source_text": "U.S. Attorney — Northern District of Illinois (Chicago)\nHandles federal criminal prosecutions and civil rights enforcement for northern Illinois. Major civil rights, police misconduct, and ADA docket."
  },
  {
-  "entity_id": "bb4a807e-45b1-9d90-b66c-1a69a2d9e822",
-  "canonical_id": "crp_wa_c940daa4dd3ccae9c3a5",
-  "resource_name": "DESC (Downtown Emergency Service Center)",
-  "state": "WA",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'behavioral health' in \"desc.org — primary care, behavioral health\" @ xlsx:master_template_program:row:40",
-  "primary_quote": "behavioral health",
-  "memberships": [
-   {
-    "category": "housing",
-    "tier": "R4",
-    "tiers": [
-     "R4"
-    ],
-    "tag_only": false,
-    "evidence": [
-     "R4: eligibility_summary 'homeless' in \"Chronically homeless adults with mental illness\" @ xlsx:master_template_program:row:40"
-    ]
-   }
-  ],
-  "civic_object_uid": "corpus:3350f65ea03c5cc4c172e8814016c0d6c1f589001188030eb15ce7406ca54ce5",
-  "object_ref": "3350f65ea03c5cc4c172e8814016c0d6c1f589001188030eb15ce7406ca54ce5",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:40",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "DESC (Downtown Emergency Service Center)\nChronically homeless adults with mental illness\ndesc.org — primary care, behavioral health"
- },
- {
   "entity_id": "bb57d757-d76c-b7e3-7d10-6b1ab10e4cd7",
   "canonical_id": "crp_pr_281423054c064c0b5906",
   "resource_name": "PR State Insurance Fund (FSE) -- Workers Compensation",
@@ -35162,24 +33918,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "U.S. District Court — Northern District of Mississippi (Oxford)\nFederal trial court for northern Mississippi including the Delta region. Handles civil rights, employment discrimination, voting rights, and agricultural worker cases. Key court for Mississippi Delta voting rights and racial discrimination cases."
- },
- {
-  "entity_id": "bbe55f29-9ef8-5a8f-92e0-f41972178e97",
-  "canonical_id": "crp_fl_e7e4778e8a521cfe8791",
-  "resource_name": "FL Landlord-Tenant Act (Fla. Stat. Ch. 83)",
-  "state": "FL",
-  "primary_category": "housing",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'tenant rights' in \"floridalawhelp.org — tenant rights self-help; FL has relatively landlord-friendly law but habitability protect\" @ xlsx:master_template_program:row:187",
-  "primary_quote": "tenant rights",
-  "memberships": [],
-  "civic_object_uid": "corpus:3572143fa3b69336708a0827de39a500709f4b3270ff96044d08a9512421f67e",
-  "object_ref": "3572143fa3b69336708a0827de39a500709f4b3270ff96044d08a9512421f67e",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:187",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "FL Landlord-Tenant Act (Fla. Stat. Ch. 83)\nGoverns most FL residential rentals — habitability, security deposits, notice, lockout prohibition; §83.51: landlord duty to maintain\nfloridalawhelp.org — tenant rights self-help; FL has relatively landlord-friendly law but habitability protections exist"
  },
  {
   "entity_id": "bc1d833b-9445-8194-641b-eef72c53948d",
@@ -36063,24 +34801,6 @@
   "source_text": "EEOC Fresno Local Office\nLocal office for Central Valley: Fresno, Inyo, Kings, Madera, Mariposa, Merced, Mono, San Benito, Tulare counties."
  },
  {
-  "entity_id": "bf58f158-be9d-0659-dfe2-c3bdad6a14ca",
-  "canonical_id": "crp_ak_248ea8a0343b85c950d5",
-  "resource_name": "Food Bank of Alaska (Anchorage / Statewide)",
-  "state": "AK",
-  "primary_category": "food_nutrition",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Food Bank' in \"Food Bank of Alaska (Anchorage / Statewide) | What it covers:: Primary Alaska food bank — statewide distributi\" @ xlsx:master_template_program:row:288",
-  "primary_quote": "Food Bank",
-  "memberships": [],
-  "civic_object_uid": "corpus:e50cf1a070b084180249c090ab04a9aae9de922e8d527cfb120f22e3f5987c9c",
-  "object_ref": "e50cf1a070b084180249c090ab04a9aae9de922e8d527cfb120f22e3f5987c9c",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:288",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Food Bank of Alaska (Anchorage / Statewide)\nFood Bank of Alaska (Anchorage / Statewide) | What it covers:: Primary Alaska food bank — statewide distribution including Bush deliveries via regional hubs | Who qualifies:: Anyone in need. foodbankofalaska.org. Also Fairbanks Community Food Bank (907-456-8653). Southeast Alaska Food Bank (Sitka: 907-747-8688). | Contact:: 📞 907-222-3663 · foodbankofalaska.org"
- },
- {
   "entity_id": "bf76d090-fc9f-2bfa-17aa-5344e17927f7",
   "canonical_id": "crp_ut_c58e116c9677c2722284",
   "resource_name": "U.S. District Court — District of Utah (St. George Division / Southwestern Utah)",
@@ -36419,24 +35139,6 @@
   "source_text": "Supreme Court of Georgia\nNine justices. Final appellate authority on Georgia labor law, consumer protection, and civil rights."
  },
  {
-  "entity_id": "c0983900-e3c1-1453-9a9f-363effe6a717",
-  "canonical_id": "crp_us_5a5bfc2f8c1c8ca3b5a8",
-  "resource_name": "BIA Tribal Leaders Directory",
-  "state": "US",
-  "primary_category": "tribal",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'tribal government' in \"Official contact information for all federally recognized tribal governments. Pairs with your existing 115 tri\" @ xlsx:federal_resource_directory:row:8",
-  "primary_quote": "tribal government",
-  "memberships": [],
-  "civic_object_uid": "corpus:e7cc32a65c8f02ffe50a7ffb6a1350513d2edb88be557d45071701b8f41ccb49",
-  "object_ref": "e7cc32a65c8f02ffe50a7ffb6a1350513d2edb88be557d45071701b8f41ccb49",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:federal_resource_directory:row:8",
-  "before_category": "resource",
-  "before_layer": "backbone_workbook",
-  "source_text": "BIA Tribal Leaders Directory\nOfficial contact information for all federally recognized tribal governments. Pairs with your existing 115 tribal services."
- },
- {
   "entity_id": "c0a24bf6-a211-76b8-8955-08c3e126bf1f",
   "canonical_id": "crp_us_1e63cd9e52347c3dbd46",
   "resource_name": "Sidran Institute",
@@ -36519,24 +35221,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "Oregon State Bar — Lawyer Referral Service\nORS 9.005 et seq. (Oregon State Bar); Oregon Rules of Professional Conduct"
- },
- {
-  "entity_id": "c148797e-cae5-1b13-72dd-c13e4826040d",
-  "canonical_id": "crp_ak_bfc6765481bc02ce72ac",
-  "resource_name": "Alaska LIHEAP / AHFC Heating Program",
-  "state": "AK",
-  "primary_category": "utilities",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'LIHEAP' in \"Alaska LIHEAP / AHFC Heating Program | What it covers:: Heating assistance — critical in Alaska winters, espec\" @ xlsx:master_template_program:row:299",
-  "primary_quote": "LIHEAP",
-  "memberships": [],
-  "civic_object_uid": "corpus:7bd32c21d241047e5b4c6abd75adc3c76a3b23f80d789626eef35a3769abf761",
-  "object_ref": "7bd32c21d241047e5b4c6abd75adc3c76a3b23f80d789626eef35a3769abf761",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:299",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Alaska LIHEAP / AHFC Heating Program\nAlaska LIHEAP / AHFC Heating Program | What it covers:: Heating assistance — critical in Alaska winters, especially for off-road communities | Who qualifies:: Income < 60% state median. ahfc.us/heating. Community Action Agencies: CCSS Anchorage (907-743-1111). Interior: Tanana Chiefs Conference (907-452-8251). | Contact:: 📞 907-338-6100 · ahfc.us/heating"
  },
  {
   "entity_id": "c198745b-6d9c-906a-be1c-d3e5b8b5fa56",
@@ -37186,24 +35870,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "Chippewa Cree Tribe (Rocky Boy's Reservation)\nChippewa Cree Tribe at Rocky Boy's Reservation in north-central Montana. Tribal Court handles civil, criminal, and ICWA matters."
- },
- {
-  "entity_id": "c4010eb7-478d-73c1-5983-7e4df4815e10",
-  "canonical_id": "crp_ak_9a2c319f43fe2c4163a9",
-  "resource_name": "Alaska TANF / Alaska Temporary Assistance (DHSS)",
-  "state": "AK",
-  "primary_category": "cash_assistance",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Cash assistance' in \"Alaska TANF / Alaska Temporary Assistance (DHSS) | What it covers:: Cash assistance for families with children\" @ xlsx:master_template_program:row:296",
-  "primary_quote": "Cash assistance",
-  "memberships": [],
-  "civic_object_uid": "corpus:8d395b6c6495f5dd005c135342a8916c3bc33a09dc0801480e3c0e55fc2f7d2e",
-  "object_ref": "8d395b6c6495f5dd005c135342a8916c3bc33a09dc0801480e3c0e55fc2f7d2e",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:296",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Alaska TANF / Alaska Temporary Assistance (DHSS)\nAlaska TANF / Alaska Temporary Assistance (DHSS) | What it covers:: Cash assistance for families with children | Who qualifies:: Families with children — up to $923/month family of 3 (higher than most states to offset AK cost of living). 60-month limit. Work requirements apply. myALASKA.gov. | Contact:: 📞 907-465-3347 · dhss.alaska.gov/dpa/tanf"
  },
  {
   "entity_id": "c444bef3-dae0-38e0-bc41-79b885dd3bf2",
@@ -38021,24 +36687,6 @@
   "source_text": "NY State DV Hotline 800-942-6906 (24 hrs, bilingual) │ NYC DV Hotline 800-621-HOPE (4673) │ National 800-799-7233\nNYSCADV connects DV survivors to local programs in all 62 NY counties. NY DV law: NY Domestic Relations Law and Family Court Act cover family offense proceedings. Orders of Protection available same day from Family Court in emergency. NYC-specific: Safe Horizon (NYC's largest victim services org) 212-577-7777 for DV crisis services and shelter. VAWA housing protections apply to DV survivors in federally assisted housing."
  },
  {
-  "entity_id": "c8590f7d-64e5-53b7-322b-56f5bd159708",
-  "canonical_id": "crp_ak_0850e89aa238415f962d",
-  "resource_name": "Alaska SNAP (DHSS)",
-  "state": "AK",
-  "primary_category": "food_nutrition",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'food assistance' in \"Alaska SNAP (DHSS) | What it covers:: Monthly food assistance — 24 offices statewide, many accessible only by \" @ xlsx:master_template_program:row:287",
-  "primary_quote": "food assistance",
-  "memberships": [],
-  "civic_object_uid": "corpus:ce38f368a76b61e89b2baa727068152b5cfb14aa7e9ff70ebc05ebc62dc06e41",
-  "object_ref": "ce38f368a76b61e89b2baa727068152b5cfb14aa7e9ff70ebc05ebc62dc06e41",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:287",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Alaska SNAP (DHSS)\nAlaska SNAP (DHSS) | What it covers:: Monthly food assistance — 24 offices statewide, many accessible only by phone for Bush clients | Who qualifies:: Income < 130% FPL. Apply at myALASKA.gov. Anchorage: 907-269-6529. ABAWD active with some rural exceptions. Bush clients: phone intake essential. | Contact:: 📞 907-465-3347 · dhss.alaska.gov/dpa"
- },
- {
   "entity_id": "c889e26a-3546-f56c-3f7b-9080acb13c7c",
   "canonical_id": "crp_al_a0433d62176b65415ffa",
   "resource_name": "Ryan White HIV/AIDS Program — Alabama",
@@ -38394,24 +37042,6 @@
   "before_category": "healthcare",
   "before_layer": "layer_1",
   "source_text": "Thundermist Health Center (FQHC -- Latino and Multilingual)\nthundermist.org -- primary FQHC for northern RI Latino communities. West Warwick site: 401-615-2900.\nWoonsocket West Warwick and surrounding -- FQHC sliding scale. Large Latino patient base. Multiple language services.\nthundermist.org -- primary FQHC for northern RI Latino communities. West Warwick site: 401-615-2900."
- },
- {
-  "entity_id": "caaf3432-fe6b-2278-efd7-57458312625e",
-  "canonical_id": "crp_wa_639c04febef05481cf9e",
-  "resource_name": "Tribal Health (WA State)",
-  "state": "WA",
-  "primary_category": "tribal",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Tribal Health' in \"Tribal Health (WA State)\" @ xlsx:master_template_program:row:43",
-  "primary_quote": "Tribal Health",
-  "memberships": [],
-  "civic_object_uid": "corpus:7a69df4c5cd56e271a32da4acd072a4f527c1b580772b330afda82cddf58e5fe",
-  "object_ref": "7a69df4c5cd56e271a32da4acd072a4f527c1b580772b330afda82cddf58e5fe",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:43",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Tribal Health (WA State)\nTribal Health (WA State)\nTribal Health (WA State)"
  },
  {
   "entity_id": "cacde9d3-f307-6819-a601-7603555551c8",
@@ -38785,24 +37415,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "VA Wichita Health Care System\nProvides medical and mental health care to eligible veterans in central and western Kansas."
- },
- {
-  "entity_id": "cc46d3e1-dc0d-e926-824b-c16172006443",
-  "canonical_id": "crp_fl_d8f11b2f9f961064da8c",
-  "resource_name": "Bay Area Legal Services (BALS) — 7 Tampa Bay counties",
-  "state": "FL",
-  "primary_category": "legal_civil_rights",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'legal aid' in \"bals.org — largest legal aid in Tampa Bay; offices in Tampa, St. Petersburg, Clearwater, Brooksville\" @ xlsx:master_template_program:row:251",
-  "primary_quote": "legal aid",
-  "memberships": [],
-  "civic_object_uid": "corpus:98781210b585edfa065a307e376f714d2e7f62349039a2f7af135c9eeeb2832a",
-  "object_ref": "98781210b585edfa065a307e376f714d2e7f62349039a2f7af135c9eeeb2832a",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:251",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Bay Area Legal Services (BALS) — 7 Tampa Bay counties\nIncome-qualified: Hillsborough, Pinellas, Pasco, Hernando, Citrus, Polk, Manatee counties\nbals.org — largest legal aid in Tampa Bay; offices in Tampa, St. Petersburg, Clearwater, Brooksville"
  },
  {
   "entity_id": "cc53faad-6197-889b-a469-c9239751906b",
@@ -39600,24 +38212,6 @@
   "before_category": "cash_assistance_income",
   "before_layer": "layer_1",
   "source_text": "Seattle / King County Wrap-Around Resources\nNJP CLEAR hotline (888-201-1014 · nwjustice.org). Housing Justice Project (courthouse eviction defense: 206-267-7090). Harborview charity care (206-744-9200 — no one turned away). King Co DSHS CSO (Basic Food/Apple Health/TANF: 206-324-5700). 2-1-1 (211 · 24/7 local referral). Seattle OLS (Seattle wage/workplace ordinances: 206-256-5297 · seattle.gov/laborstandards). KCRHA coordinated entry (housing/shelter: 206-263-9100). Chief Seattle Club (urban Native: 206-957-4700). SIHB (urban tribal health: 206-324-9360). API Chaya (API DV: 206-325-0325). ICHS (multilingual FQHC: 206-788-3700). Sea Mar (Latino FQHC: 206-764-4700). Northwest Immigrant Rights Project (206-587-4009 · nwirp.org). King County Mental Health Crisis (866-427-4747 · 24/7). Benefits Law Center (SSI/SSDI: 206-408-4274). Sound Generations elder (206-448-3110). EASTERN WASHINGTON — Agricultural Corridor / Yakima Valley EASTERN WA: Yakima, Benton, Franklin, Grant, Adams, Okanogan, Chelan counties — largest H-2A agricultural workforce in US. Yakama Nation Reservation (2.2M acres — largest in WA). Columbia Legal Services is the primary legal aid for farmworkers. Spanish-language capacity essential throughout.\nKing County / Seattle metro residents — 5-county metro.\nNJP CLEAR hotline (888-201-1014 · nwjustice.org). Housing Justice Project (courthouse eviction defense: 206-267-7090). Harborview charity care (206-744-9200 — no one turned away). King Co DSHS CSO (Basic Food/Apple Health/TANF: 206-324-5700). 2-1-1 (211 · 24/7 local referral). Seattle OLS (Seattle wage/workplace ordinances: 206-256-5297 · seattle.gov/laborstandards). KCRHA coordinated entry (housing/shelter: 206-263-9100). Chief Seattle Club (urban Native: 206-957-4700). SIHB (urban tribal health: 206-324-9360). API Chaya (API DV: 206-325-0325). ICHS (multilingual FQHC: 206-788-3700). Sea Mar (Latino FQHC: 206-764-4700). Northwest Immigrant Rights Project (206-587-4009 · nwirp.org). King County Mental Health Crisis (866-427-4747 · 24/7). Benefits Law Center (SSI/SSDI: 206-408-4274). Sound Generations elder (206-448-3110). EASTERN WASHINGTON — Agricultural Corridor / Yakima Valley EASTERN WA: Yakima, Benton, Franklin, Grant, Adams, Okanogan, Chelan counties — largest H-2A agricultural workforce in US. Yakama Nation Reservation (2.2M acres — largest in WA). Columbia Legal Services is the primary legal aid for farmworkers. Spanish-language capacity essential throughout."
- },
- {
-  "entity_id": "d0200925-cd5e-17b1-fea5-2b9132b26a28",
-  "canonical_id": "crp_ct_28429c2796b424b3cfc9",
-  "resource_name": "Yale New Haven Hospital (New Haven Safety Net) 20 York St, New Haven, CT 06510 📞 203-688-4242 · ynhh.org Eligibility: Greater New Haven — Level 1 trauma + charity care; major academic medical center.",
-  "state": "CT",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'medical center' in \"Yale New Haven Hospital (New Haven Safety Net) 20 York St, New Haven, CT 06510 📞 203-688-4242 · ynhh.org Eligi\" @ xlsx:master_template_program:row:347",
-  "primary_quote": "medical center",
-  "memberships": [],
-  "civic_object_uid": "corpus:865b2fbbd75547252ef4f0d8dbe33b0a9cfd34002e793e7349d4af8664d78171",
-  "object_ref": "865b2fbbd75547252ef4f0d8dbe33b0a9cfd34002e793e7349d4af8664d78171",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:347",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Yale New Haven Hospital (New Haven Safety Net) 20 York St, New Haven, CT 06510 📞 203-688-4242 · ynhh.org Eligibility: Greater New Haven — Level 1 trauma + charity care; major academic medical center.\nYale New Haven Hospital (New Haven Safety Net) 20 York St, New Haven, CT 06510 📞 203-688-4242 · ynhh.org Eligibility: Greater New Haven — Level 1 trauma + charity care; major academic medical center. Apply/Notes: ynhh.org — charity care for income < 200% FPL. Also Bridgeport Hospital (203-384-3000) for Bridgeport community."
  },
  {
   "entity_id": "d03eb4c6-4acb-1dc0-2dcb-9eb2556b2882",
@@ -40470,24 +39064,6 @@
   "source_text": "EEOC Albuquerque Area Office (Serves Most NM Counties — NOT Southwestern NM)\nVerified from eeoc.gov June 2026. Director: April Klug. Walk-ins Tuesday and Thursday 8am-2pm. Photo ID required. CRITICAL: Southwestern NM counties (Doña Ana/Las Cruces, Hidalgo, Grant, Luna) route to EEOC San Antonio (Texas), not Albuquerque. NM Human Rights Bureau (HRB) is the FEPA work-share partner. 300-day federal SOL."
  },
  {
-  "entity_id": "d4783f3e-fef3-678d-6150-126f60f10e31",
-  "canonical_id": "crp_us_b2fe0ae88f3065a7bca3",
-  "resource_name": "Apple Health for Kids (CHIP)",
-  "state": "US",
-  "primary_category": "healthcare",
-  "primary_tier": "R3a_workbook",
-  "primary_evidence": "workbook wa_resource_directory.service_category 'healthcare' @ xlsx:wa_resource_directory:row:22",
-  "primary_quote": "healthcare",
-  "memberships": [],
-  "civic_object_uid": "corpus:7a8254a45ce40f40485753a901d25c531e977dafac188465369fd3510f46ddec",
-  "object_ref": "7a8254a45ce40f40485753a901d25c531e977dafac188465369fd3510f46ddec",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:wa_resource_directory:row:22",
-  "before_category": "benefits_office",
-  "before_layer": "backbone_workbook",
-  "source_text": "Apple Health for Kids (CHIP)\nChildren above Medicaid income threshold"
- },
- {
   "entity_id": "d4931ba9-bb02-c653-8860-5ec560f05f50",
   "canonical_id": "crp_ky_dde0cc9870e124a00f8a",
   "resource_name": "Disability Rights Kentucky (DRK)",
@@ -40841,24 +39417,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "Eastside Legal Assistance Program (ELAP)\nelap.org — housing, family, immigration"
- },
- {
-  "entity_id": "d6e17036-9d29-4398-43ef-f8d400195a9c",
-  "canonical_id": "crp_fl_60148d3207c51270ee2c",
-  "resource_name": "Camillus House (Miami — homeless housing + services)",
-  "state": "FL",
-  "primary_category": "housing",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'homeless' in \"camillus.org — comprehensive Miami homeless services campus\" @ xlsx:master_template_program:row:193",
-  "primary_quote": "homeless",
-  "memberships": [],
-  "civic_object_uid": "corpus:623ab9837e85e654203eae99498c4bbbede0cd60af68330e8cd14528bec68789",
-  "object_ref": "623ab9837e85e654203eae99498c4bbbede0cd60af68330e8cd14528bec68789",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:193",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Camillus House (Miami — homeless housing + services)\nHomeless individuals, Miami — emergency shelter, transitional housing, services, housing navigation\ncamillus.org — comprehensive Miami homeless services campus"
  },
  {
   "entity_id": "d70c67b1-ab6e-45a5-271e-238847713cce",
@@ -41406,24 +39964,6 @@
   "source_text": "Arizona Nutrition Assistance (SNAP) — Health-e-Arizona Plus\nApply online at healthearizonaplus.gov — one application covers SNAP, AHCCCS, TANF, LIHEAP. Summer EBT (SUN Bucks): auto-enrolled for qualifying school-aged children. SNAP work requirement: 80 hrs/month for ABDs 18–54.\nIncome < 130% FPL. SNAP Expedited Service: gross income < $150/mo and liquid assets < $100, or housing costs exceed income — benefits within 7 days.\nApply online at healthearizonaplus.gov — one application covers SNAP, AHCCCS, TANF, LIHEAP. Summer EBT (SUN Bucks): auto-enrolled for qualifying school-aged children. SNAP work requirement: 80 hrs/month for ABDs 18–54."
  },
  {
-  "entity_id": "d92bbde3-28be-00f8-068e-a38db40e18ef",
-  "canonical_id": "crp_fl_9900af123e7d89a9a448",
-  "resource_name": "Injunction for Protection (FL — Order of Protection)",
-  "state": "FL",
-  "primary_category": "legal_civil_rights",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'legal aid' in \"flcourts.gov — forms available free; clerk's office can assist; legal aid for help filing\" @ xlsx:master_template_program:row:219",
-  "primary_quote": "legal aid",
-  "memberships": [],
-  "civic_object_uid": "corpus:770ca69c4ddde2271e84e6f3599709a85f705db8880460a323d092cd8036ba57",
-  "object_ref": "770ca69c4ddde2271e84e6f3599709a85f705db8880460a323d092cd8036ba57",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:219",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Injunction for Protection (FL — Order of Protection)\nDV, SA, stalking, repeat violence survivors — available from FL Circuit Courts; self-represented filing permitted\nflcourts.gov — forms available free; clerk's office can assist; legal aid for help filing"
- },
- {
   "entity_id": "d93cc666-3565-a28b-8cfc-7e02023cc244",
   "canonical_id": "crp_us_f3c604984b81b2ef8ea7",
   "resource_name": "CT Paid Leave Authority — CT PFML Administration",
@@ -41635,24 +40175,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "U.S. District Court -- District of Maine, Portland (HQ)\nPortland is the primary federal courthouse for southern Maine. Handles: civil rights, employment discrimination, ADA, immigration habeas corpus, ERISA, environmental (Maine has significant Clean Water Act and Clean Air Act litigation involving tribal territory), and constitutional litigation. Federal Public Defender: 148 Middle Street Suite 500, Portland ME 04101 | 207-553-7070."
- },
- {
-  "entity_id": "da723f69-4e37-db5a-10c5-ec386cde7ff7",
-  "canonical_id": "crp_ct_85fdc3e69ce2c1bf6789",
-  "resource_name": "Connecticut SNAP / Supplemental Nutrition (DSS) 55 Farmington Ave, Hartford, CT 06105 📞 855-626-6632 · ct.gov/dss/snap Eligibility: Income < 130% FPL — 12 DSS offices statewide. Apply/Notes: connect.c",
-  "state": "CT",
-  "primary_category": "food_nutrition",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'SNAP' in \"Connecticut SNAP / Supplemental Nutrition (DSS) 55 Farmington Ave, Hartford, CT 06105 📞 855-626-6632 · ct.gov/\" @ xlsx:master_template_program:row:342",
-  "primary_quote": "SNAP",
-  "memberships": [],
-  "civic_object_uid": "corpus:09304e0106dd4aaf83bf2f264306475056a3b201f63af7bfafcddabb02fa155f",
-  "object_ref": "09304e0106dd4aaf83bf2f264306475056a3b201f63af7bfafcddabb02fa155f",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:342",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Connecticut SNAP / Supplemental Nutrition (DSS) 55 Farmington Ave, Hartford, CT 06105 📞 855-626-6632 · ct.gov/dss/snap Eligibility: Income < 130% FPL — 12 DSS offices statewide. Apply/Notes: connect.c\nConnecticut SNAP / Supplemental Nutrition (DSS) 55 Farmington Ave, Hartford, CT 06105 📞 855-626-6632 · ct.gov/dss/snap Eligibility: Income < 130% FPL — 12 DSS offices statewide. Apply/Notes: connect.ct.gov — apply online (ConneCT). Hartford DSS: 860-566-2008. New Haven DSS: 203-974-2000. Bridgeport DSS: 203-551-2600."
  },
  {
   "entity_id": "da736d62-a3d4-9b47-7197-7e31280c98ba",
@@ -41869,24 +40391,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "Abused Deaf Women's Advocacy Services (ADWAS)\nadwas.org"
- },
- {
-  "entity_id": "db9e3eb9-9182-2749-e55f-a26e48cdaa6e",
-  "canonical_id": "crp_fl_00c03a8328363ec1e8a9",
-  "resource_name": "Legal Services of Greater Miami (LSGM) — DV legal",
-  "state": "FL",
-  "primary_category": "legal_civil_rights",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'legal services' in \"legalservicesmiami.org — multilingual DV legal services\" @ xlsx:master_template_program:row:227",
-  "primary_quote": "legal services",
-  "memberships": [],
-  "civic_object_uid": "corpus:276a9ddc9b4c081a321755062b21a8e16e8b5d6b6ff9f0889e2a1e3b38b8615f",
-  "object_ref": "276a9ddc9b4c081a321755062b21a8e16e8b5d6b6ff9f0889e2a1e3b38b8615f",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:227",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Legal Services of Greater Miami (LSGM) — DV legal\nLow-income DV survivors, Miami-Dade — Injunctions for Protection, family law, VAWA immigration\nlegalservicesmiami.org — multilingual DV legal services"
  },
  {
   "entity_id": "dbcc1509-e84c-22ab-5158-e8b86e792f90",
@@ -43552,24 +42056,6 @@
   "source_text": "Office of the Governor of the CNMI [CNMI-GOV] ★\nGovernor: David M. Apatang -- 11th Governor of CNMI, sworn in July 24, 2025 by Chief Justice Castro after Governor Arnold I. Palacios died in office July 23, 2025. Lt. Governor: Dennis James C. Mendiola (former Senate President). Governor Apatang announced in March 2026 he will NOT seek a full term -- term runs to January 11, 2027. Verify current Governor at governor.cnmi.gov. Key CNMI agencies: DOL (670-664-3196), DOH/CHC (670-234-8950), Commerce/WCC (670-664-8018), MHSA (670-664-4150), and Department of Public Safety (670-664-9022). CNMI Legislature: Senate (9 members) and House of Representatives (20 members)."
  },
  {
-  "entity_id": "e3af6143-caad-1809-74e7-41f3d1db75c8",
-  "canonical_id": "crp_fl_993f1886363651cc29c1",
-  "resource_name": "Tampa Housing Authority (THA)",
-  "state": "FL",
-  "primary_category": "housing",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'public housing' in \"thafl.com — HCV, public housing, Hope VI; waitlist status varies\" @ xlsx:master_template_program:row:207",
-  "primary_quote": "public housing",
-  "memberships": [],
-  "civic_object_uid": "corpus:cd2434559d0b2941343a1f3024310ff21b51ab936efc652f34ad7f493fd8ddb4",
-  "object_ref": "cd2434559d0b2941343a1f3024310ff21b51ab936efc652f34ad7f493fd8ddb4",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:207",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Tampa Housing Authority (THA)\nIncome < 50% AMI, Tampa city residents\nthafl.com — HCV, public housing, Hope VI; waitlist status varies"
- },
- {
   "entity_id": "e3fb19ee-65f7-38cc-0d8a-a30f1cc7ddd4",
   "canonical_id": "crp_nj_7f4a1d2063b3619e773a",
   "resource_name": "U.S. Attorney — District of New Jersey (Newark / Camden / Trenton)",
@@ -44031,72 +42517,6 @@
   "source_text": "VA Montana Health Care System\nProvides medical and mental health care to eligible Montana veterans through Fort Harrison main facility and 10 community-based outpatient clinics statewide."
  },
  {
-  "entity_id": "e693de26-9368-2cac-1357-4eaf1d026973",
-  "canonical_id": "crp_fl_4b0bb5917b02c5132b91",
-  "resource_name": "FPL (Florida Power & Light) — FPL Energy Assistance Program",
-  "state": "FL",
-  "primary_category": "utilities",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'LIHEAP' in \"fpl.com/help/billing-and-payment/energy-assistance — also connects to LIHEAP; medical baseline rate available\" @ xlsx:master_template_program:row:279",
-  "primary_quote": "LIHEAP",
-  "memberships": [],
-  "civic_object_uid": "corpus:b7dc43366a10c6818200927604be7f8bdbbc40c73dfb12905e2dc26e4d198f74",
-  "object_ref": "b7dc43366a10c6818200927604be7f8bdbbc40c73dfb12905e2dc26e4d198f74",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:279",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "FPL (Florida Power & Light) — FPL Energy Assistance Program\nFPL customers, income-qualified — FPL's low-income assistance programs + EAP administration\nfpl.com/help/billing-and-payment/energy-assistance — also connects to LIHEAP; medical baseline rate available"
- },
- {
-  "entity_id": "e698a5d1-ffb7-463d-f583-80733013013d",
-  "canonical_id": "crp_fl_166ad6440aca8a9ec60f",
-  "resource_name": "Bay Area Legal Services (BALS) — housing (Tampa Bay)",
-  "state": "FL",
-  "primary_category": "legal_civil_rights",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'legal aid' in \"bals.org — Tampa Bay's largest legal aid provider; multiple offices\" @ xlsx:master_template_program:row:209",
-  "primary_quote": "legal aid",
-  "memberships": [
-   {
-    "category": "housing",
-    "tier": "R4",
-    "tiers": [
-     "R4"
-    ],
-    "tag_only": false,
-    "evidence": [
-     "R4: eligibility_summary 'eviction' in \"Income-qualified, Hillsborough, Pinellas, Pasco, Hernando, Citrus, Polk, Manatee counties — eviction defense, \" @ xlsx:master_template_program:row:209"
-    ]
-   }
-  ],
-  "civic_object_uid": "corpus:04cc6a3793751e5020addaf45e946c25233b9ea2bf72b65f18ae7b7baceafeee",
-  "object_ref": "04cc6a3793751e5020addaf45e946c25233b9ea2bf72b65f18ae7b7baceafeee",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:209",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Bay Area Legal Services (BALS) — housing (Tampa Bay)\nIncome-qualified, Hillsborough, Pinellas, Pasco, Hernando, Citrus, Polk, Manatee counties — eviction defense, habitability, DV, elder law\nbals.org — Tampa Bay's largest legal aid provider; multiple offices"
- },
- {
-  "entity_id": "e6c3ba91-002e-60d9-c0b4-84c5c1466147",
-  "canonical_id": "crp_us_6519fff5b03afadfe1e6",
-  "resource_name": "DOL Wage and Hour Division Offices",
-  "state": "US",
-  "primary_category": "employment_labor",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'wage theft' in \"Where people file wage theft complaints. Links to your Employment & Workplace pipeline.\" @ xlsx:federal_resource_directory:row:11",
-  "primary_quote": "wage theft",
-  "memberships": [],
-  "civic_object_uid": "corpus:2008dcaf24002953bccc219eb79eec44ee6ed32878febc5e9a05c673c412fcea",
-  "object_ref": "2008dcaf24002953bccc219eb79eec44ee6ed32878febc5e9a05c673c412fcea",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:federal_resource_directory:row:11",
-  "before_category": "resource",
-  "before_layer": "backbone_workbook",
-  "source_text": "DOL Wage and Hour Division Offices\nWhere people file wage theft complaints. Links to your Employment & Workplace pipeline."
- },
- {
   "entity_id": "e6c81133-4354-56c5-0d6a-d2a5ddece40e",
   "canonical_id": "crp_md_d3a3f7b102822ffb28d5",
   "resource_name": "Disability Rights Maryland (DRM)",
@@ -44213,24 +42633,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "Jewish Family Service – Project DVORA\njfsseattle.org/dvora"
- },
- {
-  "entity_id": "e76a0d46-8aea-030b-a3dc-75839687dfee",
-  "canonical_id": "crp_ct_f500276c9be9ed112312",
-  "resource_name": "Hartford HealthCare / Hartford Hospital (Hartford Safety Net) 80 Seymour St, Hartford, CT 06102 📞 860-545-5000 · hartfordhealthcare.org Eligibility: Greater Hartford — Level 1 trauma center + charity",
-  "state": "CT",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'HealthCare' in \"Hartford HealthCare / Hartford Hospital (Hartford Safety Net) 80 Seymour St, Hartford, CT 06102 📞 860-545-5000\" @ xlsx:master_template_program:row:346",
-  "primary_quote": "HealthCare",
-  "memberships": [],
-  "civic_object_uid": "corpus:a5923833a541f141874273e32f11fff59759da13659f7e28667373beb5db836e",
-  "object_ref": "a5923833a541f141874273e32f11fff59759da13659f7e28667373beb5db836e",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:346",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Hartford HealthCare / Hartford Hospital (Hartford Safety Net) 80 Seymour St, Hartford, CT 06102 📞 860-545-5000 · hartfordhealthcare.org Eligibility: Greater Hartford — Level 1 trauma center + charity\nHartford HealthCare / Hartford Hospital (Hartford Safety Net) 80 Seymour St, Hartford, CT 06102 📞 860-545-5000 · hartfordhealthcare.org Eligibility: Greater Hartford — Level 1 trauma center + charity care for uninsured and underinsured. Apply/Notes: hartfordhealthcare.org — charity care for income < 200% FPL. Also Saint Francis Hospital (Hartford: 860-714-4000) for North Hartford community."
  },
  {
   "entity_id": "e797ce3a-9793-9d1b-df55-8fd9424b11ae",
@@ -44424,24 +42826,6 @@
   "source_text": "USDA Rural Development — Oregon State Office\nProvides rural housing loans, rental assistance, community facilities funding, and water/wastewater infrastructure grants in rural Oregon."
  },
  {
-  "entity_id": "e892159b-f018-d487-e147-fe0605cff9a0",
-  "canonical_id": "crp_fl_1a4b26edce954321b459",
-  "resource_name": "FL TANF 24-Month Limit (in any 60-month period)",
-  "state": "FL",
-  "primary_category": "cash_assistance",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'TANF' in \"Document TANF months carefully — pair with every other available resource immediately; this clock runs faster \" @ xlsx:master_template_program:row:267",
-  "primary_quote": "TANF",
-  "memberships": [],
-  "civic_object_uid": "corpus:bfbc9ef5f33cbaf7833dd979620757294cfb8d5be6e65657c4ee18754902f05a",
-  "object_ref": "bfbc9ef5f33cbaf7833dd979620757294cfb8d5be6e65657c4ee18754902f05a",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:267",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "FL TANF 24-Month Limit (in any 60-month period)\nFL limits TANF receipt to 24 months in any 60-month rolling period — not a 48-month lifetime limit that resets; effectively a more aggressive limit than it appears. Federal limit is 60 months lifetime.\nDocument TANF months carefully — pair with every other available resource immediately; this clock runs faster than most states"
- },
- {
   "entity_id": "e898c2b1-51e2-f8f6-c4c3-2590ce5b946f",
   "canonical_id": "crp_wy_104c1a0f963c5360e4aa",
   "resource_name": "Wyoming Coalition Against Domestic Violence and Sexual Assault (WCADVSA)",
@@ -44560,24 +42944,6 @@
   "before_category": "Federal statute — Establishes national framework for opioid/SUD prevention, treatment, recovery, and Plans of Safe Care for substance-exposed infants",
   "before_layer": null,
   "source_text": "Comprehensive Addiction and Recovery Act (CARA) of 2016\nCARA is the foundational 2016 federal law responding to the opioid crisis, funding prevention, treatment, and recovery programs and expanding access to naloxone and medication-assisted treatment. It requires states receiving federal child protective services grants to develop 'Plans of Safe Care' for infants born affected by substance use, withdrawal symptoms, or Fetal Alcohol Spectrum Disorder, addressing the health and treatment needs of both infant and caregiver. It expands first responder access to overdose-reversal drugs and supports veterans', women's, and family-focused addiction treatment initiatives. It also addresses collateral consequences of addiction, such as reentry and employment barriers for people in recovery. The law does not create an individual right to sue but conditions state grant funding on compliance."
- },
- {
-  "entity_id": "e9b5e686-0d40-e8f7-d0c0-b69447c4086f",
-  "canonical_id": "crp_fl_95a564a811d45541108a",
-  "resource_name": "Feeding South Florida (Miami-Dade, Broward, Palm Beach, Monroe)",
-  "state": "FL",
-  "primary_category": "food_nutrition",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'SNAP' in \"feedingsouthflorida.org — find nearest pantry or distribution; also SNAP outreach and enrollment\" @ xlsx:master_template_program:row:122",
-  "primary_quote": "SNAP",
-  "memberships": [],
-  "civic_object_uid": "corpus:c35fb78aa3a39159154d731a77b2d05fe22327565976cb3c10c18bb97d07c075",
-  "object_ref": "c35fb78aa3a39159154d731a77b2d05fe22327565976cb3c10c18bb97d07c075",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:122",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Feeding South Florida (Miami-Dade, Broward, Palm Beach, Monroe)\nAnyone in need, 4-county South Florida area — 25M+ meals annually\nfeedingsouthflorida.org — find nearest pantry or distribution; also SNAP outreach and enrollment"
  },
  {
   "entity_id": "e9b93639-5c64-f0e6-6df9-4776fd763eec",
@@ -45460,24 +43826,6 @@
   "source_text": "Feeding SW VA (Roanoke): 1025 Electric Road, Salem VA 24153 (540-387-3863) | Central VA (Richmond): 3910 Williamsburg Road, Richmond VA 23231 (804-521-2500)\nRegional food banks serving Virginia counties. SNAP enrollment assistance."
  },
  {
-  "entity_id": "ecff84ff-13c1-1baf-ceb2-3fe23fbc3f14",
-  "canonical_id": "crp_ak_9a01bcc2315dbf4b978e",
-  "resource_name": "Alaska Housing Finance Corporation (AHFC)",
-  "state": "AK",
-  "primary_category": "housing",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'homelessness' in \"Alaska Housing Finance Corporation (AHFC) | What it covers:: Section 8/HCV, HOME program, rural housing, homel\" @ xlsx:master_template_program:row:295",
-  "primary_quote": "homelessness",
-  "memberships": [],
-  "civic_object_uid": "corpus:41ea8df6ab6db4b304177004733fdd7146fdc9b8bc695c80eaf3b5939d946add",
-  "object_ref": "41ea8df6ab6db4b304177004733fdd7146fdc9b8bc695c80eaf3b5939d946add",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:295",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Alaska Housing Finance Corporation (AHFC)\nAlaska Housing Finance Corporation (AHFC) | What it covers:: Section 8/HCV, HOME program, rural housing, homelessness prevention | Who qualifies:: Low-income AK residents. ahfc.us. Anchorage: 907-279-3161. Rural Housing: ahfc.us/rural. Critical: Bush Alaska has severe housing shortages and overcrowding. | Contact:: 📞 907-338-6100 · ahfc.us"
- },
- {
   "entity_id": "ed22e550-b662-e6b1-83e9-765a9fbe181b",
   "canonical_id": "crp_az_767b4db284506936f1b6",
   "resource_name": "Arizona Department of Insurance and Financial Institutions (DIFI)",
@@ -46048,36 +44396,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "Idaho Department of Labor — Wage and Hour\nEnforces Idaho minimum wage and wage payment laws, administers unemployment insurance, and oversees Idaho OSHA-equivalent safety consultation (note: federal OSHA holds enforcement authority)."
- },
- {
-  "entity_id": "efe2bb41-ef2b-ba58-ba9b-f2ff82b2dbe7",
-  "canonical_id": "crp_ar_0cb19566c8a23547dd46",
-  "resource_name": "Arkansas Development Finance Authority (ADFA) — Housing",
-  "state": "AR",
-  "primary_category": "housing",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'rental assistance' in \"Arkansas Development Finance Authority (ADFA — Housing) | What it covers:: Section 8/HCV, HOME program, rental\" @ xlsx:master_template_program:row:322",
-  "primary_quote": "rental assistance",
-  "memberships": [
-   {
-    "category": "safety_crisis",
-    "tier": "R3b",
-    "tiers": [
-     "R3b"
-    ],
-    "tag_only": true,
-    "evidence": [
-     "workbook resource_master.category_tags tag 'housing,disability,domestic_violence,immigration,veterans' @ xlsx:resource_master:row:160"
-    ]
-   }
-  ],
-  "civic_object_uid": "corpus:ed524c06cef9db4fb7438605f3dd76fc44571363d3cf8ff61257417e438ca113",
-  "object_ref": "ed524c06cef9db4fb7438605f3dd76fc44571363d3cf8ff61257417e438ca113",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:322",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Arkansas Development Finance Authority (ADFA — Housing)\nArkansas Development Finance Authority (ADFA — Housing) | What it covers:: Section 8/HCV, HOME program, rental assistance | Who qualifies:: Low-income AR renters. arkansasfinance.com. Little Rock Housing Authority: 501-375-7201. Fayetteville Housing: 479-521-1834. | Contact:: 📞 501-682-5900 · arkansasfinance.com"
  },
  {
   "entity_id": "f0260869-8f1b-4644-df04-d6ca61aa0cd8",
@@ -46931,24 +45249,6 @@
   "source_text": "MA Probate and Family Court — Protective Orders / Domestic Violence / Child Welfare\nHandles: Chapter 209A Abuse Prevention Orders (DV — available same day in emergency), Chapter 258E Harassment Prevention Orders (non-DV relationships), divorce, child custody/support, adoption, guardianship, and child welfare matters. ICWA: Probate and Family Court must inquire about tribal membership in all child welfare proceedings involving MA's two federally recognized tribes. VAWA housing protections coordinate with Chapter 209A orders for federally assisted housing residents."
  },
  {
-  "entity_id": "f4c3a14a-36e4-a023-16ce-871abeca2f70",
-  "canonical_id": "crp_ak_31211b4b245c0a1d2ddb",
-  "resource_name": "NLRB — Region 19 Seattle (covers AK)",
-  "state": "AK",
-  "primary_category": "employment_labor",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Unfair labor practice' in \"NLRB — Region 19 Seattle (covers AK) | Function:: Unfair labor practices, union organizing rights, retaliation\" @ xlsx:master_template_program:row:314",
-  "primary_quote": "Unfair labor practice",
-  "memberships": [],
-  "civic_object_uid": "corpus:ebc034dd7053e1da284d8e4402c67727742e6ccdf2c48d9b1cb8d4b2292c900f",
-  "object_ref": "ebc034dd7053e1da284d8e4402c67727742e6ccdf2c48d9b1cb8d4b2292c900f",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:314",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "NLRB — Region 19 Seattle (covers AK)\nNLRB — Region 19 Seattle (covers AK) | Function:: Unfair labor practices, union organizing rights, retaliation. | Statute of Limitations:: 6 months — FATAL | Pathway:: nlrb.gov/case-activity/regional-case-activity/region-19"
- },
- {
   "entity_id": "f4fc3af7-8b02-0613-1e9a-dfbc38a92657",
   "canonical_id": "crp_ar_53fe65fb6e83175d847f",
   "resource_name": "Arkansas SNAP / Food Assistance (DHS — access.arkansas.gov)",
@@ -47174,24 +45474,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "EEOC Little Rock Area Office (Serves Arkansas — Under Memphis District)\nArkansas has no state FEPA partner — EEOC is the PRIMARY enforcement route. 300-day federal SOL applies. Under Memphis District Office. No appointment required but strongly recommended. Arkansas Civil Rights Act (state law) requires private attorney for state claims — EEOC is the gateway for federal claims."
- },
- {
-  "entity_id": "f5cee6a4-09b9-2076-5290-c8a328d6886f",
-  "canonical_id": "crp_fl_cbb07b82102d187a38ee",
-  "resource_name": "Seminole Tribe — Tribal Health Programs (Hollywood)",
-  "state": "FL",
-  "primary_category": "tribal",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'tribal health' in \"semtribe.com/health — tribal health clinics on Immokalee, Brighton, Big Cypress, Hollywood, Tampa, Fort Pierce\" @ xlsx:master_template_program:row:180",
-  "primary_quote": "tribal health",
-  "memberships": [],
-  "civic_object_uid": "corpus:3d06b7d8074b43bafd98fc2abef51a5823d3b2c1bdc9469a1b8fe79a3fac5544",
-  "object_ref": "3d06b7d8074b43bafd98fc2abef51a5823d3b2c1bdc9469a1b8fe79a3fac5544",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:180",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Seminole Tribe — Tribal Health Programs (Hollywood)\nSeminole tribal members — comprehensive tribal health; Seminole Tribe primarily self-funds through gaming revenue; does not depend on IHS\nsemtribe.com/health — tribal health clinics on Immokalee, Brighton, Big Cypress, Hollywood, Tampa, Fort Pierce reservations"
  },
  {
   "entity_id": "f5e0f877-1c0a-ea42-51fd-8930b3bb0ac6",
@@ -47485,24 +45767,6 @@
   "source_text": "VA Jesse Brown Medical Center (Chicago)\nMedical and mental health care for Chicago area veterans. CBOCs throughout the metro and Illinois."
  },
  {
-  "entity_id": "f67fba8e-808c-22e8-6af4-0dc8874dedb6",
-  "canonical_id": "crp_ar_0d029fdc115e95e2d7aa",
-  "resource_name": "AR Medicaid External Review (ARHOME Plans)",
-  "state": "AR",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Medicaid' in \"AR Medicaid External Review (ARHOME Plans) | Function:: External medical review for ARHOME managed care plan d\" @ xlsx:master_template_program:row:341",
-  "primary_quote": "Medicaid",
-  "memberships": [],
-  "civic_object_uid": "corpus:aa44068d16830dcc1698b68d3c6d7b1371c3ca40c02825e46ecbc2d6c143d2e1",
-  "object_ref": "aa44068d16830dcc1698b68d3c6d7b1371c3ca40c02825e46ecbc2d6c143d2e1",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:341",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "AR Medicaid External Review (ARHOME Plans)\nAR Medicaid External Review (ARHOME Plans) | Function:: External medical review for ARHOME managed care plan denials. | Statute of Limitations:: 30 days from plan internal denial — FATAL | Pathway:: medicaid.mmis.state.ar.us — external review request"
- },
- {
   "entity_id": "f68f6903-3171-9f81-490c-8b44881b591c",
   "canonical_id": "crp_ks_18e3b6f7324b85459220",
   "resource_name": "EEOC Kansas City Area Office — Overland Park (Serves Kansas)",
@@ -47561,24 +45825,6 @@
   "before_category": "healthcare",
   "before_layer": "layer_1",
   "source_text": "Wabanaki Tribal Health Programs (4 Nations)\nihs.gov/boston -- IHS Boston Area coordinates Wabanaki health (617-565-1000). Route enrolled Wabanaki members to tribal health first.\nEnrolled Wabanaki members -- tribal health programs.\nihs.gov/boston -- IHS Boston Area coordinates Wabanaki health (617-565-1000). Route enrolled Wabanaki members to tribal health first."
- },
- {
-  "entity_id": "f71987c0-32e6-ab2c-d5b9-d6386d1a1f71",
-  "canonical_id": "crp_fl_861462709b2561ff5ea7",
-  "resource_name": "FL Dept of Health — County Health Departments (67 counties)",
-  "state": "FL",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Medicaid' in \"floridahealth.gov/county-health-departments — find nearest CHD; sliding scale fees; critical given no Medicaid\" @ xlsx:master_template_program:row:152",
-  "primary_quote": "Medicaid",
-  "memberships": [],
-  "civic_object_uid": "corpus:587956874a9078a233391d6291eb7e076341d4a9ed0c3f4ff1166b78417c7924",
-  "object_ref": "587956874a9078a233391d6291eb7e076341d4a9ed0c3f4ff1166b78417c7924",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:152",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "FL Dept of Health — County Health Departments (67 counties)\nAnyone — FL DOH operates one public health unit in every county; primary safety net for uninsured statewide\nfloridahealth.gov/county-health-departments — find nearest CHD; sliding scale fees; critical given no Medicaid expansion"
  },
  {
   "entity_id": "f730da27-e8a6-5b7a-aa43-8b3eb0a2229b",
@@ -48227,24 +46473,6 @@
   "source_text": "U.S. District Court -- District of Puerto Rico, Jose V. Toledo Courthouse (Old San Juan)\nJose V. Toledo Courthouse in Old San Juan is the primary D.P.R. courthouse. Handles: civil rights, employment discrimination (PR Law 100 + Title VII), ADA, PROMESA proceedings (fiscal oversight challenges), pharmaceutical fraud, immigration (significant PR immigration court docket), and constitutional matters. Pro se litigants: Clerk's office hours M-F 8:30AM-4:30PM. Proceedings available in Spanish (unlike mainland federal courts). Federal Public Defender: 241 FD Roosevelt Avenue Suite 400, Hato Rey PR 00918 | 787-281-4922."
  },
  {
-  "entity_id": "fa33ca61-eba6-121b-4aff-352de38ff4e2",
-  "canonical_id": "crp_fl_61255c4f2c0036799715",
-  "resource_name": "Florida Legal Aid Programs — By Region",
-  "state": "FL",
-  "primary_category": "legal_civil_rights",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Legal Aid' in \"Florida Legal Aid Programs — By Region\" @ xlsx:master_template_program:row:245",
-  "primary_quote": "Legal Aid",
-  "memberships": [],
-  "civic_object_uid": "corpus:d17b88fe56ccd77ada60127886b06b519d1a8e5908fd6ec93a9b47712c8e1a08",
-  "object_ref": "d17b88fe56ccd77ada60127886b06b519d1a8e5908fd6ec93a9b47712c8e1a08",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:245",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Florida Legal Aid Programs — By Region\nFlorida Legal Aid Programs — By Region\nFlorida Legal Aid Programs — By Region"
- },
- {
   "entity_id": "fa94a000-784b-35ed-9985-927627cfa099",
   "canonical_id": "crp_la_49a64f0574e68c5ffece",
   "resource_name": "ACLU of Louisiana",
@@ -48415,24 +46643,6 @@
   "before_category": "Anti-poverty / LIHEAP energy assistance / Head Start / emergency aid (Ada County)",
   "before_layer": null,
   "source_text": "El-Ada Community Action Partnership"
- },
- {
-  "entity_id": "fb3c0b7f-4c06-a459-5c1c-9fc6166050a4",
-  "canonical_id": "crp_ar_eba39571c0a816dfe867",
-  "resource_name": "ARHOME / Arkansas Medicaid (DHS)",
-  "state": "AR",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Medicaid' in \"ARHOME / Arkansas Medicaid (DHS) | What it covers:: Medicaid via Private Option — purchases marketplace insura\" @ xlsx:master_template_program:row:318",
-  "primary_quote": "Medicaid",
-  "memberships": [],
-  "civic_object_uid": "corpus:2c37dd71f3fd4591ef2dc1728442c66d38ab260f88e41573e78073d0f97619cf",
-  "object_ref": "2c37dd71f3fd4591ef2dc1728442c66d38ab260f88e41573e78073d0f97619cf",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:318",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "ARHOME / Arkansas Medicaid (DHS)\nARHOME / Arkansas Medicaid (DHS) | What it covers:: Medicaid via Private Option — purchases marketplace insurance for adults 19–64 | Who qualifies:: Adults 19–64 to 138% FPL (ARHOME). Children (ARKids First), families, elderly, disabled. access.arkansas.gov. Plans: AR Blue Cross, Ambetter. Marshallese COFA residents: verify current Medicaid eligibility. | Contact:: 📞 888-987-1200 · medicaid.mmis.state.ar.us"
  },
  {
   "entity_id": "fb3c3592-4440-be32-f045-dfef0487c236",
@@ -49023,42 +47233,6 @@
   "before_category": "workbook_record",
   "before_layer": "backbone_workbook",
   "source_text": "EEOC New Orleans Field Office\nVerified live from eeoc.gov June 2026. Covers all Louisiana parishes. Director: Michael Kirkland. Security screening required — arrive 30 minutes early. 300-day federal SOL applies. LCHR is the FEPA work-share partner."
- },
- {
-  "entity_id": "fea449d8-52bd-b5b1-b3c7-d1b8c6b94f16",
-  "canonical_id": "crp_fl_4643ebfbd72b45c6fe03",
-  "resource_name": "TEFAP / Emergency Food Assistance (Florida)",
-  "state": "FL",
-  "primary_category": "food_nutrition",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'food bank' in \"feedingflorida.org — 12 member food banks statewide; find nearest pantry or distribution site\" @ xlsx:master_template_program:row:117",
-  "primary_quote": "food bank",
-  "memberships": [],
-  "civic_object_uid": "corpus:cd915878d943c530fe4978d059c037440c3fffc97b45311e05e96c6ece884f19",
-  "object_ref": "cd915878d943c530fe4978d059c037440c3fffc97b45311e05e96c6ece884f19",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:117",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "TEFAP / Emergency Food Assistance (Florida)\nLow-income FL households — USDA commodity foods through Feeding Florida network\nfeedingflorida.org — 12 member food banks statewide; find nearest pantry or distribution site"
- },
- {
-  "entity_id": "fea5c3cb-015e-3317-e439-dfc45ed502df",
-  "canonical_id": "crp_ar_5af5b8ec2745b2acbe62",
-  "resource_name": "Arkansas Primary Care Association (FQHCs)",
-  "state": "AR",
-  "primary_category": "healthcare",
-  "primary_tier": "R4",
-  "primary_evidence": "apply_notes 'Clinic' in \"Arkansas Primary Care Association (FQHCs) | What it covers:: Federally qualified health centers — sliding scal\" @ xlsx:master_template_program:row:320",
-  "primary_quote": "Clinic",
-  "memberships": [],
-  "civic_object_uid": "corpus:656ecb01a7822a15177868637888042323172c51b38824fc7ccedda401a4009c",
-  "object_ref": "656ecb01a7822a15177868637888042323172c51b38824fc7ccedda401a4009c",
-  "artifact_key": "State Enriched Registry bucket/luminari_resource_directory_v3_13.xlsx",
-  "source_locator": "xlsx:master_template_program:row:320",
-  "before_category": "workbook_record",
-  "before_layer": "backbone_workbook",
-  "source_text": "Arkansas Primary Care Association (FQHCs)\nArkansas Primary Care Association (FQHCs) | What it covers:: Federally qualified health centers — sliding scale statewide | Who qualifies:: Anyone. arpca.com / findahealthcenter.hrsa.gov. Key: Lee County Cooperative Clinic (Marianna — Delta: 870-295-6595 — oldest rural FQHC in AR). Central Arkansas Family Health Center (Little Rock: 501-663-6191). | Contact:: 📞 501-664-0836 · arpca.com"
  },
  {
   "entity_id": "fea9823a-afe9-0719-311d-d69acbe7c901",

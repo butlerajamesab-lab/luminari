@@ -9,7 +9,7 @@ import {
   PASS_VERSION,
   buildEntityUpdate,
   buildLedgerInsert,
-  evidenceIsBenefitsAnchored,
+  evidenceIsUnverifiableAnchored,
   filterApprovedProposals,
   manifestFor,
   planClassifications,
@@ -29,7 +29,7 @@ const EMBEDDED = JSON.parse(
   ),
 );
 const EXPECTED_MANIFEST =
-  "a0904191747d89a5e8c7c391c17f6c0378bc5f7dc1b9afdee31a401560226dc9";
+  "3e1bd3c36d41475b9d0c0961e2987e8520bde3d5b1d1a880bb42449d09b4a2a5";
 
 const row = (overrides = {}) => ({
   entity_id: "11111111-2222-3333-4444-555555555555",
@@ -114,19 +114,25 @@ describe("fidelity guards — token-based sheet attribution", () => {
     expect([...sheetTokensOf("label 'x' @ xlsx:program_master:row:9")]).toEqual(
       ["program_master"],
     );
-    expect(evidenceIsBenefitsAnchored("@ xlsx:program_master:row:9")).toBe(
+    expect(evidenceIsUnverifiableAnchored("@ xlsx:program_master:row:9")).toBe(
       false,
     );
     expect(
-      evidenceIsBenefitsAnchored("@ xlsx:benefits_program_master:row:9"),
+      evidenceIsUnverifiableAnchored("@ xlsx:benefits_program_master:row:9"),
     ).toBe(true);
+    // the trap in the other direction: the UNVERIFIABLE token
+    // 'programs' must not catch the FAITHFUL 'program_master'
+    expect([...sheetTokensOf("label 'x' @ xlsx:programs:row:9")]).toEqual([
+      "programs",
+    ]);
+    expect(evidenceIsUnverifiableAnchored("@ xlsx:programs:row:9")).toBe(true);
     // the word alone, without a locator token, is not an anchor
-    expect(evidenceIsBenefitsAnchored("see benefits_program_master notes")).toBe(
-      false,
-    );
+    expect(
+      evidenceIsUnverifiableAnchored("see benefits_program_master notes"),
+    ).toBe(false);
   });
 
-  it("holds benefits-anchored primaries — the sheet is unverifiable", () => {
+  it("holds unverifiable-anchored primaries — no sheet-name exceptions", () => {
     const { approved, excluded } = filterApprovedProposals([
       row({
         entity_id: "a",
@@ -138,24 +144,36 @@ describe("fidelity guards — token-based sheet attribution", () => {
         primary_evidence:
           "wb:service_type 'cash assistance' in \"Cash help\" @ xlsx:program_master:row:260",
       }),
+      row({
+        entity_id: "c",
+        primary_evidence:
+          "description 'cash assistance' in \"Cash help\" @ xlsx:master_template_program:row:12",
+      }),
+      row({
+        entity_id: "d",
+        primary_evidence:
+          "description 'cash assistance' in \"Cash help\" @ xlsx:wa_resource_directory:row:40",
+      }),
     ]);
     expect(approved.map((r) => r.entity_id)).toEqual(["b"]);
     expect(excluded).toEqual([
-      { entity_id: "a", reason: "benefits_anchored_evidence" },
+      { entity_id: "a", reason: "unverifiable_sheet_primary" },
+      { entity_id: "c", reason: "unverifiable_sheet_primary" },
+      { entity_id: "d", reason: "unverifiable_sheet_primary" },
     ]);
   });
 
-  it("strips benefits-anchored membership evidence and drops evidenceless memberships", () => {
+  it("strips unverifiable-anchored membership evidence and drops evidenceless memberships", () => {
     const { approved, droppedMemberships, strippedEvidenceStrings } =
       filterApprovedProposals([
         row({
           memberships: [
             mem("utilities", [
-              "workbook benefits_program_master.benefit_categories tag 'utilities' @ xlsx:benefits_program_master:row:260",
+              "workbook master_template_program.benefit_categories tag 'utilities' @ xlsx:master_template_program:row:260",
               "R4: description 'energy assistance' in \"Energy assistance\" @ lines:5-9",
             ]),
             mem("tribal", [
-              "workbook benefits_program_master.benefit_categories tag 'tribal' @ xlsx:benefits_program_master:row:260",
+              "workbook wa_registry_program.benefit_categories tag 'tribal' @ xlsx:wa_registry_program:row:260",
             ]),
           ],
         }),
@@ -166,6 +184,30 @@ describe("fidelity guards — token-based sheet attribution", () => {
     expect(approved[0].memberships[0].evidence).toHaveLength(1);
     expect(droppedMemberships).toBe(1);
     expect(strippedEvidenceStrings).toBe(2);
+  });
+
+  it("drops an unverifiable-anchored membership while a program_master-anchored sibling survives", () => {
+    const { approved, droppedMemberships, strippedEvidenceStrings } =
+      filterApprovedProposals([
+        row({
+          memberships: [
+            mem("tribal", [
+              "workbook substrate_az_program.category_tags tag 'tribal' @ xlsx:substrate_az_program:row:88",
+            ]),
+            mem("healthcare", [
+              "workbook program_master.category_tags tag 'healthcare' @ xlsx:program_master:row:88",
+            ]),
+          ],
+        }),
+      ]);
+    expect(approved).toHaveLength(1);
+    expect(approved[0].memberships).toHaveLength(1);
+    expect(approved[0].memberships[0].category).toBe("healthcare");
+    expect(approved[0].memberships[0].evidence).toEqual([
+      "workbook program_master.category_tags tag 'healthcare' @ xlsx:program_master:row:88",
+    ]);
+    expect(droppedMemberships).toBe(1);
+    expect(strippedEvidenceStrings).toBe(1);
   });
 
   it("excludes entities whose only evidence sits on LOSSY sheets", () => {
@@ -311,17 +353,17 @@ describe("embedded census set", () => {
   const { approved, excluded, droppedMemberships } =
     filterApprovedProposals(EMBEDDED);
 
-  it("applies exactly the 1,777 clean-tier entities in census tier counts", () => {
+  it("applies exactly the 1,683 clean-tier entities in census tier counts", () => {
     expect(excluded).toHaveLength(0);
-    expect(approved).toHaveLength(1777);
+    expect(approved).toHaveLength(1683);
     const byTier = {};
     for (const r of approved) byTier[r.primary_tier] = (byTier[r.primary_tier] ?? 0) + 1;
-    expect(byTier).toEqual({ R2: 343, R3a_workbook: 51, R4: 1383 });
+    expect(byTier).toEqual({ R2: 343, R3a_workbook: 48, R4: 1292 });
   });
 
-  it("carries 1,476 memberships, 1,129 of them tag-grade R3b (applied, tier recorded)", () => {
+  it("carries 1,465 memberships, 1,129 of them tag-grade R3b (applied, tier recorded)", () => {
     const mems = approved.flatMap((r) => r.memberships);
-    expect(mems).toHaveLength(1476);
+    expect(mems).toHaveLength(1465);
     expect(mems.filter((m) => m.tag_only)).toHaveLength(1129);
     expect(droppedMemberships).toBe(0);
   });
@@ -340,12 +382,12 @@ describe("embedded census set", () => {
     }
   });
 
-  it("no applied evidence string is benefits-anchored (fidelity gate, re-checked)", () => {
+  it("no applied evidence string is unverifiable-anchored (fidelity gate, re-checked)", () => {
     for (const r of approved) {
-      expect(evidenceIsBenefitsAnchored(r.primary_evidence)).toBe(false);
+      expect(evidenceIsUnverifiableAnchored(r.primary_evidence)).toBe(false);
       for (const m of r.memberships) {
         for (const ev of m.evidence) {
-          expect(evidenceIsBenefitsAnchored(ev)).toBe(false);
+          expect(evidenceIsUnverifiableAnchored(ev)).toBe(false);
         }
       }
     }

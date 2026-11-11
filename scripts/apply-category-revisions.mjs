@@ -20,8 +20,8 @@
 //
 // The apply set is embedded in this repository as
 // scripts/category-pass-proposals-v1.json so the run is reproducible
-// from the repo alone: 1,777 entities (R2 343 / R3a_workbook 51 /
-// R4 1,383) with 1,476 membership assignments (1,129 of them
+// from the repo alone: 1,683 entities (R2 343 / R3a_workbook 48 /
+// R4 1,292) with 1,465 membership assignments (1,129 of them
 // tag-grade R3b, applied with their tier recorded per the census
 // design's "apply but queue" — the queue is the recorded tier).
 //
@@ -36,9 +36,19 @@
 //   - naming_fidelity_held (161): entities whose naming-repair
 //     renames are held on benefits_program_master evidence — do not
 //     categorize records whose names are still held.
-//   - benefits_anchored_evidence (0 in this set): any primary whose
-//     evidence is anchored to benefits_program_master (UNVERIFIABLE
-//     sheet) is excluded; the filter below re-checks it.
+//   - unverifiable_sheet_primary (94): any primary whose evidence
+//     is anchored to an UNVERIFIABLE sheet is excluded, and
+//     unverifiable-anchored membership evidence is stripped (a
+//     membership left evidenceless is dropped). UNVERIFIABLE per the
+//     workbook-fidelity audit (no surviving raw source on disk):
+//     benefits_program_master, national_benefits_program, programs,
+//     master_template_program, federal_resource_directory,
+//     wa_resource_directory, wa_registry_program,
+//     clean_partial_program, substrate_az_program,
+//     territory_org_verified. The gate was tightened 2026-11-11 from
+//     the original benefits-only rule, for consistency with the
+//     naming fidelity gate: unverifiable = held, no sheet-name
+//     exceptions. The filter below re-checks it.
 //   - lossy_sheet_only_evidence (0 in this set): entities whose only
 //     evidence sits on LOSSY sheets (bucket_resource,
 //     registry_programs, state_enriched_directory_v3_13,
@@ -71,10 +81,12 @@
 //     sheet attribution is TOKEN-based — the sheet is the maximal
 //     [a-z0-9_] run after 'xlsx:' in an evidence locator, so
 //     'benefits_program_master' never matches a check for
-//     'program_master'. No applied evidence string may be anchored
-//     to benefits_program_master: a benefits-anchored primary
-//     excludes the entity; benefits-anchored membership evidence is
-//     stripped (a membership left with no evidence is dropped).
+//     'program_master', and the UNVERIFIABLE token 'programs' never
+//     matches the FAITHFUL 'program_master'. No applied evidence
+//     string may be anchored to an UNVERIFIABLE sheet: an
+//     unverifiable-anchored primary excludes the entity;
+//     unverifiable-anchored membership evidence is stripped (a
+//     membership left with no evidence is dropped).
 //   - Write order per tier, one transaction per tier: ledger rows
 //     into public.luminari_category_pass_classifications FIRST
 //     (conflict-guarded on the entity PK), then the entity update.
@@ -83,8 +95,8 @@
 //     "entity_id|primary_category|membership1,membership2" lines of
 //     the approved set. The dry run prints it; the staged derivation
 //     expects
-//     a0904191747d89a5e8c7c391c17f6c0378bc5f7dc1b9afdee31a401560226dc9
-//     for the embedded v1 set (1,777 rows).
+//     3e1bd3c36d41475b9d0c0961e2987e8520bde3d5b1d1a880bb42449d09b4a2a5
+//     for the embedded v1 set (1,683 rows, post-tightening).
 //
 // Dry run by default; --apply writes. --apply refuses to run until
 // the pass ledger exists (migration 20261110230000 installed).
@@ -119,7 +131,25 @@ export const CANONICAL_CATEGORIES = [
   "employment_labor",
 ];
 
-const BENEFITS_SHEET = "benefits_program_master";
+/**
+ * UNVERIFIABLE sheets (workbook-fidelity audit: no surviving raw
+ * source on disk, so fidelity can be proven neither way). Membership
+ * is by exact sheet TOKEN only: 'programs' is in this set and the
+ * FAITHFUL 'program_master' is not — the substring trap runs in both
+ * directions, and token parsing is what disarms it.
+ */
+const UNVERIFIABLE_SHEETS = new Set([
+  "benefits_program_master",
+  "national_benefits_program",
+  "programs",
+  "master_template_program",
+  "federal_resource_directory",
+  "wa_resource_directory",
+  "wa_registry_program",
+  "clean_partial_program",
+  "substrate_az_program",
+  "territory_org_verified",
+]);
 const LOSSY_SHEETS = new Set([
   "bucket_resource",
   "registry_programs",
@@ -146,8 +176,11 @@ export function sheetTokensOf(evidence) {
   return tokens;
 }
 
-export function evidenceIsBenefitsAnchored(evidence) {
-  return sheetTokensOf(evidence).has(BENEFITS_SHEET);
+export function evidenceIsUnverifiableAnchored(evidence) {
+  for (const token of sheetTokensOf(evidence)) {
+    if (UNVERIFIABLE_SHEETS.has(token)) return true;
+  }
+  return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -157,9 +190,9 @@ export function evidenceIsBenefitsAnchored(evidence) {
 /**
  * Filter raw proposal rows to the apply set, re-checking the census
  * derivation's gates: approved tier, canonical vocabulary, complete
- * fields, and the fidelity guards (benefits-anchored primaries
- * excluded; benefits-anchored membership evidence stripped, and a
- * membership left evidenceless dropped; LOSSY-only evidence
+ * fields, and the fidelity guards (unverifiable-anchored primaries
+ * excluded; unverifiable-anchored membership evidence stripped, and
+ * a membership left evidenceless dropped; LOSSY-only evidence
  * excluded). Returns { approved, excluded, droppedMemberships,
  * strippedEvidenceStrings }.
  */
@@ -184,8 +217,8 @@ export function filterApprovedProposals(proposals) {
       excluded.push({ entity_id, reason: "primary_not_canonical" });
       continue;
     }
-    if (evidenceIsBenefitsAnchored(row.primary_evidence)) {
-      excluded.push({ entity_id, reason: "benefits_anchored_evidence" });
+    if (evidenceIsUnverifiableAnchored(row.primary_evidence)) {
+      excluded.push({ entity_id, reason: "unverifiable_sheet_primary" });
       continue;
     }
     // LOSSY attribution is per evidence string: a string counts as
@@ -218,7 +251,7 @@ export function filterApprovedProposals(proposals) {
       }
       const kept = [];
       for (const ev of mem.evidence ?? []) {
-        if (evidenceIsBenefitsAnchored(ev)) {
+        if (evidenceIsUnverifiableAnchored(ev)) {
           strippedEvidenceStrings += 1;
         } else {
           kept.push(ev);
@@ -477,8 +510,8 @@ async function main() {
         approved: approved.length,
         excluded_by_filter: excluded.length,
         excluded_reasons: excludedReasons,
-        dropped_memberships_benefits: droppedMemberships,
-        stripped_evidence_strings_benefits: strippedEvidenceStrings,
+        dropped_memberships_unverifiable: droppedMemberships,
+        stripped_evidence_strings_unverifiable: strippedEvidenceStrings,
         planned: planned.length,
         planned_by_tier: byTier,
         already_applied: alreadyApplied.length,
