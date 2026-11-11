@@ -49,12 +49,31 @@ describe("person-facing name guard", () => {
     expect(is_human_display_name(undefined)).toBe(false);
   });
 
+  it("rejects artifact-shaped 'enriched' pass labels, hyphen or underscore delimited", () => {
+    // No luminari- prefix on these: the enriched clause alone decides.
+    expect(is_human_display_name("something_ENRICHED_v2")).toBe(false);
+    expect(is_human_display_name("example-ENRICHED-PASS2-2026")).toBe(false);
+    expect(is_human_display_name("example-enriched")).toBe(false);
+  });
+
+  it("accepts genuine names that contain the word Enriched", () => {
+    // A real LAUSD school in the gov-office projection; the blanket
+    // 'enriched' clause held it out of the catalog by its own name.
+    expect(is_human_display_name("Westchester Enriched Sciences Magnets")).toBe(
+      true,
+    );
+  });
+
   it("mirrors the same rules in SQL", () => {
     const sql = person_facing_name_sql("e.resource_name");
     expect(sql).toContain("e.resource_name !~*");
     expect(sql).toContain("[0-9a-f]{8}-[0-9a-f]{4}");
     expect(sql).toContain("^luminari[-_]");
     expect(sql).toContain("enriched");
+    // The SQL twin carries the same narrowed artifact shape — never
+    // the blanket word.
+    expect(sql).toContain("(^|[-_])enriched([-_]|$)");
+    expect(sql).not.toContain("!~* 'enriched'");
   });
 });
 
