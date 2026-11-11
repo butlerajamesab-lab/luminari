@@ -24,6 +24,10 @@ const quarantinableSourceErrors = new Set([
   "docket_storage_ambiguous_or_missing_archive",
   "docket_storage_object_size_mismatch",
   "docket_storage_archive_sha256_mismatch",
+  "docket_storage_unquarantined_partial_holds",
+  "docket_storage_cached_bill_identity_conflict",
+  "docket_storage_source_bill_count_mismatch",
+  "docket_storage_invalid_source_bill_identity",
 ]);
 
 export function isArchiveLocalQuarantineReason(reason: string): boolean {
@@ -61,6 +65,13 @@ export function archiveQuarantinePath(sha256: string): string {
 export function classifyArchiveLocalPreflightFailure(stderr: string): ArchiveLocalPreflightFailure | null {
   const match = stderr.match(/(?:^|\n)Error: (docket_bulk_[a-z0-9_]+)(?:: ([^\r\n]*))?(?:\r?\n|$)/);
   if (!match || !quarantinableSourceErrors.has(match[1])) return null;
+  return { reason_code: match[1], member_path: match[2]?.trim() || null };
+}
+
+export function classifyArchiveLocalPreapplyFailure(error: unknown): ArchiveLocalPreflightFailure | null {
+  if (!(error instanceof Error)) return null;
+  const match = error.message.match(/^(docket_storage_[a-z0-9_]+)(?:: (.*))?$/);
+  if (!match || !isArchiveLocalQuarantineReason(match[1])) return null;
   return { reason_code: match[1], member_path: match[2]?.trim() || null };
 }
 
