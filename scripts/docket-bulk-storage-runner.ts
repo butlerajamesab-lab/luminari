@@ -24,7 +24,7 @@ import { spawn } from "node:child_process";
 import JSZip from "jszip";
 import { createClient } from "@supabase/supabase-js";
 import {
-  archiveQuarantinePath, classifyArchiveLocalPreflightFailure,
+  DOCKET_QUARANTINE_PREFIX, archiveQuarantinePath, classifyArchiveLocalPreflightFailure,
   makeArchiveQuarantine, validateArchiveQuarantine,
   type ArchiveLocalPreflightFailure, type DocketArchiveQuarantine
 } from "./docket-bulk-archive-quarantine";
@@ -130,13 +130,13 @@ async function storageDownload(name: string, output: string): Promise<void> {
   await pipeline(Readable.fromWeb(response.body as any), createWriteStream(output, { flags: "wx" }));
 }
 type StorageObject = { name: string; metadata?: { size?: number | string } };
-async function listObjects(): Promise<StorageObject[]> {
+async function listObjects(prefix = ""): Promise<StorageObject[]> {
   const result: StorageObject[] = [];
   for (let offset = 0; offset < 10000; offset += 100) {
     const response = await fetch(root + "/object/list/Docket", {
       method: "POST",
       headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify({ prefix: "", limit: 100, offset,
+      body: JSON.stringify({ prefix, limit: 100, offset,
         sortBy: { column: "name", order: "asc" } })
     });
     if (!response.ok) throw new Error("docket_storage_list_failed_HTTP_" + response.status);
@@ -314,12 +314,18 @@ async function main(): Promise<void> {
       entry: BaselineArchive; objectName: string | null; state: string;
       sourceIssue: ArchiveLocalPreflightFailure | null;
     }> = [];
-    const quarantineObjects = new Set(objects.map(x => x.name));
+    // Supabase Storage lists folder contents by prefix, not recursively from
+    // the bucket root. A separate bounded listing is mandatory: otherwise a
+    // quarantined ZIP could be selected again on the next scheduled run.
+    const quarantineObjects = new Set(
+      (await listObjects(DOCKET_QUARANTINE_PREFIX)).map(x => x.name)
+    );
     for (const source of entries) {
       const counts = await readCounts(source);
       const state = receiptState(source, counts);
       const quarantinePath = archiveQuarantinePath(source.sha256);
-      if (quarantineObjects.has(quarantinePath)) {
+      if (quarantineObjects.has(quarantinePath) ||
+          quarantineObjects.has(source.sha256 + ".json")) {
         if (state === "complete") {
           throw new Error("docket_quarantine_archive_appears_complete_requires_review: " + source.archive);
         }
