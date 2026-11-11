@@ -370,6 +370,18 @@ APPROVED_REPOSITORY_ONLY = {
         "20261110160000_gov_office_projection_v1.sql",
         "9d2b3ae281ef25afd3c9a2abb455e2949be745f1",
     ),
+    # Catalog remainder projection v1: registers the
+    # catalog_remainder_projection document family and creates the
+    # luminari_catalog_remainder_source_rows link table for the
+    # step-4 projection of classified catalog rows step 1 could not
+    # turn into sites. Repository-only pending the separately
+    # approved production installation that follows the merge.
+    # Exact Git blob pinned; no production installation or ledger
+    # rewrite is implied by this entry.
+    "20261110213000": (
+        "20261110213000_catalog_remainder_projection_v1.sql",
+        "09073c3a39cdb808abf1dd89e000916e06e8f54e",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
