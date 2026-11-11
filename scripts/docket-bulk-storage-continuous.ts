@@ -13,6 +13,7 @@ import {
   type DocketGuardStore, type DocketImportOutcome
 } from "./docket-bulk-continuous-guard";
 import { BASELINE_MANIFEST_SHA256 } from "./docket-bulk-storage-plan";
+import { isArchiveLocalQuarantineReason } from "./docket-bulk-archive-quarantine";
 
 const PROJECT_REF = "wepxlinwbjrkqdzkqpar";
 const BUCKET = "Docket";
@@ -127,7 +128,7 @@ async function executeSourceOnlyArchive(): Promise<DocketImportOutcome> {
     if (s.selected_count !== 1 || result.processed !== 0 ||
         !/^[a-f0-9]{64}$/.test(result.archive_sha256 || "") ||
         result.archive_sha256 !== s.selected_archive_sha256 ||
-        typeof result.reason_code !== "string" || !result.reason_code.startsWith("docket_bulk_")) {
+        typeof result.reason_code !== "string" || !isArchiveLocalQuarantineReason(result.reason_code)) {
       throw new Error("docket_continuous_invalid_quarantine_receipt");
     }
     // The runner already created and read back the exact-hash, create-only
