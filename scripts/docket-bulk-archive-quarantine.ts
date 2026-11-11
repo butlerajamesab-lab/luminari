@@ -19,6 +19,11 @@ const quarantinableSourceErrors = new Set([
   "docket_bulk_invalid_member_id",
   "docket_bulk_filename_id_mismatch",
   "docket_bulk_bill_identity_mismatch",
+  // Source-object faults are local to the exact manifest archive. A failed
+  // Storage service/list request is NOT in this list and remains a global stop.
+  "docket_storage_ambiguous_or_missing_archive",
+  "docket_storage_object_size_mismatch",
+  "docket_storage_archive_sha256_mismatch",
 ]);
 
 export type ArchiveLocalPreflightFailure = {
