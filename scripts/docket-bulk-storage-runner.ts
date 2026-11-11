@@ -22,6 +22,12 @@ import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { spawn } from "node:child_process";
 import JSZip from "jszip";
+import { createClient } from "@supabase/supabase-js";
+import {
+  archiveQuarantinePath, classifyArchiveLocalPreflightFailure,
+  makeArchiveQuarantine, validateArchiveQuarantine,
+  type ArchiveLocalPreflightFailure, type DocketArchiveQuarantine
+} from "./docket-bulk-archive-quarantine";
 import { create_database_pool } from "../server/pg-config";
 import {
   BASELINE_MANIFEST_SHA256, BASELINE_PILOT_OBJECT, chooseStorageObject,
@@ -73,6 +79,38 @@ if (!storageKey || !databaseUrl ||
 }
 const root = storageUrl + "/storage/v1";
 const headers = { apikey: storageKey, Authorization: "Bearer " + storageKey };
+const docketStorage = createClient(storageUrl, storageKey, {
+  auth: { autoRefreshToken: false, persistSession: false },
+}).storage.from("Docket");
+
+async function readQuarantineRecord(path: string): Promise<unknown> {
+  const { data, error } = await docketStorage.download(path);
+  if (error || !data) throw new Error("docket_quarantine_read_failed: " + path);
+  const bytes = Buffer.from(await data.arrayBuffer());
+  if (bytes.length > 8192) throw new Error("docket_quarantine_oversized_record: " + path);
+  return JSON.parse(bytes.toString("utf8"));
+}
+async function persistArchiveQuarantine(
+  archive: BaselineArchive, reason: ArchiveLocalPreflightFailure,
+  receipts: ReceiptCounts,
+): Promise<DocketArchiveQuarantine> {
+  const record = makeArchiveQuarantine(archive, reason, receipts, new Date().toISOString());
+  const path = archiveQuarantinePath(archive.sha256);
+  const { error } = await docketStorage.upload(
+    path, Buffer.from(JSON.stringify(record) + "\n", "utf8"),
+    { contentType: "application/json", upsert: false },
+  );
+  // A preexisting record is NEVER overwritten. If acknowledgement or
+  // readback fails, retain the global active latch.
+  if (error) throw new Error("docket_quarantine_durable_create_failed: " + path + " " + error.message);
+  const readback = validateArchiveQuarantine(
+    archive, await readQuarantineRecord(path), receipts,
+  );
+  if (JSON.stringify(record) !== JSON.stringify(readback)) {
+    throw new Error("docket_quarantine_readback_mismatch: " + path);
+  }
+  return readback;
+}
 const pool = create_database_pool({ label: "DocketStorage", max: 1, connection_timeout_millis: 10000 });
 
 function sha(bytes: Buffer): string {
@@ -209,6 +247,11 @@ async function assertExistingMemberHashes(entry: BaselineArchive, zipped: string
     }
   }
 }
+class ArchiveLocalPreflightRejection extends Error {
+  constructor(readonly evidence: ArchiveLocalPreflightFailure) {
+    super("docket_archive_local_preflight_rejected: " + evidence.reason_code);
+  }
+}
 async function runCanonicalImporter(manifestFile: string, archiveFile: string,
                                     reportFile: string, apply: boolean): Promise<void> {
   const command = [
@@ -217,10 +260,16 @@ async function runCanonicalImporter(manifestFile: string, archiveFile: string,
     "--report=" + reportFile
   ];
   if (apply) command.push("--apply", "--acknowledge-docket-triggers");
+  let stderrTail = "";
   const exitCode = await new Promise<number>((resolve, reject) => {
     const child = spawn("pnpm", command, {
-      cwd: process.cwd(), stdio: "inherit",
+      cwd: process.cwd(), stdio: ["ignore", "inherit", "pipe"],
       env: { ...process.env, LEGISCAN_API_KEY: "" }
+    });
+    child.stderr?.on("data", (chunk: Buffer) => {
+      const output = chunk.toString("utf8");
+      process.stderr.write(output);
+      stderrTail = (stderrTail + output).slice(-16384);
     });
     child.on("error", reject);
     child.on("exit", (code, signal) => {
@@ -228,7 +277,13 @@ async function runCanonicalImporter(manifestFile: string, archiveFile: string,
       resolve(code ?? 1);
     });
   });
-  if (exitCode !== 0) throw new Error("docket_storage_canonical_cli_failed_exit_" + exitCode);
+  if (exitCode !== 0) {
+    const local = !apply ? classifyArchiveLocalPreflightFailure(stderrTail) : null;
+    if (local) throw new ArchiveLocalPreflightRejection(local);
+    // A generic exit, signal, deployment problem or DB failure cannot be
+    // silently treated as a quarantinable source-member error.
+    throw new Error("docket_storage_canonical_cli_failed_exit_" + exitCode);
+  }
 }
 async function main(): Promise<void> {
   const temporary = await mkdtemp(join(tmpdir(), "docket-storage-"));
@@ -254,10 +309,30 @@ async function main(): Promise<void> {
     const entries = jurisdiction
       ? manifest.archives.filter(x => x.jurisdiction === jurisdiction)
       : manifest.archives;
-    let complete = 0, remaining = 0, processed = 0;
+    let complete = 0, remaining = 0, processed = 0, quarantined = 0;
     const pending: Array<{ entry: BaselineArchive; objectName: string; state: string }> = [];
+    const quarantineObjects = new Set(objects.map(x => x.name));
     for (const source of entries) {
-      const state = receiptState(source, await readCounts(source));
+      const counts = await readCounts(source);
+      const state = receiptState(source, counts);
+      const quarantinePath = archiveQuarantinePath(source.sha256);
+      if (quarantineObjects.has(quarantinePath)) {
+        if (state === "complete") {
+          throw new Error("docket_quarantine_archive_appears_complete_requires_review: " + source.archive);
+        }
+        const evidence = validateArchiveQuarantine(
+          source, await readQuarantineRecord(quarantinePath), counts,
+        );
+        // Quarantined archives are still outstanding, never completed or retried.
+        quarantined++;
+        remaining++;
+        console.log(JSON.stringify({
+          archive: source.archive, receipt_state: "quarantined",
+          source_receipts: counts.total, expected_json: source.json,
+          quarantine_reason: evidence.reason_code,
+        }));
+        continue;
+      }
       if (state === "held") {
         throw new Error("docket_storage_chronology_hold_requires_review: " + source.archive);
       }
@@ -283,8 +358,14 @@ async function main(): Promise<void> {
       }));
     }
     console.log(JSON.stringify({ mode, inventoried: entries.length, complete,
-      remaining, selected_count: Math.min(maxArchives, pending.length) }));
+      remaining, quarantined, selected_count: Math.min(maxArchives, pending.length),
+      selected_archive_sha256: pending[0]?.entry.sha256 || null }));
     if (mode === "plan") return;
+    if (pending.length === 0 && remaining > 0) {
+      console.log(JSON.stringify({ result: "waiting_review", mode,
+        processed: 0, quarantined, remaining }));
+      return;
+    }
     for (const item of pending.slice(0, maxArchives)) {
       const local = join(temporary, item.entry.archive);
       const report = join(temporary, item.entry.jurisdiction + "-preflight.json");
@@ -294,7 +375,28 @@ async function main(): Promise<void> {
         throw new Error("docket_storage_archive_sha256_mismatch: " + item.objectName);
       }
       if (item.state === "partial") await assertExistingMemberHashes(item.entry, local);
-      await runCanonicalImporter(manifestFile, local, report, false);
+      try {
+        await runCanonicalImporter(manifestFile, local, report, false);
+      } catch (error) {
+        if (!(error instanceof ArchiveLocalPreflightRejection) || mode !== "apply") throw error;
+        // The canonical CLI ran with --apply absent; no database writer was
+        // loaded. Check the existing receipts and bill cache before quarantining.
+        const counts = await readCounts(item.entry);
+        if (receiptState(item.entry, counts) !== item.state) {
+          throw new Error("docket_quarantine_preflight_receipt_state_drift");
+        }
+        if (counts.total > 0) {
+          await assertExistingMemberHashes(item.entry, local);
+          await assertBillReceiptCache(item.entry);
+        }
+        const evidence = await persistArchiveQuarantine(item.entry, error.evidence, counts);
+        console.log("DOCKET_SOURCE_ARCHIVE_QUARANTINED " + item.entry.archive +
+          " reason=" + evidence.reason_code + " source_receipts=" + counts.total);
+        console.log(JSON.stringify({ result: "quarantined", mode,
+          processed, archive: item.entry.archive, archive_sha256: item.entry.sha256,
+          reason_code: evidence.reason_code }));
+        return;
+      }
       if (mode === "apply") {
         await assertPreexistingBillIdentities(item.entry, local);
         console.log("APPLY " + item.entry.archive);
