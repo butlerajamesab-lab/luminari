@@ -318,12 +318,68 @@ describe("write builders", () => {
     expect(built.text).toContain("update public.luminari_resource_entities e");
     expect(built.text).toContain("set resource_category = v.primary_category");
     expect(built.text).toContain("e.resource_category is null");
-    expect(built.params[0]).toEqual([row().entity_id]);
-    expect(built.params[1]).toEqual(["housing"]);
-    // memberships only, sorted — the shape the categorized remainder
-    // entities already carry (primary is NOT repeated)
-    expect(built.params[2]).toEqual([["housing", "utilities"]]);
+    // per-row VALUES tuples with flattened params — the step-4
+    // buildEntityInsert shape, NOT parallel unnest arrays
+    expect(built.text).toContain("(values");
+    expect(built.text).toContain("$1::uuid");
+    expect(built.text).toContain("$3::text[]");
+    expect(built.params).toEqual([
+      row().entity_id,
+      "housing",
+      // memberships only, sorted — the shape the categorized
+      // remainder entities already carry (primary is NOT repeated)
+      ["housing", "utilities"],
+    ]);
     expect(buildEntityUpdate([])).toBeNull();
+  });
+
+  // The production --apply failure (2026-11-11, SQLSTATE 42804) was
+  // a param-TYPE bug the SQL-string assertions above could not see:
+  // the memberships rode as ONE text[][] param through unnest(),
+  // which flattens a 2-D array to its scalar element type in a
+  // select list, so the value reaching the text[] column was text.
+  // These tests pin the TYPES of the params handed to pg: flat,
+  // one membership slot per row, each a JS string array. Any return
+  // to an array-of-arrays param fails here before it ships.
+  it("hands pg flat params — membership slots are string arrays, never nested", () => {
+    const built = buildEntityUpdate([
+      row({
+        entity_id: "e-two",
+        memberships: [mem("utilities", "e"), mem("housing", "e")],
+      }),
+      row({ entity_id: "e-none", memberships: [] }),
+      row({
+        entity_id: "e-one",
+        primary_category: "tribal",
+        memberships: [mem("healthcare", "e")],
+      }),
+    ]);
+    expect(built.params).toHaveLength(9);
+    // NO param is an array of arrays — the exact production trap
+    for (const p of built.params) {
+      if (Array.isArray(p)) {
+        for (const el of p) expect(Array.isArray(el)).toBe(false);
+      }
+    }
+    // membership slots (every third param): real JS arrays of
+    // strings — pg serializes each into a text[] value under the
+    // $n::text[] cast; the empty-membership row is a real empty
+    // array, not [[]] or [""]
+    expect(built.params[2]).toEqual(["housing", "utilities"]);
+    expect(built.params[5]).toEqual([]);
+    expect(built.params[8]).toEqual(["healthcare"]);
+    for (const slot of [built.params[2], built.params[5], built.params[8]]) {
+      expect(Array.isArray(slot)).toBe(true);
+      for (const el of slot) expect(typeof el).toBe("string");
+    }
+    // id + primary slots stay scalar
+    expect(built.params[0]).toBe("e-two");
+    expect(built.params[1]).toBe("housing");
+    expect(built.params[6]).toBe("e-one");
+    expect(built.params[7]).toBe("tribal");
+    // the flattened-select-list unnest shape stays out by name
+    expect(built.text).not.toContain("unnest(");
+    expect(built.text).not.toContain("text[][]");
   });
 
   it("pins the ledger columns and vocabularies to the migration that creates the table", () => {

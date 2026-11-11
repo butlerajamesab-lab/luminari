@@ -391,21 +391,42 @@ export function buildLedgerInsert(rows) {
  * tier. service_categories carries the memberships only — the shape
  * the 5 already-categorized remainder entities carry (primary in
  * resource_category, memberships in service_categories).
+ *
+ * Shape: per-row VALUES tuples with FLATTENED params — each row's
+ * memberships ride as ONE JS-array param under a $n::text[] cast,
+ * the step-4 buildEntityInsert pattern for this same column. The
+ * first version instead passed the memberships as a single text[][]
+ * param through unnest($3::text[][]): in a select list, unnest over
+ * a two-dimensional array flattens to the SCALAR element type
+ * (verified live: pg_typeof(unnest('{{a,b},{c,d}}'::text[][])) =
+ * 'text'), so v.memberships was text and the production --apply
+ * failed with SQLSTATE 42804 (service_categories is text[], the
+ * expression was text) — every tier rolled back clean, nothing
+ * written. The 2-D shape was doomed a second way besides: Postgres
+ * array literals require sub-arrays of matching dimensions, and
+ * membership counts vary per row. The tests now pin the param TYPES
+ * (flat params; membership slots are string arrays; no param is an
+ * array of arrays), not just the SQL string.
  */
 export function buildEntityUpdate(rows) {
   if (!rows || rows.length === 0) return null;
-  const params = [
-    rows.map((r) => r.entity_id),
-    rows.map((r) => r.primary_category),
-    rows.map((r) => (r.memberships ?? []).map((m) => m.category).sort()),
-  ];
+  const values = [];
+  const params = [];
+  rows.forEach((r, i) => {
+    const b = i * 3;
+    values.push(`($${b + 1}::uuid,$${b + 2},$${b + 3}::text[])`);
+    params.push(
+      r.entity_id,
+      r.primary_category,
+      (r.memberships ?? []).map((m) => m.category).sort(),
+    );
+  });
   const text = `
     update public.luminari_resource_entities e
        set resource_category = v.primary_category,
            service_categories = v.memberships
-      from (select unnest($1::uuid[]) as resource_entity_id,
-                   unnest($2::text[]) as primary_category,
-                   unnest($3::text[][]) as memberships) v
+      from (values ${values.join(",")})
+        as v(resource_entity_id, primary_category, memberships)
      where e.resource_entity_id = v.resource_entity_id
        and e.resource_category is null`;
   return { text, params };
