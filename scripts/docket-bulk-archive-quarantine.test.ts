@@ -55,6 +55,21 @@ describe("Archive-local quarantine preserves strict failure evidence", () => {
       .toThrow("record_mismatch");
   });
 
+  it("isolates missing and corrupt ZIPs but not Storage outages", () => {
+    for (const reason_code of [
+      "docket_storage_ambiguous_or_missing_archive",
+      "docket_storage_object_size_mismatch",
+      "docket_storage_archive_sha256_mismatch",
+    ]) {
+      const record = makeArchiveQuarantine(archive, {
+        reason_code, member_path: null,
+      }, counts, "2026-11-11T01:02:10Z");
+      expect(validateArchiveQuarantine(archive, record, counts).reason_code).toBe(reason_code);
+    }
+    expect(() => makeArchiveQuarantine(archive, {
+      reason_code: "docket_storage_download_failed", member_path: null,
+    }, counts, "2026-11-11T01:02:10Z")).toThrow("unverified_local_failure");
+  });
   it("can pin previously imported partial receipts but refuses unverified global errors", () => {
     const partial: ReceiptCounts = {
       total: 120, bill: 100, roll_call: 20, person: 0, held: 1, wrong_identity: 0,
