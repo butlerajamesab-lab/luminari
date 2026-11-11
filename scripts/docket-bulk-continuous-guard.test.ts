@@ -82,6 +82,28 @@ describe("Docket one-archive durable stop latch", () => {
     expect(await runOneArchiveGuarded(f.store, async () => { calls++; return {complete:false}; })).toBe("paused");
     expect(calls).toBe(0);
   });
+  it("quarantines one failed archive without leaving a global stop marker", async () => {
+    const f = fakeStore();
+    expect(await runOneArchiveGuarded(f.store, async () => {
+      expect(f.markers.has(DOCKET_ACTIVE_MARKER)).toBe(true);
+      return { complete: false, deferred: "quarantined" };
+    })).toBe("quarantined");
+    expect(f.markers.has(DOCKET_ACTIVE_MARKER)).toBe(false);
+    let calls = 0;
+    expect(await runOneArchiveGuarded(f.store, async () => {
+      calls++;
+      return { complete: false };
+    })).toBe("processed");
+    expect(calls).toBe(1);
+  });
+  it("does not mark the entire manifest complete when only quarantines remain", async () => {
+    const f = fakeStore();
+    expect(await runOneArchiveGuarded(f.store, async () => ({
+      complete: false, deferred: "waiting_review",
+    }))).toBe("waiting_review");
+    expect(f.markers.has(DOCKET_DONE_MARKER)).toBe(false);
+    expect(f.markers.has(DOCKET_ACTIVE_MARKER)).toBe(false);
+  });
   it("stops on marker creation collision before running importer", async () => {
     const f = fakeStore();
     f.store.create = async () => { throw new Error("already_present"); };
