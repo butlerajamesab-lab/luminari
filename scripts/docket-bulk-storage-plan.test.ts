@@ -68,6 +68,13 @@ test("original manifest guard requires 60 unique, fully attributed archival iden
 test("Storage runner is opt-in; existing canonical importer and no paid API calls", () => {
   const source = readFileSync("scripts/docket-bulk-storage-runner.ts", "utf8");
   assert.match(source, /const mode = modeFlags\[0\] \|\| "plan"/);
+  assert.match(source, /validateArchiveQuarantine\(/);
+  assert.match(source, /quarantineSelectedArchive\(/);
+  assert.match(source, /sourceIssue: ArchiveLocalPreflightFailure/);
+  assert.match(source, /pending\.push\(\{ entry: source, objectName, state, sourceIssue \}\)/);
+  assert.match(source, /result: "waiting_review"/);
+  assert.match(source, /result: "quarantined"/);
+
   assert.match(source, /docket_storage_apply_requires_exact_manifest_approval/);
   assert.match(source, /DOCKET_BULK_ARCHIVE_APPLY_APPROVED_SHA256/);
   assert.match(source, /legiscan-bulk-docket-intake\.ts/);
