@@ -4,6 +4,7 @@ import {
   type DocketGuardStore
 } from "./docket-bulk-continuous-guard";
 import { existsSync, readFileSync } from "node:fs";
+import { archiveQuarantinePath } from "./docket-bulk-archive-quarantine";
 
 function fakeStore(existing: string[] = []) {
   const markers = new Set(existing);
@@ -81,6 +82,51 @@ describe("Docket one-archive durable stop latch", () => {
     let calls = 0;
     expect(await runOneArchiveGuarded(f.store, async () => { calls++; return {complete:false}; })).toBe("paused");
     expect(calls).toBe(0);
+  });
+  it("quarantines one failed archive without leaving a global stop marker", async () => {
+    const f = fakeStore();
+    const archivedSha = "a".repeat(64);
+    const quarantinePath = archiveQuarantinePath(archivedSha);
+    expect(await runOneArchiveGuarded(f.store, async () => {
+      expect(f.markers.has(DOCKET_ACTIVE_MARKER)).toBe(true);
+      await f.store.create(quarantinePath, "durable-test-receipt");
+      return { complete: false, deferred: "quarantined", quarantine_sha256: archivedSha };
+    })).toBe("quarantined");
+    expect(f.markers.has(quarantinePath)).toBe(true);
+    expect(f.markers.has(DOCKET_ACTIVE_MARKER)).toBe(false);
+    let calls = 0;
+    expect(await runOneArchiveGuarded(f.store, async () => {
+      calls++;
+      return { complete: false };
+    })).toBe("processed");
+    expect(calls).toBe(1);
+  });
+  it("retains the global marker when claimed quarantine evidence is missing", async () => {
+    const f = fakeStore();
+    await expect(runOneArchiveGuarded(f.store, async () => ({
+      complete: false, deferred: "quarantined", quarantine_sha256: "b".repeat(64),
+    }))).rejects.toThrow("docket_continuous_quarantine_receipt_missing");
+    expect(f.markers.has(DOCKET_ACTIVE_MARKER)).toBe(true);
+  });
+  it("refuses malformed quarantine SHA and contradictory completion outcomes", async () => {
+    const f = fakeStore();
+    await expect(runOneArchiveGuarded(f.store, async () => ({
+      complete: false, deferred: "quarantined", quarantine_sha256: "unknown",
+    }))).rejects.toThrow("docket_quarantine_invalid_archive_sha");
+    expect(f.markers.has(DOCKET_ACTIVE_MARKER)).toBe(true);
+    const second = fakeStore();
+    await expect(runOneArchiveGuarded(second.store, async () => ({
+      complete: true, deferred: "quarantined", quarantine_sha256: "a".repeat(64),
+    }))).rejects.toThrow("docket_continuous_conflicting_completion_disposition");
+    expect(second.markers.has(DOCKET_ACTIVE_MARKER)).toBe(true);
+  });
+  it("does not mark the entire manifest complete when only quarantines remain", async () => {
+    const f = fakeStore();
+    expect(await runOneArchiveGuarded(f.store, async () => ({
+      complete: false, deferred: "waiting_review",
+    }))).toBe("waiting_review");
+    expect(f.markers.has(DOCKET_DONE_MARKER)).toBe(false);
+    expect(f.markers.has(DOCKET_ACTIVE_MARKER)).toBe(false);
   });
   it("stops on marker creation collision before running importer", async () => {
     const f = fakeStore();

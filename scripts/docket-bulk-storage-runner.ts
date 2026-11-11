@@ -22,6 +22,13 @@ import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { spawn } from "node:child_process";
 import JSZip from "jszip";
+import { createClient } from "@supabase/supabase-js";
+import {
+  DOCKET_QUARANTINE_PREFIX, archiveQuarantinePath,
+  classifyArchiveLocalPreflightFailure, classifyArchiveLocalPreapplyFailure,
+  makeArchiveQuarantine, validateArchiveQuarantine,
+  type ArchiveLocalPreflightFailure, type DocketArchiveQuarantine
+} from "./docket-bulk-archive-quarantine";
 import { create_database_pool } from "../server/pg-config";
 import {
   BASELINE_MANIFEST_SHA256, BASELINE_PILOT_OBJECT, chooseStorageObject,
@@ -73,6 +80,38 @@ if (!storageKey || !databaseUrl ||
 }
 const root = storageUrl + "/storage/v1";
 const headers = { apikey: storageKey, Authorization: "Bearer " + storageKey };
+const docketStorage = createClient(storageUrl, storageKey, {
+  auth: { autoRefreshToken: false, persistSession: false },
+}).storage.from("Docket");
+
+async function readQuarantineRecord(path: string): Promise<unknown> {
+  const { data, error } = await docketStorage.download(path);
+  if (error || !data) throw new Error("docket_quarantine_read_failed: " + path);
+  const bytes = Buffer.from(await data.arrayBuffer());
+  if (bytes.length > 8192) throw new Error("docket_quarantine_oversized_record: " + path);
+  return JSON.parse(bytes.toString("utf8"));
+}
+async function persistArchiveQuarantine(
+  archive: BaselineArchive, reason: ArchiveLocalPreflightFailure,
+  receipts: ReceiptCounts,
+): Promise<DocketArchiveQuarantine> {
+  const record = makeArchiveQuarantine(archive, reason, receipts, new Date().toISOString());
+  const path = archiveQuarantinePath(archive.sha256);
+  const { error } = await docketStorage.upload(
+    path, Buffer.from(JSON.stringify(record) + "\n", "utf8"),
+    { contentType: "application/json", upsert: false },
+  );
+  // A preexisting record is NEVER overwritten. If acknowledgement or
+  // readback fails, retain the global active latch.
+  if (error) throw new Error("docket_quarantine_durable_create_failed: " + path + " " + error.message);
+  const readback = validateArchiveQuarantine(
+    archive, await readQuarantineRecord(path), receipts,
+  );
+  if (JSON.stringify(record) !== JSON.stringify(readback)) {
+    throw new Error("docket_quarantine_readback_mismatch: " + path);
+  }
+  return readback;
+}
 const pool = create_database_pool({ label: "DocketStorage", max: 1, connection_timeout_millis: 10000 });
 
 function sha(bytes: Buffer): string {
@@ -92,13 +131,13 @@ async function storageDownload(name: string, output: string): Promise<void> {
   await pipeline(Readable.fromWeb(response.body as any), createWriteStream(output, { flags: "wx" }));
 }
 type StorageObject = { name: string; metadata?: { size?: number | string } };
-async function listObjects(): Promise<StorageObject[]> {
+async function listObjects(prefix = ""): Promise<StorageObject[]> {
   const result: StorageObject[] = [];
   for (let offset = 0; offset < 10000; offset += 100) {
     const response = await fetch(root + "/object/list/Docket", {
       method: "POST",
       headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify({ prefix: "", limit: 100, offset,
+      body: JSON.stringify({ prefix, limit: 100, offset,
         sortBy: { column: "name", order: "asc" } })
     });
     if (!response.ok) throw new Error("docket_storage_list_failed_HTTP_" + response.status);
@@ -209,6 +248,11 @@ async function assertExistingMemberHashes(entry: BaselineArchive, zipped: string
     }
   }
 }
+class ArchiveLocalPreflightRejection extends Error {
+  constructor(readonly evidence: ArchiveLocalPreflightFailure) {
+    super("docket_archive_local_preflight_rejected: " + evidence.reason_code);
+  }
+}
 async function runCanonicalImporter(manifestFile: string, archiveFile: string,
                                     reportFile: string, apply: boolean): Promise<void> {
   const command = [
@@ -217,10 +261,16 @@ async function runCanonicalImporter(manifestFile: string, archiveFile: string,
     "--report=" + reportFile
   ];
   if (apply) command.push("--apply", "--acknowledge-docket-triggers");
+  let stderrTail = "";
   const exitCode = await new Promise<number>((resolve, reject) => {
     const child = spawn("pnpm", command, {
-      cwd: process.cwd(), stdio: "inherit",
+      cwd: process.cwd(), stdio: ["ignore", "inherit", "pipe"],
       env: { ...process.env, LEGISCAN_API_KEY: "" }
+    });
+    child.stderr?.on("data", (chunk: Buffer) => {
+      const output = chunk.toString("utf8");
+      process.stderr.write(output);
+      stderrTail = (stderrTail + output).slice(-16384);
     });
     child.on("error", reject);
     child.on("exit", (code, signal) => {
@@ -228,7 +278,13 @@ async function runCanonicalImporter(manifestFile: string, archiveFile: string,
       resolve(code ?? 1);
     });
   });
-  if (exitCode !== 0) throw new Error("docket_storage_canonical_cli_failed_exit_" + exitCode);
+  if (exitCode !== 0) {
+    const local = !apply ? classifyArchiveLocalPreflightFailure(stderrTail) : null;
+    if (local) throw new ArchiveLocalPreflightRejection(local);
+    // A generic exit, signal, deployment problem or DB failure cannot be
+    // silently treated as a quarantinable source-member error.
+    throw new Error("docket_storage_canonical_cli_failed_exit_" + exitCode);
+  }
 }
 async function main(): Promise<void> {
   const temporary = await mkdtemp(join(tmpdir(), "docket-storage-"));
@@ -254,28 +310,71 @@ async function main(): Promise<void> {
     const entries = jurisdiction
       ? manifest.archives.filter(x => x.jurisdiction === jurisdiction)
       : manifest.archives;
-    let complete = 0, remaining = 0, processed = 0;
-    const pending: Array<{ entry: BaselineArchive; objectName: string; state: string }> = [];
+    let complete = 0, remaining = 0, processed = 0, quarantined = 0;
+    const pending: Array<{
+      entry: BaselineArchive; objectName: string | null; state: string;
+      sourceIssue: ArchiveLocalPreflightFailure | null;
+    }> = [];
+    // Supabase Storage lists folder contents by prefix, not recursively from
+    // the bucket root. A separate bounded listing is mandatory: otherwise a
+    // quarantined ZIP could be selected again on the next scheduled run.
+    const quarantineObjects = new Set(
+      (await listObjects(DOCKET_QUARANTINE_PREFIX)).map(x => x.name)
+    );
     for (const source of entries) {
-      const state = receiptState(source, await readCounts(source));
-      if (state === "held") {
-        throw new Error("docket_storage_chronology_hold_requires_review: " + source.archive);
+      const counts = await readCounts(source);
+      const state = receiptState(source, counts);
+      const quarantinePath = archiveQuarantinePath(source.sha256);
+      if (quarantineObjects.has(quarantinePath) ||
+          quarantineObjects.has(source.sha256 + ".json")) {
+        if (state === "complete") {
+          throw new Error("docket_quarantine_archive_appears_complete_requires_review: " + source.archive);
+        }
+        const evidence = validateArchiveQuarantine(
+          source, await readQuarantineRecord(quarantinePath), counts,
+        );
+        // Quarantined archives are still outstanding, never completed or retried.
+        quarantined++;
+        remaining++;
+        console.log(JSON.stringify({
+          archive: source.archive, receipt_state: "quarantined",
+          source_receipts: counts.total, expected_json: source.json,
+          quarantine_reason: evidence.reason_code,
+        }));
+        continue;
       }
+      // An existing partial archive with held source receipts is an
+      // archive-local review case, not permission to reapply those members.
+      // It will be quarantined after original member-hash reconciliation.
       // First thirteen archives were staged in older batch bundles, not
       // necessarily as standalone Storage objects. Do not demand a second
       // upload for an already-complete, receipt-verified archive.
       let objectName: string | null = null;
+      let sourceIssue: ArchiveLocalPreflightFailure | null = state === "held"
+        ? { reason_code: "docket_storage_unquarantined_partial_holds", member_path: null }
+        : null;
       if (state === "complete") {
         await assertBillReceiptCache(source);
         complete++;
       } else {
-        objectName = chooseStorageObject(source.archive, names);
-        const object = objects.find(x => x.name === objectName)!;
-        if (object.metadata?.size != null && Number(object.metadata.size) !== source.bytes) {
-          throw new Error("docket_storage_object_size_mismatch: " + objectName);
+        try {
+          objectName = chooseStorageObject(source.archive, names);
+        } catch (error) {
+          if (!(error instanceof Error) ||
+              !error.message.startsWith("docket_storage_ambiguous_or_missing_archive:")) throw error;
+          sourceIssue = {
+            reason_code: "docket_storage_ambiguous_or_missing_archive",
+            member_path: null,
+          };
+        }
+        if (objectName) {
+          const object = objects.find(x => x.name === objectName)!;
+          if (object.metadata?.size != null && Number(object.metadata.size) !== source.bytes) {
+            sourceIssue = { reason_code: "docket_storage_object_size_mismatch", member_path: null };
+          }
         }
         remaining++;
-        pending.push({ entry: source, objectName, state });
+        pending.push({ entry: source, objectName, state, sourceIssue });
       }
       console.log(JSON.stringify({
         archive: source.archive, storage_object: objectName,
@@ -283,20 +382,83 @@ async function main(): Promise<void> {
       }));
     }
     console.log(JSON.stringify({ mode, inventoried: entries.length, complete,
-      remaining, selected_count: Math.min(maxArchives, pending.length) }));
+      remaining, quarantined, selected_count: Math.min(maxArchives, pending.length),
+      selected_archive_sha256: pending[0]?.entry.sha256 || null }));
     if (mode === "plan") return;
+    if (pending.length === 0 && remaining > 0) {
+      console.log(JSON.stringify({ result: "waiting_review", mode,
+        processed: 0, quarantined, remaining }));
+      return;
+    }
+    const quarantineSelectedArchive = async (
+      item: (typeof pending)[number], failure: ArchiveLocalPreflightFailure,
+      originalZip: string | null,
+    ): Promise<void> => {
+      if (mode !== "apply") throw new Error("docket_quarantine_requires_apply_mode");
+      const counts = await readCounts(item.entry);
+      if (receiptState(item.entry, counts) !== item.state) {
+        throw new Error("docket_quarantine_source_receipt_state_drift");
+      }
+      if (counts.total > 0) {
+        // A partial archive can be isolated ONLY if every existing member
+        // hash and cache identity is reconciled against the exact original ZIP.
+        if (!originalZip) throw new Error("docket_quarantine_partial_missing_original");
+        await assertExistingMemberHashes(item.entry, originalZip);
+        await assertBillReceiptCache(item.entry);
+      }
+      const evidence = await persistArchiveQuarantine(item.entry, failure, counts);
+      console.log("DOCKET_SOURCE_ARCHIVE_QUARANTINED " + item.entry.archive +
+        " reason=" + evidence.reason_code + " source_receipts=" + counts.total);
+      console.log(JSON.stringify({ result: "quarantined", mode,
+        processed, archive: item.entry.archive, archive_sha256: item.entry.sha256,
+        reason_code: evidence.reason_code }));
+    };
     for (const item of pending.slice(0, maxArchives)) {
       const local = join(temporary, item.entry.archive);
       const report = join(temporary, item.entry.jurisdiction + "-preflight.json");
       console.log("VALIDATE " + item.entry.archive);
+      if (item.sourceIssue) {
+        if (item.state === "held" && item.sourceIssue.reason_code ===
+            "docket_storage_unquarantined_partial_holds" && item.objectName) {
+          await storageDownload(item.objectName, local);
+          if ((await fileHash(local)) !== item.entry.sha256) {
+            throw new Error("docket_quarantine_partial_archive_sha_mismatch");
+          }
+          await quarantineSelectedArchive(item, item.sourceIssue, local);
+        } else {
+          // If partial receipts exist but the original ZIP is unavailable or
+          // corrupt, the global latch must remain until source proof is restored.
+          await quarantineSelectedArchive(item, item.sourceIssue, null);
+        }
+        return;
+      }
+      if (!item.objectName) throw new Error("docket_storage_selected_archive_object_missing");
       await storageDownload(item.objectName, local);
       if ((await fileHash(local)) !== item.entry.sha256) {
-        throw new Error("docket_storage_archive_sha256_mismatch: " + item.objectName);
+        await quarantineSelectedArchive(item,
+          { reason_code: "docket_storage_archive_sha256_mismatch", member_path: null }, null);
+        return;
       }
       if (item.state === "partial") await assertExistingMemberHashes(item.entry, local);
-      await runCanonicalImporter(manifestFile, local, report, false);
+      try {
+        await runCanonicalImporter(manifestFile, local, report, false);
+      } catch (error) {
+        if (!(error instanceof ArchiveLocalPreflightRejection) || mode !== "apply") throw error;
+        // The canonical CLI ran without --apply; no database writer was loaded.
+        await quarantineSelectedArchive(item, error.evidence, local);
+        return;
+      }
       if (mode === "apply") {
-        await assertPreexistingBillIdentities(item.entry, local);
+        try {
+          await assertPreexistingBillIdentities(item.entry, local);
+        } catch (error) {
+          const localCause = classifyArchiveLocalPreapplyFailure(error);
+          if (!localCause) throw error;
+          // Identity check performs zero source writes and cannot overwrite
+          // existing Docket identities; preserve its exact failure receipt.
+          await quarantineSelectedArchive(item, localCause, local);
+          return;
+        }
         console.log("APPLY " + item.entry.archive);
         await runCanonicalImporter(manifestFile, local,
           join(temporary, item.entry.jurisdiction + "-apply.json"), true);

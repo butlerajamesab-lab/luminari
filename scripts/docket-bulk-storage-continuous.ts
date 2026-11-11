@@ -13,6 +13,7 @@ import {
   type DocketGuardStore, type DocketImportOutcome
 } from "./docket-bulk-continuous-guard";
 import { BASELINE_MANIFEST_SHA256 } from "./docket-bulk-storage-plan";
+import { isArchiveLocalQuarantineReason } from "./docket-bulk-archive-quarantine";
 
 const PROJECT_REF = "wepxlinwbjrkqdzkqpar";
 const BUCKET = "Docket";
@@ -63,8 +64,12 @@ async function executeSourceOnlyArchive(): Promise<DocketImportOutcome> {
     "exec", "tsx", "scripts/docket-bulk-storage-runner.ts",
     "--apply", "--acknowledge-docket-triggers", "--max-archives=1",
   ];
-  let summary: { mode: string; inventoried: number; remaining: number; selected_count: number } | null = null;
-  let resultReported = false;
+  type Summary = { mode: string; inventoried: number; remaining: number;
+    quarantined: number; selected_count: number; selected_archive_sha256: string | null };
+  type SourceResult = { result: "complete" | "quarantined" | "waiting_review"; mode: string;
+    processed: number; archive_sha256?: string; reason_code?: string };
+  let summary: Summary | null = null;
+  let sourceResult: SourceResult | null = null;
   const code = await new Promise<number>((resolve, reject) => {
     const child = spawn("pnpm", args, {
       cwd: process.cwd(),
@@ -78,12 +83,13 @@ async function executeSourceOnlyArchive(): Promise<DocketImportOutcome> {
         if (item && typeof item === "object" && item.mode === "apply" &&
             Number.isInteger(item.inventoried) &&
             Number.isInteger(item.remaining) &&
+            Number.isInteger(item.quarantined) &&
             Number.isInteger(item.selected_count)) {
-          summary = item;
+          summary = item as Summary;
         }
-        if (item?.result === "complete" && item.mode === "apply" &&
-            Number.isInteger(item.processed)) {
-          resultReported = true;
+        if (["complete", "quarantined", "waiting_review"].includes(item?.result) &&
+            item.mode === "apply" && Number.isInteger(item.processed)) {
+          sourceResult = item as SourceResult;
         }
       } catch { /* Ordinary text logs are allowed; do not reinterpret them. */ }
     };
@@ -106,14 +112,39 @@ async function executeSourceOnlyArchive(): Promise<DocketImportOutcome> {
       resolve(code ?? 1);
     });
   });
-  if (code !== 0 || !resultReported || !summary) {
+  if (code !== 0 || !sourceResult || !summary) {
     throw new Error("docket_continuous_source_runner_failed_or_missing_receipts_" + code);
   }
-  const s = summary as { mode: string; inventoried: number; remaining: number; selected_count: number };
-  if (s.inventoried !== 60 || s.remaining < 0 || s.selected_count > 1 ||
-      (s.remaining > 0 && s.selected_count !== 1) ||
-      (s.remaining === 0 && s.selected_count !== 0)) {
+  const s = summary as Summary;
+  const result = sourceResult as SourceResult;
+  if (s.inventoried !== 60 || s.remaining < 0 || s.quarantined < 0 ||
+      s.quarantined > s.remaining || s.selected_count < 0 || s.selected_count > 1 ||
+      (s.remaining === 0 && (s.selected_count !== 0 || s.quarantined !== 0)) ||
+      (s.remaining > s.quarantined && s.selected_count !== 1) ||
+      (s.remaining === s.quarantined && s.selected_count !== 0)) {
     throw new Error("docket_continuous_unexpected_archive_selection");
+  }
+  if (result.result === "quarantined") {
+    if (s.selected_count !== 1 || result.processed !== 0 ||
+        !/^[a-f0-9]{64}$/.test(result.archive_sha256 || "") ||
+        result.archive_sha256 !== s.selected_archive_sha256 ||
+        typeof result.reason_code !== "string" || !isArchiveLocalQuarantineReason(result.reason_code)) {
+      throw new Error("docket_continuous_invalid_quarantine_receipt");
+    }
+    // The runner already created and read back the exact-hash, create-only
+    // quarantine receipt before reporting this outcome.
+    return { complete: false, deferred: "quarantined", quarantine_sha256: result.archive_sha256 };
+  }
+  if (result.result === "waiting_review") {
+    if (s.remaining === 0 || s.selected_count !== 0 ||
+        s.remaining !== s.quarantined || result.processed !== 0) {
+      throw new Error("docket_continuous_invalid_waiting_review_receipt");
+    }
+    return { complete: false, deferred: "waiting_review" };
+  }
+  if (result.processed !== s.selected_count || result.processed < 0 ||
+      result.processed > 1) {
+    throw new Error("docket_continuous_missing_verified_archive");
   }
   return { complete: s.remaining === 0 };
 }
@@ -123,6 +154,10 @@ if (result === "paused") {
   console.error("DOCKET_SOURCE_IMPORT_PAUSED: active marker remains; inspect last run and source receipts before explicit clearance.");
 } else if (result === "complete") {
   console.log("DOCKET_SOURCE_IMPORT_ALL_60_COMPLETE: future scheduled runs will be no-op.");
+} else if (result === "quarantined") {
+  console.error("DOCKET_SOURCE_ARCHIVE_QUARANTINED: durable archive-specific proof retained; next eligible ZIP can proceed.");
+} else if (result === "waiting_review") {
+  console.log("DOCKET_SOURCE_IMPORT_WAITING_REVIEW: all remaining ZIPs quarantined; no automatic retries.");
 } else {
   console.log("DOCKET_SOURCE_IMPORT_ONE_ARCHIVE_VERIFIED: next scheduled run may proceed.");
 }
