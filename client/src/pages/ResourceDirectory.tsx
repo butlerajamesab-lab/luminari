@@ -27,6 +27,12 @@ import {
 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
+import {
+  buildDirectorySearchInput,
+  canonicalDirectoryCategory,
+  humanErrorMessage,
+  visibleDirectoryCategories,
+} from "@/lib/directory-search";
 import { Link, useLocation } from "wouter";
 
 type Contact = {
@@ -564,19 +570,25 @@ export default function ResourceDirectory() {
   const [jurisdiction, set_jurisdiction] = useState(
     initial_jurisdiction === "USVI" ? "VI" : initial_jurisdiction,
   );
+  // Only a canonical category key may enter filter state. The summary
+  // payload's category list is derived from every distinct value stored
+  // in the corpus — including legacy labels and free-text section
+  // composites that are not categories — and a shared URL can carry
+  // anything. Non-canonical values are dropped here and again when the
+  // search input is built (see @/lib/directory-search).
   const [category, setCategory] = useState(
-    initial_params.get("category") || "",
+    () => canonicalDirectoryCategory(initial_params.get("category")) ?? "",
   );
   const [page, setPage] = useState(0);
 
   const directoryQuery = trpc.resourceDirectory.search.useQuery(
-    {
+    buildDirectorySearchInput({
       query: query || undefined,
       jurisdiction: jurisdiction || undefined,
-      category: category || undefined,
+      category,
       limit: PAGE_SIZE,
       offset: page * PAGE_SIZE,
-    },
+    }),
     {
       staleTime: 60 * 1000,
       refetchOnWindowFocus: false,
@@ -594,7 +606,7 @@ export default function ResourceDirectory() {
   const summary = summaryQuery.data as DirectorySummary | undefined;
   const searchResult = directoryQuery.data as SearchResponse | undefined;
   const jurisdictionOptions = summary?.jurisdictions ?? [];
-  const categoryOptions = summary?.categories ?? [];
+  const categoryOptions = visibleDirectoryCategories(summary?.categories);
   const hasFilters = Boolean(query || jurisdiction || category);
   const exactVisibleTotal = !hasFilters
     ? summary?.total_resources
@@ -626,7 +638,11 @@ export default function ResourceDirectory() {
   }
 
   function chooseCategory(nextCategory: string) {
-    setCategory((current) => (current === nextCategory ? "" : nextCategory));
+    setCategory((current) =>
+      current === nextCategory
+        ? ""
+        : (canonicalDirectoryCategory(nextCategory) ?? ""),
+    );
     setPage(0);
   }
 
@@ -886,7 +902,10 @@ export default function ResourceDirectory() {
                   The directory could not load.
                 </h3>
                 <p className="mt-2 text-sm text-rose-100/70">
-                  {directoryQuery.error.message}
+                  {humanErrorMessage(
+                    directoryQuery.error,
+                    "The search could not be completed. Try again, or clear the filters and search once more.",
+                  )}
                 </p>
                 <button
                   type="button"
