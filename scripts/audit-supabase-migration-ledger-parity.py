@@ -433,7 +433,7 @@ APPROVED_REPOSITORY_ONLY = {
     # entry.
     "20261110260000": (
         "20261110260000_title_hygiene_ledger_v1.sql",
-        "",
+        "8db8db82096920337091d5c0bef645905a293e47",
     ),
 }
 
