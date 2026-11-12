@@ -203,6 +203,42 @@ describe("unified catalog query contracts", () => {
     expect(sql).toContain("(select count(*)::int from filtered) as total");
   });
 
+  it("excludes publication-retired entities from held_for_naming so the panel reconciles", () => {
+    // Regression pin (2026-11-11): the held subquery originally tallied
+    // every name-failing entity row with no publication-resolution
+    // filter, so bundle wave 1's 40 retired shells stayed counted as
+    // held (panel 1,126) after they had left the substantive held
+    // population (1,086). The subquery must apply the corpus CTE's own
+    // resolution exclusion alongside the negated name test.
+    const sql = build_unified_summary_sql();
+    const alias_at = sql.indexOf("as held_for_naming_count");
+    expect(alias_at).toBeGreaterThan(0);
+    const subquery_start = sql.lastIndexOf(
+      "(select count(*)::int from public.luminari_resource_entities e",
+      alias_at,
+    );
+    expect(subquery_start).toBeGreaterThan(0);
+    const held_subquery = sql.slice(subquery_start, alias_at);
+    expect(held_subquery).toContain(
+      "left join public.luminari_resource_publication_resolutions p",
+    );
+    expect(held_subquery).toContain(
+      "coalesce(p.publication_status, 'active') <> 'inactive'",
+    );
+    expect(held_subquery).toContain("and not (");
+    // The sibling inactive_resources count is intentionally the mirror
+    // image — resolution-based, name-positive — and must not be
+    // "fixed" into the held shape.
+    const inactive_alias_at = sql.indexOf("as inactive_resources");
+    const inactive_start = sql.lastIndexOf(
+      "(select count(*)::int from public.luminari_resource_entities e",
+      inactive_alias_at,
+    );
+    const inactive_subquery = sql.slice(inactive_start, inactive_alias_at);
+    expect(inactive_subquery).toContain("p.publication_status = 'inactive'");
+    expect(inactive_subquery).not.toContain("and not (");
+  });
+
   it("keeps the workbook storage class out of the category dimension", () => {
     expect(build_unified_summary_sql()).toContain(
       "m.category_key <> 'workbook_record'",
