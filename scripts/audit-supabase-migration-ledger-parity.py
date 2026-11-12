@@ -421,6 +421,11 @@ APPROVED_REPOSITORY_ONLY = {
         "20261110240000_bundle_decomposition_v1.sql",
         "2ea8bffbe6d9aa6f8d928ee8217fed807a847778",
     ),
+    # Step-3 wave A pin ledger (creates luminari_step3_wavea_pins only).
+    "20261110250000": (
+        "20261110250000_step3_wavea_ledger_v1.sql",
+        "d4a6675c4a6e4796251fba8ce16a9b0f34a4e9f5",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
