@@ -75,6 +75,79 @@ describe("person-facing name guard", () => {
     expect(sql).toContain("(^|[-_])enriched([-_]|$)");
     expect(sql).not.toContain("!~* 'enriched'");
   });
+
+  it("rejects the title-hygiene shapes the 2026-11-11 census measured", () => {
+    // ZIP code baked into the title (class b)
+    expect(
+      is_human_display_name("08625 — New Jersey Department of Human Services"),
+    ).toBe(false);
+    // Serialized object stored as a title (class c)
+    expect(
+      is_human_display_name(
+        "{'english': 'Guam Behavioral Health and Wellness Center', 'local': 'x'}",
+      ),
+    ).toBe(false);
+    // Workbook bracket codes, hyphen / slug / citation forms (class d)
+    expect(is_human_display_name("ACLU of Guam [ACLU-GU] ★")).toBe(false);
+    expect(is_human_display_name("211 Connecticut [211-CT] ★")).toBe(false);
+    expect(
+      is_human_display_name(
+        "U.S. District Court — District of New Hampshire (Concord) [D.NH] ★",
+      ),
+    ).toBe(false);
+    // Editorial process text (class d)
+    expect(
+      is_human_display_name(
+        "Bazelon Center [ADV-BAZELON-SUD] PARTIAL — verify remaining fields",
+      ),
+    ).toBe(false);
+    expect(
+      is_human_display_name("State Programs — CRITICAL: FL Opted Out"),
+    ).toBe(false);
+    expect(
+      is_human_display_name("NEDA -- WARNING: HELPLINE PERMANENTLY CLOSED"),
+    ).toBe(false);
+    // Street address as a title (class a)
+    expect(
+      is_human_display_name("10225 Grand Avenue, Franklin Park, IL 60131"),
+    ).toBe(false);
+    // Phone-leading contact line (class e, leading form)
+    expect(is_human_display_name("1-800-QUIT-NOW (Quitlines)")).toBe(false);
+  });
+
+  it("keeps real names the hygiene clauses could over-match", () => {
+    // 'way' inside a word is not a street word.
+    expect(
+      is_human_display_name(
+        "603 Legal Aid — Statewide Centralized Intake Gateway",
+      ),
+    ).toBe(true);
+    expect(is_human_display_name("800 West Broadway")).toBe(true);
+    // A number inside a name is not a phone-leading title.
+    expect(
+      is_human_display_name(
+        "National Network of Tobacco Cessation Quitlines (1-800-QUIT-NOW)",
+      ),
+    ).toBe(true);
+    // A bracketed qualifier with spaces is content, not a workbook code.
+    expect(
+      is_human_display_name("Aria Community Health Center Hanford 103 [Wee Dental]"),
+    ).toBe(true);
+    // Repaired titles pass.
+    expect(is_human_display_name("ACLU of Guam")).toBe(true);
+    expect(
+      is_human_display_name("New Jersey Department of Human Services (DMHAS)"),
+    ).toBe(true);
+  });
+
+  it("carries the hygiene clauses in the SQL twin", () => {
+    const sql = person_facing_name_sql("e.resource_name");
+    expect(sql).toContain("[0-9]{5}(-[0-9]{4})?");
+    expect(sql).toContain("\\[[A-Za-z0-9][A-Za-z0-9.-]*\\]");
+    expect(sql).toContain("verify remaining fields");
+    expect(sql).toContain("warning:");
+    expect(sql).toContain("1-[0-9]{3}-[A-Z0-9-]+");
+  });
 });
 
 describe("contact type-fidelity guards", () => {
@@ -228,7 +301,11 @@ describe("unified catalog query contracts", () => {
     expect(held_subquery).toContain("and not (");
     // The sibling inactive_resources count is intentionally the mirror
     // image — resolution-based, name-positive — and must not be
-    // "fixed" into the held shape.
+    // "fixed" into the held shape. The name test itself now carries
+    // one internal "and not (" (the address sub-clause of the widened
+    // title-hygiene test, 2026-11-12), so the pin is the CALL SITE:
+    // the inactive count must apply the helper positively and never
+    // negate the whole helper the way the held count does.
     const inactive_alias_at = sql.indexOf("as inactive_resources");
     const inactive_start = sql.lastIndexOf(
       "(select count(*)::int from public.luminari_resource_entities e",
@@ -236,7 +313,12 @@ describe("unified catalog query contracts", () => {
     );
     const inactive_subquery = sql.slice(inactive_start, inactive_alias_at);
     expect(inactive_subquery).toContain("p.publication_status = 'inactive'");
-    expect(inactive_subquery).not.toContain("and not (");
+    expect(inactive_subquery).toContain(
+      "and (\n    e.resource_name is not null",
+    );
+    expect(inactive_subquery).not.toContain(
+      "and not (\n    e.resource_name is not null",
+    );
   });
 
   it("keeps the workbook storage class out of the category dimension", () => {
