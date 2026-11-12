@@ -282,8 +282,18 @@ export function build_unified_summary_sql(): string {
             on p.resource_entity_id = e.resource_entity_id
           where p.publication_status = 'inactive'
             and ${person_facing_name_sql("e.resource_name")}) as inactive_resources,
+        -- Held for naming counts the same population the corpus rule
+        -- defines, minus its name clause: entities whose name fails the
+        -- person-facing test AND that are not publication-retired. The
+        -- resolution exclusion mirrors the corpus CTE — without it the
+        -- count also tallied retired records (bundle wave 1's 40 shells,
+        -- 2026-11-11), which are neither in the corpus nor substantively
+        -- held, and the panel's numbers stopped reconciling.
         (select count(*)::int from public.luminari_resource_entities e
-          where not ${person_facing_name_sql("e.resource_name")}) as held_for_naming_count,
+          left join public.luminari_resource_publication_resolutions p
+            on p.resource_entity_id = e.resource_entity_id
+          where coalesce(p.publication_status, 'active') <> 'inactive'
+            and not ${person_facing_name_sql("e.resource_name")}) as held_for_naming_count,
         (select count(distinct jurisdiction_code)::int from corpus) as jurisdiction_count,
         (select count(*)::int from category_rows) as category_count,
         (select count(*)::int from corpus where resource_type = 'program') as program_count
