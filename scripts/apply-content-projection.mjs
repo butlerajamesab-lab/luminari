@@ -33,7 +33,13 @@
 //   - Drift guard: a text field is written only when its CURRENT
 //     value is still null/blank at write time (the wave never
 //     overwrites); a contact type is minted only for entities
-//     that still have no contact point of that type. Counts are
+//     that still have no contact point of that type — re-checked
+//     INSIDE the write transaction, because the plan was computed
+//     minutes earlier against a state that may have moved.
+//     Applies are serialized with a transaction-scoped advisory
+//     lock so two overlapping runs cannot interleave; the second
+//     run's re-check then sees the first run's points and rolls
+//     back on drift instead of duplicating them. Counts are
 //     verified per kind; any mismatch rolls the transaction back.
 //   - Write order: ledger rows into
 //     public.luminari_content_projection_repairs FIRST
@@ -440,6 +446,41 @@ async function buildPlan(client) {
 }
 
 // ---------------------------------------------------------------------------
+// Apply serialization + drift recheck (pure parts unit-tested)
+// ---------------------------------------------------------------------------
+
+/** Advisory-lock keys serializing concurrent applies of this repair. */
+export const APPLY_LOCK_KEY_1 = 20261112;
+export const APPLY_LOCK_KEY_2 = 270000;
+
+/** Take the apply lock for the current transaction (released at commit/rollback). */
+export async function acquireApplyLock(client) {
+  await client.query("select pg_advisory_xact_lock($1, $2)", [
+    APPLY_LOCK_KEY_1,
+    APPLY_LOCK_KEY_2,
+  ]);
+}
+
+/**
+ * Planned contact mints whose entity has SINCE gained a contact
+ * point of the same type (a concurrent apply or another writer
+ * landed first). Any drift aborts the contact transaction: the
+ * plan was computed against a state that no longer holds, and
+ * inserting anyway would serve duplicate points — the contact
+ * table carries no entity/type/value uniqueness constraint.
+ */
+export function contactDrift(contactMints, existingTypesByEntity) {
+  const drift = [];
+  for (const m of contactMints ?? []) {
+    const existing = existingTypesByEntity?.get(m.entity_id);
+    if (existing && existing.has(m.contact_type)) {
+      drift.push({ entity_id: m.entity_id, contact_type: m.contact_type });
+    }
+  }
+  return drift;
+}
+
+// ---------------------------------------------------------------------------
 // Apply (one transaction per action kind; ledger first)
 // ---------------------------------------------------------------------------
 
@@ -448,6 +489,7 @@ async function applyTextSets(client, textSets, entityById) {
   let updated = 0;
   await client.query("begin");
   try {
+    await acquireApplyLock(client);
     const ledgerRows = textSets.map((t) =>
       ledgerRowForTextSet(t, entityById.get(t.entity_id)?.[t.field] ?? null),
     );
@@ -480,6 +522,19 @@ async function applyContactMints(client, contactMints, entityById) {
   let inserted = 0;
   await client.query("begin");
   try {
+    await acquireApplyLock(client);
+    const drift = contactDrift(
+      contactMints,
+      await loadExistingTypes(
+        client,
+        [...new Set(contactMints.map((m) => m.entity_id))],
+      ),
+    );
+    if (drift.length) {
+      throw new Error(
+        `contact mints: ${drift.length} planned point(s) drifted — an entity already has that contact type at write time (first: ${drift[0].entity_id} / ${drift[0].contact_type}); a concurrent writer landed first; transaction rolled back`,
+      );
+    }
     for (const batch of chunk(contactMints.map(ledgerRowForContactMint), 500)) {
       const built = buildLedgerInsert(batch);
       ledger += (await client.query(built.text, built.params)).rowCount;
@@ -508,6 +563,7 @@ async function applyRecords(client, helds, rejections) {
   let ledger = 0;
   await client.query("begin");
   try {
+    await acquireApplyLock(client);
     const rows = [
       ...helds.map(ledgerRowForHeld),
       ...rejections.map(ledgerRowForRejection),

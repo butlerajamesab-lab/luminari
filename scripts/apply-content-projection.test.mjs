@@ -12,6 +12,10 @@ import {
   buildLedgerInsert,
   buildTextUpdate,
   buildContactInsert,
+  APPLY_LOCK_KEY_1,
+  APPLY_LOCK_KEY_2,
+  acquireApplyLock,
+  contactDrift,
 } from "./apply-content-projection.mjs";
 
 const E1 = "11111111-1111-1111-1111-111111111111";
@@ -167,5 +171,45 @@ describe("write builders", () => {
     expect(buildLedgerInsert([])).toBeNull();
     expect(buildTextUpdate("description", [])).toBeNull();
     expect(buildContactInsert([], new Map())).toBeNull();
+  });
+});
+
+describe("apply serialization + contact drift recheck", () => {
+  it("takes the transaction-scoped advisory lock with the pinned keys", async () => {
+    const calls = [];
+    const fakeClient = {
+      query: async (text, params) => {
+        calls.push({ text, params });
+        return { rows: [], rowCount: 0 };
+      },
+    };
+    await acquireApplyLock(fakeClient);
+    expect(calls).toHaveLength(1);
+    expect(calls[0].text).toContain("pg_advisory_xact_lock");
+    expect(calls[0].params).toEqual([APPLY_LOCK_KEY_1, APPLY_LOCK_KEY_2]);
+    expect(Number.isInteger(APPLY_LOCK_KEY_1)).toBe(true);
+    expect(Number.isInteger(APPLY_LOCK_KEY_2)).toBe(true);
+  });
+  it("flags a planned mint whose type appeared after planning", () => {
+    const existing = new Map([[E1, new Set(["phone"])]]);
+    expect(contactDrift([mint], existing)).toEqual([
+      { entity_id: E1, contact_type: "phone" },
+    ]);
+  });
+  it("passes when the entity still lacks every planned type", () => {
+    const existing = new Map([[E1, new Set(["email"])]]);
+    expect(contactDrift([mint], existing)).toEqual([]);
+    expect(contactDrift([mint], new Map())).toEqual([]);
+    expect(contactDrift([], existing)).toEqual([]);
+  });
+  it("flags only the drifted mints in a mixed plan", () => {
+    const websiteMint = { ...mint, entity_id: E2, contact_type: "website" };
+    const existing = new Map([
+      [E1, new Set(["phone"])],
+      [E2, new Set(["email"])],
+    ]);
+    expect(contactDrift([mint, websiteMint], existing)).toEqual([
+      { entity_id: E1, contact_type: "phone" },
+    ]);
   });
 });
