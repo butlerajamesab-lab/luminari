@@ -435,6 +435,15 @@ APPROVED_REPOSITORY_ONLY = {
         "20261110260000_title_hygiene_ledger_v1.sql",
         "8db8db82096920337091d5c0bef645905a293e47",
     ),
+    # Content projection ledger (creates
+    # luminari_content_projection_repairs only). Repository-only
+    # pending the separately approved production installation that
+    # follows the merge. Exact Git blob pinned; no production
+    # installation or ledger rewrite is implied by this entry.
+    "20261110270000": (
+        "20261110270000_content_projection_ledger_v1.sql",
+        "1e3a13af4194ef14ae0de43426ad5614ab8e550c",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
