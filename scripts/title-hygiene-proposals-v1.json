@@ -1,0 +1,5017 @@
+{
+ "repair_version": "title_hygiene_v1",
+ "plan_manifest_sha256": "35c6531012ccf363ca51633eec4b00a0960296f7a115447073a953c039c7bc32",
+ "renames": [
+  {
+   "entity_id": "1a7b919d-c27d-12d3-d652-45a303915d33",
+   "census_class": "b",
+   "old_name": "02108 — Massachusetts Department of Public Health Bureau of Substance Addiction Services (BSAS)",
+   "new_name": "Massachusetts Department of Public Health Bureau of Substance Addiction Services (BSAS)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "712a7bea-5fa7-2301-acdb-19c05de12eea",
+   "census_class": "b",
+   "old_name": "02920 — Rhode Island Department of Behavioral Healthcare, Developmental Disabilities and Hospitals (BHDDH)",
+   "new_name": "Rhode Island Department of Behavioral Healthcare, Developmental Disabilities and Hospitals (BHDDH)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "57655c6a-a640-d53a-a590-7e42db4f1f68",
+   "census_class": "b",
+   "old_name": "03301 — New Hampshire Department of Health and Human Services, Bureau of Drug and Alcohol Services (BDAS)",
+   "new_name": "New Hampshire Department of Health and Human Services, Bureau of Drug and Alcohol Services (BDAS)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "9651280f-2c32-c6b2-e5df-df2f04bbcff1",
+   "census_class": "b",
+   "old_name": "05671 — Vermont Department of Health, Division of Substance Use Programs (DSU)",
+   "new_name": "Vermont Department of Health, Division of Substance Use Programs (DSU)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "ce5e6193-9646-6fe7-9d5e-2ec18197170c",
+   "census_class": "b",
+   "old_name": "06134 — Connecticut Department of Mental Health and Addiction Services (DMHAS)",
+   "new_name": "Connecticut Department of Mental Health and Addiction Services (DMHAS)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "6e6605c2-2862-daae-9b70-dca503a62937",
+   "census_class": "b",
+   "old_name": "08625 — New Jersey Department of Human Services, Division of Mental Health and Addiction Services (DMHAS)",
+   "new_name": "New Jersey Department of Human Services, Division of Mental Health and Addiction Services (DMHAS)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "d32876af-4285-c27a-5e02-129518c39fb4",
+   "census_class": "b",
+   "old_name": "12203-3526 — New York State Office of Addiction Services and Supports (OASAS)",
+   "new_name": "New York State Office of Addiction Services and Supports (OASAS)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "8d95e6ca-aef8-4e41-e6ef-c9c60a0da76e",
+   "census_class": "b",
+   "old_name": "17110 — Pennsylvania Department of Drug and Alcohol Programs (DDAP)",
+   "new_name": "Pennsylvania Department of Drug and Alcohol Programs (DDAP)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "427743b5-d0a4-98e8-b421-77b92dbe5a98",
+   "census_class": "b",
+   "old_name": "19720 — Delaware Division of Substance Abuse and Mental Health (DSAMH)",
+   "new_name": "Delaware Division of Substance Abuse and Mental Health (DSAMH)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "7e9b409c-7ecd-0205-6007-4deb78873c93",
+   "census_class": "b",
+   "old_name": "20002 — District of Columbia Department of Behavioral Health (DBH)",
+   "new_name": "District of Columbia Department of Behavioral Health (DBH)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "babe2464-0886-0e0f-252a-f3a3610bef47",
+   "census_class": "b",
+   "old_name": "21228 — Maryland Behavioral Health Administration (BHA)",
+   "new_name": "Maryland Behavioral Health Administration (BHA)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "43fb9854-38f9-0fa6-2d5d-eb5afa4b0ee5",
+   "census_class": "b",
+   "old_name": "23218-1797 — Virginia Department of Behavioral Health and Developmental Services (DBHDS)",
+   "new_name": "Virginia Department of Behavioral Health and Developmental Services (DBHDS)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "5924e52a-6f9a-9933-c98c-67ca2b524719",
+   "census_class": "b",
+   "old_name": "25301 — West Virginia Department of Human Services Bureau for Behavioral Health",
+   "new_name": "West Virginia Department of Human Services Bureau for Behavioral Health",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "d32a818e-a18a-8bf0-beba-b36f41546208",
+   "census_class": "b",
+   "old_name": "27699-3001 — North Carolina Department of Health and Human Services Division of Mental Health, Developmental Disabilities, and Substance Use Services (DMHDDSUS)",
+   "new_name": "North Carolina Department of Health and Human Services Division of Mental Health, Developmental Disabilities, and Substance Use Services (DMHDDSUS)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "65bdfdba-42cf-0d38-3689-7a2ea890c01b",
+   "census_class": "b",
+   "old_name": "29033 — South Carolina Department of Behavioral Health and Developmental Disabilities (BHDD), Office of Substance Use Services (OSUS)",
+   "new_name": "South Carolina Department of Behavioral Health and Developmental Disabilities (BHDD), Office of Substance Use Services (OSUS)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "d5d6b43f-837c-0fa5-f930-3bf5c9903d9d",
+   "census_class": "b",
+   "old_name": "30334 — Georgia Department of Behavioral Health and Developmental Disabilities (DBHDD), Division of Behavioral Health, Office of Addictive Diseases",
+   "new_name": "Georgia Department of Behavioral Health and Developmental Disabilities (DBHDD), Division of Behavioral Health, Office of Addictive Diseases",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "d3f6c368-3869-f3d9-09d5-5915ee8b72a8",
+   "census_class": "b",
+   "old_name": "36130 — Alabama Department of Mental Health, Division of Mental Health and Substance Use Services",
+   "new_name": "Alabama Department of Mental Health, Division of Mental Health and Substance Use Services",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "11cd0e5f-e3d4-eb8e-64ea-7d6ee2868b97",
+   "census_class": "b",
+   "old_name": "39201 — Mississippi Department of Mental Health, Bureau of Behavioral Health Services (formerly Bureau of Alcohol and Drug Services)",
+   "new_name": "Mississippi Department of Mental Health, Bureau of Behavioral Health Services (formerly Bureau of Alcohol and Drug Services)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "40aa3e06-09c4-f18a-efea-5c0f4e29cd6d",
+   "census_class": "b",
+   "old_name": "40621 — Kentucky Department for Behavioral Health, Developmental and Intellectual Disabilities (DBHDID)",
+   "new_name": "Kentucky Department for Behavioral Health, Developmental and Intellectual Disabilities (DBHDID)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "db3e954a-42c1-ba23-2b64-138505e5bff0",
+   "census_class": "b",
+   "old_name": "43215 — Ohio Department of Behavioral Health (DBH)",
+   "new_name": "Ohio Department of Behavioral Health (DBH)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "8c819951-c719-792f-d510-0bd4a609c167",
+   "census_class": "b",
+   "old_name": "46204 — Indiana Family and Social Services Administration (FSSA), Division of Mental Health and Addiction (DMHA)",
+   "new_name": "Indiana Family and Social Services Administration (FSSA), Division of Mental Health and Addiction (DMHA)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "6e0af877-5c45-524c-b511-d55379364b96",
+   "census_class": "b",
+   "old_name": "50319 — Iowa Department of Health and Human Services (HHS), Division of Behavioral Health",
+   "new_name": "Iowa Department of Health and Human Services (HHS), Division of Behavioral Health",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "776c8014-6de1-3138-ee9c-66e0babebbff",
+   "census_class": "b",
+   "old_name": "53703 — Wisconsin Department of Health Services, Division of Care and Treatment Services, Bureau of Prevention Treatment and Recovery",
+   "new_name": "Wisconsin Department of Health Services, Division of Care and Treatment Services, Bureau of Prevention Treatment and Recovery",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "b778e690-62db-b7b4-c30b-26d3924d6bdf",
+   "census_class": "b",
+   "old_name": "55164-0977 — Minnesota Department of Human Services, Behavioral Health Division",
+   "new_name": "Minnesota Department of Human Services, Behavioral Health Division",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "699355e5-81ac-a6fd-68d7-596e5b805ae8",
+   "census_class": "b",
+   "old_name": "57501 — South Dakota Department of Social Services, Division of Behavioral Health",
+   "new_name": "South Dakota Department of Social Services, Division of Behavioral Health",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "23b953a5-0274-9ec8-aae7-74c3db805c62",
+   "census_class": "b",
+   "old_name": "58505 — North Dakota Department of Health and Human Services, Behavioral Health Division",
+   "new_name": "North Dakota Department of Health and Human Services, Behavioral Health Division",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "6447f29e-e9bc-8c5f-c4f7-e7506f3e5c54",
+   "census_class": "b",
+   "old_name": "59620-2905 — Montana Department of Public Health and Human Services (DPHHS), Behavioral Health and Developmental Disabilities Division (BHDD)",
+   "new_name": "Montana Department of Public Health and Human Services (DPHHS), Behavioral Health and Developmental Disabilities Division (BHDD)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "a1dc07f9-7315-39b1-6ad8-d8b73884a0f3",
+   "census_class": "b",
+   "old_name": "62703 — Illinois Department of Human Services Division of Behavioral Health and Recovery (DBHR)",
+   "new_name": "Illinois Department of Human Services Division of Behavioral Health and Recovery (DBHR)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "04c7f589-1ea5-33c9-5772-e942592b9763",
+   "census_class": "b",
+   "old_name": "65101 — Missouri Department of Mental Health, Division of Behavioral Health",
+   "new_name": "Missouri Department of Mental Health, Division of Behavioral Health",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "fbdcecfb-bed4-a3a5-0bf5-27390a7329e2",
+   "census_class": "b",
+   "old_name": "66603-3404 — Kansas Department for Aging and Disability Services (KDADS) - Behavioral Health Services Commission",
+   "new_name": "Kansas Department for Aging and Disability Services (KDADS) - Behavioral Health Services Commission",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "697ea169-326c-28bb-04af-68f419d9d84d",
+   "census_class": "b",
+   "old_name": "68509-5026 — Nebraska Department of Health and Human Services, Division of Behavioral Health",
+   "new_name": "Nebraska Department of Health and Human Services, Division of Behavioral Health",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "ec5f5cbf-bf70-958b-1828-eaa7471534f0",
+   "census_class": "b",
+   "old_name": "70802 — Louisiana Department of Health, Office of Behavioral Health (OBH)",
+   "new_name": "Louisiana Department of Health, Office of Behavioral Health (OBH)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "30cab9a6-acf5-cccd-f845-b8c89a0bb4a8",
+   "census_class": "b",
+   "old_name": "73106 — Oklahoma Department of Mental Health and Substance Abuse Services (ODMHSAS)",
+   "new_name": "Oklahoma Department of Mental Health and Substance Abuse Services (ODMHSAS)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "1a858dc2-4a4f-db0e-55b5-b6668218aa84",
+   "census_class": "b",
+   "old_name": "78711 — Texas Health and Human Services Commission (HHSC)",
+   "new_name": "Texas Health and Human Services Commission (HHSC)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "9d20a934-4703-7585-1d78-87d70989a898",
+   "census_class": "b",
+   "old_name": "82002 — Wyoming Department of Health, Behavioral Health Division",
+   "new_name": "Wyoming Department of Health, Behavioral Health Division",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "98d34826-752a-18a2-d705-f61ceda0de73",
+   "census_class": "b",
+   "old_name": "83720-0036 — Idaho Department of Health and Welfare, Division of Behavioral Health",
+   "new_name": "Idaho Department of Health and Welfare, Division of Behavioral Health",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "00860bdf-dd8c-a65c-378a-d03301ceaeef",
+   "census_class": "b",
+   "old_name": "84116 — Utah Department of Health and Human Services (DHHS), Office of Substance Use and Mental Health (OSUMH)",
+   "new_name": "Utah Department of Health and Human Services (DHHS), Office of Substance Use and Mental Health (OSUMH)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "b8866e6f-3204-69d7-430b-1850a101ca6a",
+   "census_class": "b",
+   "old_name": "85007 — Arizona Health Care Cost Containment System (AHCCCS) - Division of Behavioral Health and Housing (DBHH)",
+   "new_name": "Arizona Health Care Cost Containment System (AHCCCS) - Division of Behavioral Health and Housing (DBHH)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "22fbbc4e-90a3-83fc-c7d2-d38b423a9397",
+   "census_class": "b",
+   "old_name": "87504-2348 — New Mexico Health Care Authority (HCA), Behavioral Health Services Division (BHSD)",
+   "new_name": "New Mexico Health Care Authority (HCA), Behavioral Health Services Division (BHSD)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "9cd304ec-cf37-97a8-6f84-98d3c009a603",
+   "census_class": "b",
+   "old_name": "89706 — Nevada Department of Health and Human Services, Division of Public and Behavioral Health (DPBH), Substance Use Prevention, Treatment, and Recovery Services (SUPTRS)",
+   "new_name": "Nevada Department of Health and Human Services, Division of Public and Behavioral Health (DPBH), Substance Use Prevention, Treatment, and Recovery Services (SUPTRS)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "f3ba6e7d-8705-2923-ca09-2b4f41870c62",
+   "census_class": "b",
+   "old_name": "95899-7413 — California Department of Health Care Services (DHCS) - Behavioral Health Substance Use Disorder",
+   "new_name": "California Department of Health Care Services (DHCS) - Behavioral Health Substance Use Disorder",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "b47146ec-ac6d-529f-6451-63c2ccf2e777",
+   "census_class": "b",
+   "old_name": "96707 — Hawaii Department of Health, Alcohol and Drug Abuse Division (ADAD)",
+   "new_name": "Hawaii Department of Health, Alcohol and Drug Abuse Division (ADAD)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "5eade8dc-fc44-8fbf-1538-98c5ec7debcb",
+   "census_class": "b",
+   "old_name": "97301 — Oregon Health Authority (OHA), Health Systems Division, Behavioral Health Division",
+   "new_name": "Oregon Health Authority (OHA), Health Systems Division, Behavioral Health Division",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "a4e8010f-70a1-4fb4-c129-e1fad55c415e",
+   "census_class": "b",
+   "old_name": "98504 — Washington State Health Care Authority, Division of Behavioral Health and Recovery (DBHR)",
+   "new_name": "Washington State Health Care Authority, Division of Behavioral Health and Recovery (DBHR)",
+   "rule": "B1-zip-strip"
+  },
+  {
+   "entity_id": "6ed0bb57-831d-9ffe-d589-ce5255837fca",
+   "census_class": "c",
+   "old_name": "{'english': 'American Samoa Department of Health, Behavioral Health Services Division (BHSD)', 'local': 'Ofisa o le Soifua Maloloina o Amerika Samoa (Samoan: Department of Health)'}",
+   "new_name": "American Samoa Department of Health, Behavioral Health Services Division (BHSD)",
+   "rule": "C1-serialized-english"
+  },
+  {
+   "entity_id": "c3e771aa-1cf0-1381-7c55-cb68246f9d66",
+   "census_class": "c",
+   "old_name": "{'english': 'Commonwealth Healthcare Corporation (CHCC) — Community Guidance Center (CGC), Behavioral Health Division', 'local': 'Not commonly rendered in Chamorro or Carolinian on official materials; local usage retains English acronyms CHCC/CGC'}",
+   "new_name": "Commonwealth Healthcare Corporation (CHCC) — Community Guidance Center (CGC), Behavioral Health Division",
+   "rule": "C1-serialized-english"
+  },
+  {
+   "entity_id": "e4ee9f5e-3324-fc68-7231-cd445932c36b",
+   "census_class": "c",
+   "old_name": "{'english': 'Guam Behavioral Health and Wellness Center (GBHWC)', 'local': 'Dipattamenton Salut Hinasso yan Abuson Amot (Chamorro name of predecessor agency, Department of Mental Health and Substance Abuse)'}",
+   "new_name": "Guam Behavioral Health and Wellness Center (GBHWC)",
+   "rule": "C1-serialized-english"
+  },
+  {
+   "entity_id": "2b138476-6e18-f191-a6a2-dc9714b0a9e0",
+   "census_class": "c",
+   "old_name": "{'english': 'Mental Health and Addiction Services Administration', 'local': 'Administración de Servicios de Salud Mental y Contra la Adicción (ASSMCA)'}",
+   "new_name": "Mental Health and Addiction Services Administration",
+   "rule": "C1-serialized-english"
+  },
+  {
+   "entity_id": "638bcd7a-3987-e7e9-5ca3-637ab7ad4cb6",
+   "census_class": "d",
+   "old_name": "1-800-QUIT-NOW (National Network of Tobacco Cessation Quitlines) [CRISIS-QUITNOW] PARTIAL — verify remaining fields",
+   "new_name": "National Network of Tobacco Cessation Quitlines (1-800-QUIT-NOW)",
+   "rule": "D1-bracket-strip+D3-phone-paren-invert"
+  },
+  {
+   "entity_id": "d263ea0b-47f0-5215-9257-b55b9b4d6fa2",
+   "census_class": "d",
+   "old_name": "1-800-QUIT-NOW (National Network of Tobacco Cessation Quitlines) [SUD-TOB-QUITNOW] PARTIAL — verify remaining fields",
+   "new_name": "National Network of Tobacco Cessation Quitlines (1-800-QUIT-NOW)",
+   "rule": "D1-bracket-strip+D3-phone-paren-invert"
+  },
+  {
+   "entity_id": "ef05289b-8d73-8517-e5de-dd69ff07fb17",
+   "census_class": "d",
+   "old_name": "ACLU of Connecticut (ACLU-CT) [ACLU-CT] ★",
+   "new_name": "ACLU of Connecticut (ACLU-CT)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "0451477b-592f-1939-6924-5c8930183893",
+   "census_class": "d",
+   "old_name": "ACLU of Guam [ACLU-GU] ★",
+   "new_name": "ACLU of Guam",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "14cc334f-ab91-e025-aba6-19855a53d032",
+   "census_class": "d",
+   "old_name": "ACLU of Maine (ACLU-ME) [ACLU-ME] ★",
+   "new_name": "ACLU of Maine (ACLU-ME)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "9e88e52f-417e-8069-27fd-65585002cfc1",
+   "census_class": "d",
+   "old_name": "ACLU of New Hampshire (ACLU-NH) [ACLU-NH] ★",
+   "new_name": "ACLU of New Hampshire (ACLU-NH)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "f50c597b-fe5f-866c-44e4-f21c764169de",
+   "census_class": "d",
+   "old_name": "ACLU of New Jersey [ACLU-NJ] ★",
+   "new_name": "ACLU of New Jersey",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "4f6ade3b-a554-3ed4-bc45-b3c0aeb09404",
+   "census_class": "d",
+   "old_name": "ACLU of Puerto Rico (ACLU-PR) [ACLU-PR] ★",
+   "new_name": "ACLU of Puerto Rico (ACLU-PR)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "02a31066-2bdc-e337-f60c-522d8182593e",
+   "census_class": "d",
+   "old_name": "ACLU of the Virgin Islands (ACLU-VI) [ACLU-VI] ★",
+   "new_name": "ACLU of the Virgin Islands (ACLU-VI)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "b49842c3-61a2-4445-bcf8-4c84d6f180b6",
+   "census_class": "d",
+   "old_name": "ACLU of Vermont (ACLU-VT) [ACLU-VT] ★",
+   "new_name": "ACLU of Vermont (ACLU-VT)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "b6e9fe5c-b61b-d481-0b20-458370b2b494",
+   "census_class": "d",
+   "old_name": "ADDA -- Attention Deficit Disorder Association (Adults) [MH-ADHD-002] ★",
+   "new_name": "ADDA -- Attention Deficit Disorder Association (Adults)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "1ec1fdb2-87d0-01a5-7152-24d964801875",
+   "census_class": "d",
+   "old_name": "Alcoholics Anonymous General Service Office (GSO) [CRISIS-AAWS] N/A — no dedicated hotline",
+   "new_name": "Alcoholics Anonymous General Service Office (GSO)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "2bcef3b9-5887-cb07-0871-58993b9af003",
+   "census_class": "d",
+   "old_name": "American Samoa Department of Human and Social Services (DHSS) [AS-DHSS] ★",
+   "new_name": "American Samoa Department of Human and Social Services (DHSS)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "9df2d254-2366-2233-7df1-9127187e209a",
+   "census_class": "d",
+   "old_name": "American Samoa Government (ASG) -- Employment and Human Resources [ASG-HR] ★",
+   "new_name": "American Samoa Government (ASG) -- Employment and Human Resources",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "63dc8c1a-1984-d5ae-7d9c-056533915c3c",
+   "census_class": "d",
+   "old_name": "American Samoa Workmen's Compensation Commission (WCC) [AS-WCC] ★",
+   "new_name": "American Samoa Workmen's Compensation Commission (WCC)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "5e6f92b5-10ad-5d92-460d-d9298cc6d23e",
+   "census_class": "d",
+   "old_name": "Association of Recovery Community Organizations (ARCO) [SUD-PRS-ARCO] PARTIAL — verify remaining fields",
+   "new_name": "Association of Recovery Community Organizations (ARCO)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "bd5bbc15-a272-0bbb-ad14-7724fc80733e",
+   "census_class": "d",
+   "old_name": "Bazelon Center for Mental Health Law [ADV-BAZELON-SUD] PARTIAL — verify remaining fields",
+   "new_name": "Bazelon Center for Mental Health Law",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "6adbd54e-f37d-3f43-ec9b-0be828207afe",
+   "census_class": "d",
+   "old_name": "BIA Eastern Region -- ICWA for Any DC Child Welfare Proceedings [BIA-DC] ★",
+   "new_name": "BIA Eastern Region -- ICWA for Any DC Child Welfare Proceedings",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "bb089bf7-45a8-cef9-4d74-e9fbe30d9998",
+   "census_class": "d",
+   "old_name": "BIA Eastern Region -- ICWA for Maine Four Federally Recognized Tribes [BIA-ME-ICWA] ★",
+   "new_name": "BIA Eastern Region -- ICWA for Maine Four Federally Recognized Tribes",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "946a7a82-d295-79e3-791a-9dbab0deed82",
+   "census_class": "d",
+   "old_name": "BIA Eastern Region -- ICWA Protocol for DC Child Welfare Proceedings [BIA-DC-ICWA] ★",
+   "new_name": "BIA Eastern Region -- ICWA Protocol for DC Child Welfare Proceedings",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "b47ac113-bfe3-fda3-cf3e-40c2fdbadf5b",
+   "census_class": "d",
+   "old_name": "BIA Eastern Region — For ICWA Notification (Out-of-State Tribe Members in VT) [BIA-VT-ICWA] ★",
+   "new_name": "BIA Eastern Region — For ICWA Notification (Out-of-State Tribe Members in VT)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "08b459cb-cd1a-a0f0-5c7f-0480569b236f",
+   "census_class": "d",
+   "old_name": "BIA Eastern Region — ICWA Compliance for Both MA Wampanoag Tribes [BIA-MA-ICWA] ★",
+   "new_name": "BIA Eastern Region — ICWA Compliance for Both MA Wampanoag Tribes",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "8adcbfed-3741-f177-673a-93abc9b4d479",
+   "census_class": "d",
+   "old_name": "BIA Eastern Region — ICWA Compliance for Narragansett Tribe in RI [BIA-RI-ICWA] ★",
+   "new_name": "BIA Eastern Region — ICWA Compliance for Narragansett Tribe in RI",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "64a1e53b-f42c-42c2-6543-1b8c5ab8aac1",
+   "census_class": "d",
+   "old_name": "BIA Eastern Region — ICWA Protocol for NH Proceedings (Out-of-State Tribal Enrollment) [BIA-NH-ICWA] ★",
+   "new_name": "BIA Eastern Region — ICWA Protocol for NH Proceedings (Out-of-State Tribal Enrollment)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "20e23a96-2fdd-cb62-8a1c-1be23733cf45",
+   "census_class": "d",
+   "old_name": "Carolinian Affairs Office -- Cultural and Community Advocacy [CAO-CNMI] ★",
+   "new_name": "Carolinian Affairs Office -- Cultural and Community Advocacy",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "c9e99dd4-6690-d9aa-0d4a-78eb4301f477",
+   "census_class": "d",
+   "old_name": "CNMI Department of Health (Commonwealth Health Center -- CHC) [CNMI-DOH] ★",
+   "new_name": "CNMI Department of Health (Commonwealth Health Center -- CHC)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "31e42613-1b51-6143-c8d3-24bda6806ed6",
+   "census_class": "d",
+   "old_name": "CNMI Department of Labor -- Wage Enforcement and Anti-Discrimination [CNMI-DOL] ★",
+   "new_name": "CNMI Department of Labor -- Wage Enforcement and Anti-Discrimination",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "06ec152a-f801-364c-8c52-a894a13a1014",
+   "census_class": "d",
+   "old_name": "CNMI Workers' Compensation Commission (WCC) [CNMI-WCC] ★",
+   "new_name": "CNMI Workers' Compensation Commission (WCC)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "0e8f5df0-3d2d-4a1e-d259-36b185f95ca3",
+   "census_class": "d",
+   "old_name": "CONN-OSHA — Public Employee Safety & Health (Public Sector Workers Only) [CONN-OSHA] ★",
+   "new_name": "CONN-OSHA — Public Employee Safety & Health (Public Sector Workers Only)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "8dcf02c5-2c5e-3dc8-5fce-e88dba726090",
+   "census_class": "d",
+   "old_name": "CT Department of Labor — Unemployment Insurance [CT-DOL-UI] ★",
+   "new_name": "CT Department of Labor — Unemployment Insurance",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "f7b07f24-a56d-6049-3679-c3319bc55454",
+   "census_class": "d",
+   "old_name": "CT Department of Labor — Wage & Workplace Standards Division [CT-DOL-WWS] ★",
+   "new_name": "CT Department of Labor — Wage & Workplace Standards Division",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "deee1df8-0133-dbd1-7847-09c933e467ac",
+   "census_class": "d",
+   "old_name": "CT Department of Social Services (DSS) — Medicaid / SNAP / Benefits [CT-DSS] ★",
+   "new_name": "CT Department of Social Services (DSS) — Medicaid / SNAP / Benefits",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "f1989184-ee42-685d-0df5-0b15f6ee90c5",
+   "census_class": "d",
+   "old_name": "CT Paid Leave Authority — CT PFML Administration [CT-PLA] ★",
+   "new_name": "CT Paid Leave Authority — CT PFML Administration",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "b657ada9-7941-2132-e66f-f530723352c3",
+   "census_class": "d",
+   "old_name": "CT Workers' Compensation Commission [CT-WCC] ★",
+   "new_name": "CT Workers' Compensation Commission",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "033feacb-175a-08ca-e5fb-991d6b79184f",
+   "census_class": "d",
+   "old_name": "DDHR Civil Rights (120-DAY SOL -- SHORTEST IN REGISTRY! Dual-file EEOC!)",
+   "new_name": "DDHR Civil Rights",
+   "rule": "D2-editorial-strip"
+  },
+  {
+   "entity_id": "7ffb2a49-a0b0-f7a4-60fd-f293bb6a7db1",
+   "census_class": "d",
+   "old_name": "Department of Transitional Assistance (DTA) — SNAP / Cash Assistance [MA-DTA] ★",
+   "new_name": "Department of Transitional Assistance (DTA) — SNAP / Cash Assistance",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "b4260c1e-d04e-2992-c315-1c70aa60f357",
+   "census_class": "d",
+   "old_name": "Disabilities Rights Center of NH (DRC-NH) — P&A Organization [DRC-NH] ★",
+   "new_name": "Disabilities Rights Center of NH (DRC-NH) — P&A Organization",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "6911f886-c392-7660-6dc9-655147f4b330",
+   "census_class": "d",
+   "old_name": "Disability Rights Advocates (DRA) — NYC [DRA-NYC] ★",
+   "new_name": "Disability Rights Advocates (DRA) — NYC",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "6c887021-d2a4-219e-1bcf-b2463811bd6a",
+   "census_class": "d",
+   "old_name": "DOL Wage & Hour Division -- Boston (Serves Maine) [DOL-WHD-ME] ★",
+   "new_name": "DOL Wage & Hour Division -- Boston (Serves Maine)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "859ab0d1-1dd6-5da4-74ed-69f3112d795f",
+   "census_class": "d",
+   "old_name": "DOL Wage & Hour Division -- Caribbean District (Serves USVI) [DOL-WHD-VI] ★",
+   "new_name": "DOL Wage & Hour Division -- Caribbean District (Serves USVI)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "7c3c69ac-5100-515a-28b0-2af2789c4cd6",
+   "census_class": "d",
+   "old_name": "DOL Wage & Hour Division -- Caribbean District Office (Puerto Rico) [DOL-WHD-PR] ★",
+   "new_name": "DOL Wage & Hour Division -- Caribbean District Office (Puerto Rico)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "cb9037b9-00ad-4530-161e-a58a46a7ccf9",
+   "census_class": "d",
+   "old_name": "DOL Wage & Hour Division — Albany District Office (Upstate NY) [DOL-WHD-ALB] ★",
+   "new_name": "DOL Wage & Hour Division — Albany District Office (Upstate NY)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "a3d65582-4d56-9631-0de4-d66ac3e1da18",
+   "census_class": "d",
+   "old_name": "DOL Wage & Hour Division — Boston (Serves Massachusetts) [DOL-WHD-MA] ★",
+   "new_name": "DOL Wage & Hour Division — Boston (Serves Massachusetts)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "075ab512-3e98-ab40-3577-cdb5a0e502a7",
+   "census_class": "d",
+   "old_name": "DOL Wage & Hour Division — Boston (Serves New Hampshire) [DOL-WHD-NH] ★",
+   "new_name": "DOL Wage & Hour Division — Boston (Serves New Hampshire)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "54dec2ad-9abb-def5-7e43-8e8e8ce2f7e7",
+   "census_class": "d",
+   "old_name": "DOL Wage & Hour Division — Boston (Serves Rhode Island) [DOL-WHD-RI] ★",
+   "new_name": "DOL Wage & Hour Division — Boston (Serves Rhode Island)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "d3a37a48-8a9b-9bcc-d815-d12b77fc7515",
+   "census_class": "d",
+   "old_name": "DOL Wage & Hour Division — Hartford CT (Serves Connecticut) [DOL-WHD-CT] ★",
+   "new_name": "DOL Wage & Hour Division — Hartford CT (Serves Connecticut)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "e7c65283-817e-7c7d-c2db-fe4044948d38",
+   "census_class": "d",
+   "old_name": "DOL Wage & Hour Division — New York District Office (NYC/Long Island) [DOL-WHD-NYC] ★",
+   "new_name": "DOL Wage & Hour Division — New York District Office (NYC/Long Island)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "fd96ff5c-5ecc-b311-3bbd-771e5785ac70",
+   "census_class": "d",
+   "old_name": "DOL Wage & Hour Division — Vermont (Boston Region Covers VT) [DOL-WHD-VT] ★",
+   "new_name": "DOL Wage & Hour Division — Vermont (Boston Region Covers VT)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "64f38e31-4227-8298-3235-5b74d6e24ebd",
+   "census_class": "d",
+   "old_name": "DOL Wage and Hour Division — Northern New Jersey (Mountainside) [DOL-WHD-NNJ] ★",
+   "new_name": "DOL Wage and Hour Division — Northern New Jersey (Mountainside)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "f0c50493-5caa-325a-2093-4f66cfb92a9f",
+   "census_class": "d",
+   "old_name": "DOL Wage and Hour Division — Southern New Jersey (Marlton area) [DOL-WHD-SNJ] ★",
+   "new_name": "DOL Wage and Hour Division — Southern New Jersey (Marlton area)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "fe391541-f2b3-3843-5cc1-6f18d5c8e58e",
+   "census_class": "d",
+   "old_name": "DOVE (Domestic Violence and Sexual Assault Services) -- USVI [DOVE-VI] ★",
+   "new_name": "DOVE (Domestic Violence and Sexual Assault Services) -- USVI",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "8c8158a4-3c4f-f5b1-3cb9-cd739083fc6d",
+   "census_class": "d",
+   "old_name": "EEOC Boston Area Office (Serves Connecticut) [EEOC-CT] ★",
+   "new_name": "EEOC Boston Area Office (Serves Connecticut)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "ff44b38b-9ee1-da03-3259-aba0495daddd",
+   "census_class": "d",
+   "old_name": "EEOC Boston Area Office (Serves Maine -- First Circuit) [EEOC-ME] ★",
+   "new_name": "EEOC Boston Area Office (Serves Maine -- First Circuit)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "b66e734c-e71a-0239-23d0-0a34f9e3353d",
+   "census_class": "d",
+   "old_name": "EEOC Boston Area Office (Serves Massachusetts — First Circuit) [EEOC-MA] ★",
+   "new_name": "EEOC Boston Area Office (Serves Massachusetts — First Circuit)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "5a4160c9-c3e2-1c9a-7098-8d2407f98a7c",
+   "census_class": "d",
+   "old_name": "EEOC Boston Area Office (Serves New Hampshire — First Circuit) [EEOC-NH] ★",
+   "new_name": "EEOC Boston Area Office (Serves New Hampshire — First Circuit)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "6670c0f5-bb38-3999-41ef-b78ed2950441",
+   "census_class": "d",
+   "old_name": "EEOC Boston Area Office (Serves Rhode Island — First Circuit) [EEOC-RI] ★",
+   "new_name": "EEOC Boston Area Office (Serves Rhode Island — First Circuit)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "a4b82f05-b953-7350-0f85-69951603d7d0",
+   "census_class": "d",
+   "old_name": "EEOC Boston Area Office (Serves Vermont) [EEOC-VT] ★",
+   "new_name": "EEOC Boston Area Office (Serves Vermont)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "0b31116b-ff34-84b0-b8d3-9ea391ae01a4",
+   "census_class": "d",
+   "old_name": "EEOC Honolulu Local Office (Los Angeles District -- Serves CNMI) [EEOC-CNMI] ★",
+   "new_name": "EEOC Honolulu Local Office (Los Angeles District -- Serves CNMI)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "1d75e67e-0fb6-d64e-d021-9b40c4d2da1f",
+   "census_class": "d",
+   "old_name": "EEOC Honolulu Local Office (Serves American Samoa -- Los Angeles District) [EEOC-AS] ★",
+   "new_name": "EEOC Honolulu Local Office (Serves American Samoa -- Los Angeles District)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "e65ed16a-21a7-7f06-6e2a-d0cb7791dbf8",
+   "census_class": "d",
+   "old_name": "EEOC Honolulu Local Office (Serves Guam -- Ninth Circuit) [EEOC-GU] ★",
+   "new_name": "EEOC Honolulu Local Office (Serves Guam -- Ninth Circuit)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "1b330bd0-d826-8144-160b-544f7454c307",
+   "census_class": "d",
+   "old_name": "EEOC Philadelphia District Office (Serves New Jersey — Third Circuit) [EEOC-NJ] ★",
+   "new_name": "EEOC Philadelphia District Office (Serves New Jersey — Third Circuit)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "c0c88396-c306-d4b6-a5d3-325653af2b89",
+   "census_class": "d",
+   "old_name": "EEOC San Juan Area Office (Serves Puerto Rico and US Virgin Islands) [EEOC-PR] ★",
+   "new_name": "EEOC San Juan Area Office (Serves Puerto Rico and US Virgin Islands)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "54297ae5-74d2-c78d-6059-18697dcdc291",
+   "census_class": "d",
+   "old_name": "End Overdose [SUD-OD-ENDOVERDOSE] PARTIAL — verify remaining fields",
+   "new_name": "End Overdose",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "2a42de81-8337-737f-24a7-fd9fbff16000",
+   "census_class": "d",
+   "old_name": "Federal OSHA -- American Samoa (Private Sector -- No State Plan) [AS-OSHA] ★",
+   "new_name": "Federal OSHA -- American Samoa (Private Sector -- No State Plan)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "10cf1ca3-4112-e3c2-7fcb-4d59892e59a5",
+   "census_class": "d",
+   "old_name": "Federal OSHA -- CNMI Private Sector (No State Plan) [CNMI-OSHA] ★",
+   "new_name": "Federal OSHA -- CNMI Private Sector (No State Plan)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "5ff5fa99-c5ca-6a98-f8f9-d189288c6c8b",
+   "census_class": "d",
+   "old_name": "Federal OSHA -- Guam (GDOL Safety and Health Division -- All Workers) [GU-OSHA] ★",
+   "new_name": "Federal OSHA -- Guam (GDOL Safety and Health Division -- All Workers)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "621ec68c-55b2-66ef-fc12-0a034658795f",
+   "census_class": "d",
+   "old_name": "Federal OSHA -- Maine Area Office (Private Sector Workers Only) [OSHA-ME] ★",
+   "new_name": "Federal OSHA -- Maine Area Office (Private Sector Workers Only)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "3b3997d5-3ac6-4358-48d7-20bed2d3c649",
+   "census_class": "d",
+   "old_name": "Federal OSHA -- Puerto Rico (PR OSHA State Plan Covers ALL Workers) [PR-OSHA] ★",
+   "new_name": "Federal OSHA -- Puerto Rico (PR OSHA State Plan Covers ALL Workers)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "f38c07ed-bb32-ac8e-2583-ef7fef27f06f",
+   "census_class": "d",
+   "old_name": "Federal OSHA — Manchester Area Office (Covers ALL New Hampshire Workers) [OSHA-NH] ★",
+   "new_name": "Federal OSHA — Manchester Area Office (Covers ALL New Hampshire Workers)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "7aa66ba1-c97f-0aef-1f94-c8aa4bb75271",
+   "census_class": "d",
+   "old_name": "Federal OSHA — Providence Area Office (Covers ALL Rhode Island Workers) [OSHA-RI] ★",
+   "new_name": "Federal OSHA — Providence Area Office (Covers ALL Rhode Island Workers)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "b0cea7db-91bb-7ba9-557e-08056446e1fa",
+   "census_class": "d",
+   "old_name": "Federal OSHA / VI OSHA -- Workplace Safety (USVI) [VI-OSHA] ★",
+   "new_name": "Federal OSHA / VI OSHA -- Workplace Safety (USVI)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "d0e638f4-68e7-7c58-c546-db837c64eff9",
+   "census_class": "d",
+   "old_name": "Gamblers Anonymous [SUD-GAM-GA] PARTIAL — verify remaining fields",
+   "new_name": "Gamblers Anonymous",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "1399acb7-905b-a1ec-a7b2-5e0d0f425cba",
+   "census_class": "d",
+   "old_name": "Give an Hour -- Free MH Care for Military Community [MH-VMH-004] ★",
+   "new_name": "Give an Hour -- Free MH Care for Military Community",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "f766eb37-b8f7-8b66-3a4f-aea835a9a6b9",
+   "census_class": "d",
+   "old_name": "Give an Hour (cross-listed MH) [SUD-VET-GIVEANHOUR] PARTIAL — verify remaining fields",
+   "new_name": "Give an Hour (cross-listed MH)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "19b646be-77b5-1744-81f8-15587b9bf8a8",
+   "census_class": "d",
+   "old_name": "Guam Department of Labor (GDOL) -- Wage, Safety, Anti-Discrimination [GU-GDOL] ★",
+   "new_name": "Guam Department of Labor (GDOL) -- Wage, Safety, Anti-Discrimination",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "2ec11a7a-ab2e-8b0f-0439-8d16f0b40749",
+   "census_class": "d",
+   "old_name": "Guam Department of Public Health and Social Services (DPHSS) -- Benefits [GU-DPHSS] ★",
+   "new_name": "Guam Department of Public Health and Social Services (DPHSS) -- Benefits",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "48e70429-0324-45f8-b597-2005286174d3",
+   "census_class": "d",
+   "old_name": "Guam Housing Corporation (GHC) -- Public Housing and Section 8 [GU-GHC] ★",
+   "new_name": "Guam Housing Corporation (GHC) -- Public Housing and Section 8",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "a3641e57-84df-9a68-4011-858f5c825da9",
+   "census_class": "d",
+   "old_name": "Hazelden Betty Ford Foundation — Youth Continuum [SUD-ADOL-HBF] PARTIAL — verify remaining fields",
+   "new_name": "Hazelden Betty Ford Foundation — Youth Continuum",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "324722b8-a772-a3b2-31b2-ec8c26a1e7d8",
+   "census_class": "d",
+   "old_name": "Headstrong -- Free MH Treatment for Post-9/11 Veterans [MH-VMH-003] ★",
+   "new_name": "Headstrong -- Free MH Treatment for Post-9/11 Veterans",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "ca7b3280-5cbf-042c-b237-920c74381f4c",
+   "census_class": "d",
+   "old_name": "HUD Region 1 / FHEO -- Boston (Fair Housing -- Maine) [HUD-FHEO-ME] ★",
+   "new_name": "HUD Region 1 / FHEO -- Boston (Fair Housing -- Maine)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "c40d0620-aa4e-f64e-7e3c-a7186658c7ea",
+   "census_class": "d",
+   "old_name": "HUD Region 1 / FHEO — Boston (Fair Housing — Connecticut) [HUD-FHEO-CT] ★",
+   "new_name": "HUD Region 1 / FHEO — Boston (Fair Housing — Connecticut)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "d7681832-a787-2342-8c04-e68116357711",
+   "census_class": "d",
+   "old_name": "HUD Region 1 / FHEO — Boston (Fair Housing — Massachusetts) [HUD-FHEO-MA] ★",
+   "new_name": "HUD Region 1 / FHEO — Boston (Fair Housing — Massachusetts)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "108c2a2d-1a08-32cc-c2f1-d927558ae542",
+   "census_class": "d",
+   "old_name": "HUD Region 1 / FHEO — Boston (Fair Housing — New Hampshire) [HUD-FHEO-NH] ★",
+   "new_name": "HUD Region 1 / FHEO — Boston (Fair Housing — New Hampshire)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "623e3750-059e-553d-94d1-1bcc043b5ed9",
+   "census_class": "d",
+   "old_name": "HUD Region 1 / FHEO — Boston (Fair Housing — Rhode Island) [HUD-FHEO-RI] ★",
+   "new_name": "HUD Region 1 / FHEO — Boston (Fair Housing — Rhode Island)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "683300c4-1fde-e7e6-67a7-f0420187343e",
+   "census_class": "d",
+   "old_name": "HUD Region 1 / FHEO — Boston (Fair Housing — Vermont) [HUD-FHEO-VT] ★",
+   "new_name": "HUD Region 1 / FHEO — Boston (Fair Housing — Vermont)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "85bdd741-8c9a-000b-932c-64f4ebb86a1d",
+   "census_class": "d",
+   "old_name": "HUD Region 2 / FHEO — New York (Fair Housing — All NY) [HUD-FHEO-R2-NY] ★",
+   "new_name": "HUD Region 2 / FHEO — New York (Fair Housing — All NY)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "21fe815d-c0c7-d236-cf1a-7b8cce570f21",
+   "census_class": "d",
+   "old_name": "HUD Region 2 / FHEO — New York (Serves New Jersey) [HUD-FHEO-R2] ★",
+   "new_name": "HUD Region 2 / FHEO — New York (Serves New Jersey)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "fb4fc894-f31c-b627-5e3c-7b5029223991",
+   "census_class": "d",
+   "old_name": "HUD Region 9 / FHEO -- San Francisco (Fair Housing -- American Samoa) [HUD-FHEO-AS] ★",
+   "new_name": "HUD Region 9 / FHEO -- San Francisco (Fair Housing -- American Samoa)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "fe4306bc-f266-e69f-b12b-3fd631f945f4",
+   "census_class": "d",
+   "old_name": "HUD Region 9 / FHEO -- San Francisco (Fair Housing -- CNMI) [HUD-FHEO-CNMI] ★",
+   "new_name": "HUD Region 9 / FHEO -- San Francisco (Fair Housing -- CNMI)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "e2e1c1d3-76e6-0254-5c00-d41820b8d1e2",
+   "census_class": "d",
+   "old_name": "HUD Region 9 / FHEO -- San Francisco (Fair Housing -- Guam) [HUD-FHEO-GU] ★",
+   "new_name": "HUD Region 9 / FHEO -- San Francisco (Fair Housing -- Guam)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "276585be-8142-3446-a7ec-6ae6f6f2cc95",
+   "census_class": "d",
+   "old_name": "IDEA Part B -- School-Age Special Education (Ages 3-21) [MH-ASD-008] ★",
+   "new_name": "IDEA Part B -- School-Age Special Education (Ages 3-21)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "4b32439f-6e44-2042-2b59-7da701b4a194",
+   "census_class": "d",
+   "old_name": "IDEA Part C -- Early Intervention (Birth to 3) [MH-ASD-007] ★",
+   "new_name": "IDEA Part C -- Early Intervention (Birth to 3)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "ca7a0469-9e9d-bdfb-bec9-1d577517eb08",
+   "census_class": "d",
+   "old_name": "Inetnon Gefpago (Catholic Social Service Guam) -- Community Services [CSS-GU] ★",
+   "new_name": "Inetnon Gefpago (Catholic Social Service Guam) -- Community Services",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "9b4e5e8d-c2be-e1cd-fb57-7ae202aad278",
+   "census_class": "d",
+   "old_name": "Jane Doe Inc. — MA Coalition Against Sexual Assault & Domestic Violence [JDI-MA] ★",
+   "new_name": "Jane Doe Inc. — MA Coalition Against Sexual Assault & Domestic Violence",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "59189a47-a3ce-41c5-af9d-f5ebbf32d60a",
+   "census_class": "d",
+   "old_name": "LEAD National Support Bureau [SUD-CJ-LEAD] PARTIAL — verify remaining fields",
+   "new_name": "LEAD National Support Bureau",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "b70b1e5c-00ab-1f46-0107-ccf4acc959ca",
+   "census_class": "d",
+   "old_name": "Learn to Cope [CRISIS-LEARNTOCOPE] PARTIAL — verify remaining fields",
+   "new_name": "Learn to Cope",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "92bbac40-d45b-7974-b2be-3c2ab77bd108",
+   "census_class": "d",
+   "old_name": "Learn to Cope [SUD-FAM-LEARN2COPE] PARTIAL — verify remaining fields",
+   "new_name": "Learn to Cope",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "dca548e4-7130-98c0-a390-711c4d6c7bdf",
+   "census_class": "d",
+   "old_name": "Legal Action Center (LAC) [ADV-LAC] PARTIAL — verify remaining fields",
+   "new_name": "Legal Action Center (LAC)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "ab840a26-f882-9755-92a1-4c0b58d0206c",
+   "census_class": "d",
+   "old_name": "MA Attorney General — Fair Labor Division (Wage Enforcement) [MA-AG-FLD] ★",
+   "new_name": "MA Attorney General — Fair Labor Division (Wage Enforcement)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "94b223aa-c708-6509-5a68-b7114aeb090b",
+   "census_class": "d",
+   "old_name": "MA Department of Family and Medical Leave (DFML) — PFML Administration [MA-DFML] ★",
+   "new_name": "MA Department of Family and Medical Leave (DFML) — PFML Administration",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "af568cb5-857a-67a2-bdb8-5982fd9eacbe",
+   "census_class": "d",
+   "old_name": "MA Department of Industrial Accidents (DIA) — Workers' Compensation [MA-DIA] ★",
+   "new_name": "MA Department of Industrial Accidents (DIA) — Workers' Compensation",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "2d672bc9-f318-1f1d-6eca-6d6d63327c50",
+   "census_class": "d",
+   "old_name": "MA Department of Labor Standards (DLS) — MA-OSHA / Wage Standards [MA-DLS] ★",
+   "new_name": "MA Department of Labor Standards (DLS) — MA-OSHA / Wage Standards",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "bcd91bf2-d13f-17cb-3ed2-1aeb67609cb0",
+   "census_class": "d",
+   "old_name": "MA Unemployment Insurance (DUA) — Benefits [MA-DUA] ★",
+   "new_name": "MA Unemployment Insurance (DUA) — Benefits",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "8bde6c3f-1822-e583-cb61-65cfabdabdde",
+   "census_class": "d",
+   "old_name": "Maine Bureau of Labor Standards (BLS) -- Public Sector Safety [ME-BLS] ★",
+   "new_name": "Maine Bureau of Labor Standards (BLS) -- Public Sector Safety",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "3ecd5617-338d-ee15-c267-457513522a4e",
+   "census_class": "d",
+   "old_name": "Maine Department of Labor (MDOL) -- Wage and Worker Protection [ME-MDOL] ★",
+   "new_name": "Maine Department of Labor (MDOL) -- Wage and Worker Protection",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "749a604d-1fea-26f2-07bb-8a4bdf8a1726",
+   "census_class": "d",
+   "old_name": "Maine DHHS -- Medicaid / SNAP / Child Welfare [ME-DHHS] ★",
+   "new_name": "Maine DHHS -- Medicaid / SNAP / Child Welfare",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "1a0f050e-cdfa-a88e-dc86-6c659c257f0e",
+   "census_class": "d",
+   "old_name": "Maine Indian Tribal-State Commission (MITSC) -- Unique Maine Institution [ME-MITSC] ★",
+   "new_name": "Maine Indian Tribal-State Commission (MITSC) -- Unique Maine Institution",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "aee29b46-6ede-5ec9-dd94-3461e92b72fb",
+   "census_class": "d",
+   "old_name": "Maine Workers Compensation Board [ME-WCB] ★",
+   "new_name": "Maine Workers Compensation Board",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "50829a79-e133-5a76-80af-9df79226934d",
+   "census_class": "d",
+   "old_name": "MCCR Civil Rights (180-day SOL — SHORTEST IN MID-ATLANTIC!)",
+   "new_name": "MCCR Civil Rights",
+   "rule": "D2-editorial-strip"
+  },
+  {
+   "entity_id": "03ad52be-4633-0acc-d21f-51f3d68c068d",
+   "census_class": "d",
+   "old_name": "Medicaid HCBS Waivers -- ASD Community Services [MH-ASD-009] ★",
+   "new_name": "Medicaid HCBS Waivers -- ASD Community Services",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "8bbacbff-0861-4465-be2d-6be809c79ae5",
+   "census_class": "d",
+   "old_name": "Micronesian Legal Services Corporation (MLSC) -- Marianas Office [MLSC-CNMI] ★",
+   "new_name": "Micronesian Legal Services Corporation (MLSC) -- Marianas Office",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "70aecea5-5a48-a716-943c-9e4a0a5c0616",
+   "census_class": "d",
+   "old_name": "NA World Services (Narcotics Anonymous) — Meeting Information [CRISIS-NAWS] N/A — no dedicated hotline",
+   "new_name": "NA World Services (Narcotics Anonymous) — Meeting Information",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "b3cf7947-4d13-ce8e-1721-fc700f2a37fb",
+   "census_class": "d",
+   "old_name": "National Alliance for Recovery Residences (NARR) [CRISIS-NARR-INFO] N/A — no dedicated hotline",
+   "new_name": "National Alliance for Recovery Residences (NARR)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "1f53626c-def6-7aa4-c91c-c3205d3843ca",
+   "census_class": "d",
+   "old_name": "National Alliance for Recovery Residences (NARR) [SUD-RH-NARR] PARTIAL — verify remaining fields",
+   "new_name": "National Alliance for Recovery Residences (NARR)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "d96c5a29-812a-2eba-b893-bd44afcc4e70",
+   "census_class": "d",
+   "old_name": "National Domestic Violence Hotline (substance-affected callers) [CRISIS-NDVH-SUD-SKIP] N/A — no dedicated hotline",
+   "new_name": "National Domestic Violence Hotline (substance-affected callers)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "295193bc-b2b0-5e55-919a-7d11264e304e",
+   "census_class": "d",
+   "old_name": "National Institute on Alcohol Abuse and Alcoholism (NIAAA) [NIAAA] PARTIAL — verify remaining fields",
+   "new_name": "National Institute on Alcohol Abuse and Alcoholism (NIAAA)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "d2e647a2-07b5-d5e4-9aa6-8f0326684b26",
+   "census_class": "d",
+   "old_name": "National Problem Gambling Helpline (operated by National Council on Problem Gambling) [CRISIS-NCPG] PARTIAL — verify remaining fields",
+   "new_name": "National Problem Gambling Helpline (operated by National Council on Problem Gambling)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "0a9bbaeb-ad22-a94e-f598-b2ef06c3fc59",
+   "census_class": "d",
+   "old_name": "Nebraska DOL Wage (State wages — verify year: $12→$13.50→$15!)",
+   "new_name": "Nebraska DOL Wage",
+   "rule": "D2-editorial-strip"
+  },
+  {
+   "entity_id": "6b6fc5cc-3a4f-5046-8445-6a049bca1ba7",
+   "census_class": "d",
+   "old_name": "NH Commission for Human Rights (NHCHR) — Civil Rights Gateway [NH-NHCHR] ★",
+   "new_name": "NH Commission for Human Rights (NHCHR) — Civil Rights Gateway",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "58f0d341-b53d-71a0-3132-e72ef516f28b",
+   "census_class": "d",
+   "old_name": "NH Department of Health and Human Services (DHHS) — Medicaid / SNAP / Benefits [NH-DHHS] ★",
+   "new_name": "NH Department of Health and Human Services (DHHS) — Medicaid / SNAP / Benefits",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "e85264d1-79f2-2bc8-83d5-4aa311e08cca",
+   "census_class": "d",
+   "old_name": "NH Department of Labor (NHDOL) — Wage Enforcement [NH-DOL] ★",
+   "new_name": "NH Department of Labor (NHDOL) — Wage Enforcement",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "c68e8ec8-85a3-4207-1b76-8a05814bceea",
+   "census_class": "d",
+   "old_name": "NH Employment Security (NHES) — Unemployment Insurance [NH-NHES] ★",
+   "new_name": "NH Employment Security (NHES) — Unemployment Insurance",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "5eabc2d1-7be8-ab5b-3742-8d20ad8c12c9",
+   "census_class": "d",
+   "old_name": "NH Workers' Compensation System (NH DOL) [NH-WC] ★",
+   "new_name": "NH Workers' Compensation System (NH DOL)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "cf0ea18f-34e1-3392-3fd4-f17864fb1ddf",
+   "census_class": "d",
+   "old_name": "Nicotine Anonymous World Services [SUD-TOB-NICA] PARTIAL — verify remaining fields",
+   "new_name": "Nicotine Anonymous World Services",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "c9eb6957-acab-7db8-f882-b2043b3abfa8",
+   "census_class": "d",
+   "old_name": "NJ Department of Human Services (DHS) — Medicaid / NJ FamilyCare / SNAP / DDD [NJ-DHS] ★",
+   "new_name": "NJ Department of Human Services (DHS) — Medicaid / NJ FamilyCare / SNAP / DDD",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "82e9d203-3529-1ef6-4d55-05c16634d74a",
+   "census_class": "d",
+   "old_name": "NJ Division of Temporary Disability & Family Leave Insurance (TDI/FLI) [NJ-TDI-FLI] ★",
+   "new_name": "NJ Division of Temporary Disability & Family Leave Insurance (TDI/FLI)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "f33ff5c3-3ec8-b48a-938f-7f2c975e7e2b",
+   "census_class": "d",
+   "old_name": "NJ Division of Unemployment Insurance [NJ-UI] ★",
+   "new_name": "NJ Division of Unemployment Insurance",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "7ac65ccd-8081-b82c-6985-1a4264d7acc4",
+   "census_class": "d",
+   "old_name": "NJ Division of Wage & Hour Compliance (NJDOL) — Minimum Wage / Wage Claims [NJ-WHC] ★",
+   "new_name": "NJ Division of Wage & Hour Compliance (NJDOL) — Minimum Wage / Wage Claims",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "90c62937-f28b-18a7-c1f7-8473c69938e5",
+   "census_class": "d",
+   "old_name": "NJ Division of Workers' Compensation [NJ-WC] ★",
+   "new_name": "NJ Division of Workers' Compensation",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "b9010a7c-a8b5-413a-9f6f-bc38dfcd27ff",
+   "census_class": "d",
+   "old_name": "NJ Office of the Public Defender [NJ-PD] ★",
+   "new_name": "NJ Office of the Public Defender",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "d9af9e7a-3ffa-1b1d-040d-3290c392c416",
+   "census_class": "d",
+   "old_name": "NJ PEOSH — Public Employees Occupational Safety and Health (Public Sector Workers Only) [NJ-PEOSH] ★",
+   "new_name": "NJ PEOSH — Public Employees Occupational Safety and Health (Public Sector Workers Only)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "1a977b34-e0c8-8894-d360-9cd065a885cf",
+   "census_class": "d",
+   "old_name": "NLRB Region 1 — Boston (Serves Massachusetts) [NLRB-MA] ★",
+   "new_name": "NLRB Region 1 — Boston (Serves Massachusetts)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "c9f089fa-e18c-9a6c-2169-a3a360a379d9",
+   "census_class": "d",
+   "old_name": "NLRB Region 1 — Boston (Serves New Hampshire) [NLRB-NH] ★",
+   "new_name": "NLRB Region 1 — Boston (Serves New Hampshire)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "23816f87-3a43-b142-5a0d-4c16e3cf0fc1",
+   "census_class": "d",
+   "old_name": "NLRB Region 1 — Boston (Serves Rhode Island) [NLRB-RI] ★",
+   "new_name": "NLRB Region 1 — Boston (Serves Rhode Island)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "e8d0377b-0275-de4b-1051-f99087bad3bd",
+   "census_class": "d",
+   "old_name": "NLRB Region 1 — Boston (Serves Vermont) [NLRB-VT] ★",
+   "new_name": "NLRB Region 1 — Boston (Serves Vermont)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "da0e795a-34d2-d1fc-dbdf-2eb707a76ea6",
+   "census_class": "d",
+   "old_name": "NLRB Region 2 — New York City (Serves NYC / SDNY/EDNY Area) [NLRB-R2] ★",
+   "new_name": "NLRB Region 2 — New York City (Serves NYC / SDNY/EDNY Area)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "68377fb5-a4eb-d798-266e-71c1e84ffa0a",
+   "census_class": "d",
+   "old_name": "NLRB Region 22 — Newark (Serves New Jersey) [NLRB-R22] ★",
+   "new_name": "NLRB Region 22 — Newark (Serves New Jersey)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "fc09e9d4-0600-2478-42a4-3a7b8fb8c542",
+   "census_class": "d",
+   "old_name": "NLRB Region 3 — Buffalo (Serves Upstate New York) [NLRB-R3] ★",
+   "new_name": "NLRB Region 3 — Buffalo (Serves Upstate New York)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "378f5a7c-bfe9-a2e9-38a3-a213c051a944",
+   "census_class": "d",
+   "old_name": "NLRB Region 34 — Hartford (Serves Connecticut) [NLRB-R34] ★",
+   "new_name": "NLRB Region 34 — Hartford (Serves Connecticut)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "2e7cf2cf-4a44-8f82-b028-c8b4d35b7bbc",
+   "census_class": "d",
+   "old_name": "NY Department of Labor — Unemployment Insurance [NYDOL-UI] ★",
+   "new_name": "NY Department of Labor — Unemployment Insurance",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "5af52388-d6c4-08fd-c979-c2f6e293b0de",
+   "census_class": "d",
+   "old_name": "NY Department of Labor (NYDOL) — Wage & Hour / Worker Protection [NYDOL-WHD] ★",
+   "new_name": "NY Department of Labor (NYDOL) — Wage & Hour / Worker Protection",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "56d068c4-7c3a-8a24-2c30-d5432d2dd68d",
+   "census_class": "d",
+   "old_name": "NY Office of Temporary & Disability Assistance (OTDA) — Benefits Gateway [NY-OTDA] ★",
+   "new_name": "NY Office of Temporary & Disability Assistance (OTDA) — Benefits Gateway",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "673f2bd9-bfc1-89a1-99b8-8640d7f9e67a",
+   "census_class": "d",
+   "old_name": "NY Workers' Compensation Board [NY-WCB] ★",
+   "new_name": "NY Workers' Compensation Board",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "941abf5c-6e74-047e-53da-9510e9cf0e33",
+   "census_class": "d",
+   "old_name": "NYC Administration for Children's Services (ACS) — Child Welfare [NYC-ACS] ★",
+   "new_name": "NYC Administration for Children's Services (ACS) — Child Welfare",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "b67b4b88-c353-090f-2335-e45b8a89dd37",
+   "census_class": "d",
+   "old_name": "NYC Department of Housing Preservation & Development (HPD) [NYC-HPD] ★",
+   "new_name": "NYC Department of Housing Preservation & Development (HPD)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "8ce81132-e5c8-c772-b11a-3b6f08f9bc06",
+   "census_class": "d",
+   "old_name": "NYC Human Resources Administration (HRA) — Benefits & Social Services [NYC-HRA] ★",
+   "new_name": "NYC Human Resources Administration (HRA) — Benefits & Social Services",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "74d84cdc-52e4-b16e-e396-e0239c1a4de4",
+   "census_class": "d",
+   "old_name": "NYC Mayor's Office to Combat Domestic Violence (OCDV) [NYC-OCDV] ★",
+   "new_name": "NYC Mayor's Office to Combat Domestic Violence (OCDV)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "34d27d61-9ee0-67bc-c509-7864df22d4ff",
+   "census_class": "d",
+   "old_name": "NYC Office of Immigrant Affairs (MOIA) [NYC-MOIA] ★",
+   "new_name": "NYC Office of Immigrant Affairs (MOIA)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "11773ee4-1526-48b3-624e-3571e475db2b",
+   "census_class": "d",
+   "old_name": "Office of the Governor of American Samoa [ASG-GOV] ★",
+   "new_name": "Office of the Governor of American Samoa",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "e37b3320-f55c-b7a5-21d1-2f6f22651e59",
+   "census_class": "d",
+   "old_name": "Office of the Governor of the CNMI [CNMI-GOV] ★",
+   "new_name": "Office of the Governor of the CNMI",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "5449b6de-a63c-41dc-7e40-6ef970e14424",
+   "census_class": "d",
+   "old_name": "Oficina de la Procuradora de las Mujeres (OPM) -- PR Women Advocate Office [OPM-PR] ★",
+   "new_name": "Oficina de la Procuradora de las Mujeres (OPM) -- PR Women Advocate Office",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "930195bd-e6b9-1636-816d-42d4204c51bf",
+   "census_class": "d",
+   "old_name": "Oxford House, Inc. [SUD-RH-OXFORD] PARTIAL — verify remaining fields",
+   "new_name": "Oxford House, Inc.",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "daccc35a-057c-1c0b-2a2b-ae73757fc227",
+   "census_class": "d",
+   "old_name": "Partnership to End Addiction [SUD-FAM-PARTNERSHIP] PARTIAL — verify remaining fields",
+   "new_name": "Partnership to End Addiction",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "173ed656-01b5-7669-7948-d523ec9fff17",
+   "census_class": "d",
+   "old_name": "PR Administration for Families and Children (ADSEF) -- PAN / TANF / Benefits [PR-ADSEF] ★",
+   "new_name": "PR Administration for Families and Children (ADSEF) -- PAN / TANF / Benefits",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "58681d7b-71c1-432b-621a-e20236dd4c4d",
+   "census_class": "d",
+   "old_name": "PR Department of Health (Salud) -- Medicaid / Mi Salud / SNAP [PR-SALUD] ★",
+   "new_name": "PR Department of Health (Salud) -- Medicaid / Mi Salud / SNAP",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "55cca9a2-b5e6-573f-8525-943dad1543bf",
+   "census_class": "d",
+   "old_name": "PR Department of Housing (VIVIENDA) -- Public Housing and Section 8 [PR-VIVIENDA] ★",
+   "new_name": "PR Department of Housing (VIVIENDA) -- Public Housing and Section 8",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "61fe054e-d362-4312-f371-bf245ab72821",
+   "census_class": "d",
+   "old_name": "PR Department of Labor and Human Resources (DTRH) -- Wage and Worker Protection [PR-DTRH] ★",
+   "new_name": "PR Department of Labor and Human Resources (DTRH) -- Wage and Worker Protection",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "ea22e8f6-b660-4d7d-f257-dec7ecc988c1",
+   "census_class": "d",
+   "old_name": "PR State Insurance Fund (FSE) -- Workers Compensation [PR-FSE] ★",
+   "new_name": "PR State Insurance Fund (FSE) -- Workers Compensation",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "34e7311e-d460-9eb5-bbc9-5f0095ad6273",
+   "census_class": "d",
+   "old_name": "Project HEAL -- ED Insurance Appeals and Treatment Access [MH-ED-003] ★",
+   "new_name": "Project HEAL -- ED Insurance Appeals and Treatment Access",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "8890111a-da9d-cdd0-621d-4a40d1571f94",
+   "census_class": "d",
+   "old_name": "Providers Clinical Support System (PCSS-MOUD) [SUD-MAT-PCSS] PARTIAL — verify remaining fields",
+   "new_name": "Providers Clinical Support System (PCSS-MOUD)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "44b1b9db-dee8-2ae3-a139-59aa6c1f6e8b",
+   "census_class": "d",
+   "old_name": "Puerto Rico Anti-Discrimination Unit (UAD) -- FEPA Civil Rights Gateway [PR-UAD] ★",
+   "new_name": "Puerto Rico Anti-Discrimination Unit (UAD) -- FEPA Civil Rights Gateway",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "1d1f2a9b-8938-a6d7-1509-5c0cdeb489a8",
+   "census_class": "d",
+   "old_name": "RI Commission for Human Rights (RICHR) — Civil Rights Gateway [RI-RICHR] ★",
+   "new_name": "RI Commission for Human Rights (RICHR) — Civil Rights Gateway",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "c8ddb5d1-bc7a-811d-8e40-25c4849fdc76",
+   "census_class": "d",
+   "old_name": "RI Department of Labor & Training (DLT) — Wage, UI, and TDI/TCI [RI-DLT] ★",
+   "new_name": "RI Department of Labor & Training (DLT) — Wage, UI, and TDI/TCI",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "7a78f616-56f7-a33b-ec99-03e2df93dccb",
+   "census_class": "d",
+   "old_name": "RI Executive Office of Health and Human Services (EOHHS) — Medicaid / RIte Care / RI SNAP [RI-EOHHS] ★",
+   "new_name": "RI Executive Office of Health and Human Services (EOHHS) — Medicaid / RIte Care / RI SNAP",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "e59a6039-c3ef-8ccd-bccf-fc348ae22666",
+   "census_class": "d",
+   "old_name": "RI Volunteer Lawyer Program (VLP) — RI Bar Association [VLP-RI] ★",
+   "new_name": "RI Volunteer Lawyer Program (VLP) — RI Bar Association",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "17810a9f-9d5c-1e6f-0c80-a883342514a2",
+   "census_class": "d",
+   "old_name": "RI Workers' Compensation Court — Department of Labor [RI-WCC] ★",
+   "new_name": "RI Workers' Compensation Court — Department of Labor",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "7b2fc899-3b3c-9f66-3473-fa025cd57855",
+   "census_class": "d",
+   "old_name": "SMART Recovery [CRISIS-SMART] N/A — no dedicated hotline",
+   "new_name": "SMART Recovery",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "61a7c685-563f-337a-9901-c76e777c0ac3",
+   "census_class": "d",
+   "old_name": "Sobriety Treatment and Recovery Teams (START) — Kentucky [SUD-PERI-START] PARTIAL — verify remaining fields",
+   "new_name": "Sobriety Treatment and Recovery Teams (START) — Kentucky",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "93a19a15-2bbc-c0b8-c453-82e60353679a",
+   "census_class": "d",
+   "old_name": "Social Security Administration -- American Samoa (CRITICAL: Limited SSI and SSDI Coverage) [SSA-AS] ★",
+   "new_name": "Social Security Administration -- American Samoa",
+   "rule": "D1-bracket-strip+D2-editorial-strip"
+  },
+  {
+   "entity_id": "2e03adfe-1f24-4621-f919-8147bb912bc0",
+   "census_class": "d",
+   "old_name": "Social Security Administration -- CNMI (SSI APPLIES -- Only US Territory with Full SSI Coverage) [SSA-CNMI] ★",
+   "new_name": "Social Security Administration -- CNMI",
+   "rule": "D1-bracket-strip+D2-editorial-strip"
+  },
+  {
+   "entity_id": "a395abf6-c5ca-98a1-5422-7c9b204c0ec3",
+   "census_class": "d",
+   "old_name": "Social Security Administration -- DC Offices [SSA-DC] ★",
+   "new_name": "Social Security Administration -- DC Offices",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "40b730e3-cb9a-e74c-6f3b-0bb91e99c8e7",
+   "census_class": "d",
+   "old_name": "Social Security Administration -- Guam (SSDI YES -- SSI CRITICAL NOTE) [SSA-GU] ★",
+   "new_name": "Social Security Administration -- Guam",
+   "rule": "D1-bracket-strip+D2-editorial-strip"
+  },
+  {
+   "entity_id": "d1084c11-a151-f69c-a27b-11bd9850dc8f",
+   "census_class": "d",
+   "old_name": "Social Security Administration -- Maine Key Offices [SSA-ME] ★",
+   "new_name": "Social Security Administration -- Maine Key Offices",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "105235b0-f7db-7d91-a5f8-3f5cfdc66af0",
+   "census_class": "d",
+   "old_name": "Social Security Administration -- USVI (SSDI YES -- SSI CRITICAL NOTE) [SSA-VI] ★",
+   "new_name": "Social Security Administration -- USVI",
+   "rule": "D1-bracket-strip+D2-editorial-strip"
+  },
+  {
+   "entity_id": "479d76d2-71a0-4a4b-937b-7c222db1809f",
+   "census_class": "d",
+   "old_name": "State and Local Utility Programs — CRITICAL: Extreme Heat in Arizona",
+   "new_name": "State and Local Utility Programs",
+   "rule": "D2-editorial-strip"
+  },
+  {
+   "entity_id": "a5434c71-461e-2505-539f-966e4f6a5e73",
+   "census_class": "d",
+   "old_name": "State and Local Utility Programs — CRITICAL: FL Summer Heat + Hurricane Season",
+   "new_name": "State and Local Utility Programs",
+   "rule": "D2-editorial-strip"
+  },
+  {
+   "entity_id": "37d6cccc-258d-d32e-0050-cb7ac8ff2663",
+   "census_class": "d",
+   "old_name": "State Programs — CRITICAL: FL Opted Out of Summer EBT 2025",
+   "new_name": "State Programs",
+   "rule": "D2-editorial-strip"
+  },
+  {
+   "entity_id": "e10c656d-2d1b-1b43-6481-8a034d014dcc",
+   "census_class": "d",
+   "old_name": "State Programs — CRITICAL: FL Opted Out of Summer EBT 2025",
+   "new_name": "State Programs",
+   "rule": "D2-editorial-strip"
+  },
+  {
+   "entity_id": "8e7545d2-c761-34f5-4666-d8417457d657",
+   "census_class": "d",
+   "old_name": "State Programs — CRITICAL: Florida Has NOT Expanded Medicaid; 2026 Ballot Initiative Pending",
+   "new_name": "State Programs",
+   "rule": "D2-editorial-strip"
+  },
+  {
+   "entity_id": "051df1f8-9fb0-d5d8-8d22-14c694310eee",
+   "census_class": "d",
+   "old_name": "State Programs — CRITICAL: Florida Has NOT Expanded Medicaid; 2026 Ballot Initiative Pending",
+   "new_name": "State Programs",
+   "rule": "D2-editorial-strip"
+  },
+  {
+   "entity_id": "90a1794e-57a3-a7b9-e1e4-39780b5947b9",
+   "census_class": "d",
+   "old_name": "Statewide Legal Services of Connecticut (SLS) — Intake Gateway [SLS-CT] ★",
+   "new_name": "Statewide Legal Services of Connecticut (SLS) — Intake Gateway",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "dd829d2d-d6b8-4599-be5e-01fbc6d56b17",
+   "census_class": "d",
+   "old_name": "U.S. Attorney -- District of Guam (Hagatna) [USAO-DGU] ★",
+   "new_name": "U.S. Attorney -- District of Guam (Hagatna)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "bb53f9e6-a502-5968-2e18-fc7167e55568",
+   "census_class": "d",
+   "old_name": "U.S. Attorney -- District of Puerto Rico (San Juan) [USAO-DPR] ★",
+   "new_name": "U.S. Attorney -- District of Puerto Rico (San Juan)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "8f9aeafa-b14a-4926-d940-5288794dcc50",
+   "census_class": "d",
+   "old_name": "U.S. Attorney -- District of the Northern Mariana Islands [USAO-CNMI] ★",
+   "new_name": "U.S. Attorney -- District of the Northern Mariana Islands",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "f1274e35-75d1-8a22-4372-f505abf447e4",
+   "census_class": "d",
+   "old_name": "U.S. Attorney — District of New Hampshire (Concord) [USAO-DNH] ★",
+   "new_name": "U.S. Attorney — District of New Hampshire (Concord)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "1331f6b2-f9ed-fb39-5811-6e51d1c6efe2",
+   "census_class": "d",
+   "old_name": "U.S. Attorney — District of Rhode Island (Providence) [USAO-DRI] ★",
+   "new_name": "U.S. Attorney — District of Rhode Island (Providence)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "8c4af228-d02f-409d-7242-1661977d30b8",
+   "census_class": "d",
+   "old_name": "U.S. Attorney — EDNY (Brooklyn / Queens / Staten Island / Nassau / Suffolk) [USAO-EDNY] ★",
+   "new_name": "U.S. Attorney — EDNY (Brooklyn / Queens / Staten Island / Nassau / Suffolk)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "58821c01-e790-b03b-4ff3-2f4257053cdb",
+   "census_class": "d",
+   "old_name": "U.S. Attorney — NDNY (32 Upstate Counties including Albany / Syracuse) [USAO-NDNY] ★",
+   "new_name": "U.S. Attorney — NDNY (32 Upstate Counties including Albany / Syracuse)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "6861ec61-79ef-f58a-e99c-e64824219ba7",
+   "census_class": "d",
+   "old_name": "U.S. Attorney — SDNY (Manhattan / Bronx / Hudson Valley) [USAO-SDNY] ★",
+   "new_name": "U.S. Attorney — SDNY (Manhattan / Bronx / Hudson Valley)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "173b7178-cfde-eb12-5445-48560c947d4c",
+   "census_class": "d",
+   "old_name": "U.S. Department of Veterans Affairs — Substance Use Disorder (SUD) Program [VA-SUD] PARTIAL — verify remaining fields",
+   "new_name": "U.S. Department of Veterans Affairs — Substance Use Disorder (SUD) Program",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "6d02c5e0-c332-146d-1058-b07c5e058fd2",
+   "census_class": "d",
+   "old_name": "VA Maine Healthcare System -- Togus Campus [VA-ME] ★",
+   "new_name": "VA Maine Healthcare System -- Togus Campus",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "03c2b44c-bbba-5602-f90d-76890db3ccc0",
+   "census_class": "d",
+   "old_name": "VA Manchester VA Medical Center — New Hampshire [VA-NH] ★",
+   "new_name": "VA Manchester VA Medical Center — New Hampshire",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "24ddb0d6-a8e3-f1b0-8581-1a8bc2016fe2",
+   "census_class": "d",
+   "old_name": "VA Providence Healthcare System [VA-RI] ★",
+   "new_name": "VA Providence Healthcare System",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "b35f3939-402a-61af-21a8-060506d81e42",
+   "census_class": "d",
+   "old_name": "VA White River Junction Healthcare System (Vermont) [VA-VT] ★",
+   "new_name": "VA White River Junction Healthcare System (Vermont)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "20cdf248-e32d-667c-b259-28557e4d2ed1",
+   "census_class": "d",
+   "old_name": "VI Civil Rights Commission (VICRC) -- Civil Rights Enforcement [VI-VICRC] ★",
+   "new_name": "VI Civil Rights Commission (VICRC) -- Civil Rights Enforcement",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "9b78ffcf-addd-9375-85de-152cab96c7eb",
+   "census_class": "d",
+   "old_name": "VI Government Insurance Fund (GIF) -- Workers Compensation (Monopoly Insurer) [VI-GIF] ★",
+   "new_name": "VI Government Insurance Fund (GIF) -- Workers Compensation (Monopoly Insurer)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "71189b36-4169-f7eb-4ee4-0002057ca4dc",
+   "census_class": "d",
+   "old_name": "VI Housing Finance Authority (VIHFA) -- Public Housing and Section 8 [VI-VIHFA] ★",
+   "new_name": "VI Housing Finance Authority (VIHFA) -- Public Housing and Section 8",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "71ecbf58-0afd-acb8-bde6-6da84ba42e06",
+   "census_class": "d",
+   "old_name": "Volunteer Lawyers for Justice (VLJ) [VLJ-NJ] ★",
+   "new_name": "Volunteer Lawyers for Justice (VLJ)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "e77d3818-cd45-cf61-b135-d2cd615871cd",
+   "census_class": "d",
+   "old_name": "VT Attorney General — Civil Rights Unit (Private Employment Discrimination) [VT-AG-CRU] ★",
+   "new_name": "VT Attorney General — Civil Rights Unit (Private Employment Discrimination)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "fed60e38-0e5e-a710-d8fd-66fa1a4042fd",
+   "census_class": "d",
+   "old_name": "VT Department for Children and Families (DCF) — Benefits & Child Welfare [VT-DCF] ★",
+   "new_name": "VT Department for Children and Families (DCF) — Benefits & Child Welfare",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "5863fabc-c058-2ce9-4514-c4a166c734bd",
+   "census_class": "d",
+   "old_name": "VT Department of Labor — Wage & Hour / Worker Protection [VT-DOL-WHD] ★",
+   "new_name": "VT Department of Labor — Wage & Hour / Worker Protection",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "49564fe4-0523-bff5-063d-cbdcafe9b5c1",
+   "census_class": "d",
+   "old_name": "VT Human Rights Commission (VHRC) — Housing, Public Accommodations, State Employment [VT-VHRC] ★",
+   "new_name": "VT Human Rights Commission (VHRC) — Housing, Public Accommodations, State Employment",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "c45f73e8-5226-2e84-e199-408612e2ae8b",
+   "census_class": "d",
+   "old_name": "VT Workers' Compensation Division [VT-WCD] ★",
+   "new_name": "VT Workers' Compensation Division",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "6cf65e40-3aa0-badb-af77-b207ef111864",
+   "census_class": "d",
+   "old_name": "Wounded Warrior Project — SUD-related support (flagged: no dedicated national SUD program) [SUD-VET-WWP] PARTIAL — verify remaining fields",
+   "new_name": "Wounded Warrior Project — SUD-related support (flagged: no dedicated national SUD program)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "d7a34479-142a-f802-32bd-2cb63ef7509a",
+   "census_class": "d-nohyphen",
+   "old_name": "ACLU of New York (NYCLU) [NYCLU] ★",
+   "new_name": "ACLU of New York (NYCLU)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "90246715-f368-e6e4-9c45-dddcecec30dd",
+   "census_class": "d-nohyphen",
+   "old_name": "ACLU of Rhode Island (RIACLU) [RIACLU] ★",
+   "new_name": "ACLU of Rhode Island (RIACLU)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "1773ea8f-c33a-9a88-3ff8-4aaa0cd4b926",
+   "census_class": "d-nohyphen",
+   "old_name": "Chittenden County Regional Planning Commission — Northwest VT [CCRPC] ★",
+   "new_name": "Chittenden County Regional Planning Commission — Northwest VT",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "6dc7b9f7-4677-c560-8446-ab0e9baa0a04",
+   "census_class": "d-nohyphen",
+   "old_name": "Maine Coalition to End Domestic Violence (MCEDV) [MCEDV] ★",
+   "new_name": "Maine Coalition to End Domestic Violence (MCEDV)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "50163c43-04ea-3d18-4d5b-addb291fdecf",
+   "census_class": "d-nohyphen",
+   "old_name": "Maine Fair Housing Center (MFHC) [MFHC] ★",
+   "new_name": "Maine Fair Housing Center (MFHC)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "3b1f080c-f339-da4d-09b6-5adc5af143ab",
+   "census_class": "d-nohyphen",
+   "old_name": "New York Legal Assistance Group (NYLAG) — NYC Specialized Populations [NYLAG] ★",
+   "new_name": "New York Legal Assistance Group (NYLAG) — NYC Specialized Populations",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "18b56c2a-7ff6-633d-6d4f-ba1396b6c9a6",
+   "census_class": "d-nohyphen",
+   "old_name": "NH Coalition Against Domestic and Sexual Violence (NHCADSV) [NHCADSV] ★",
+   "new_name": "NH Coalition Against Domestic and Sexual Violence (NHCADSV)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "029b6f12-527e-764f-2c76-e5028702b71a",
+   "census_class": "d-nohyphen",
+   "old_name": "South Jersey Legal Services (SJLS) — 9 Southern Counties [SJLS] ★",
+   "new_name": "South Jersey Legal Services (SJLS) — 9 Southern Counties",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "df2475bf-71ea-046f-adf8-f79de979a759",
+   "census_class": "d-nohyphen",
+   "old_name": "American Samoa Legal Aid Inc. (ASLA) -- Primary Civil Legal Aid [ASLA] ★",
+   "new_name": "American Samoa Legal Aid Inc. (ASLA) -- Primary Civil Legal Aid",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "d06e5143-5e47-be71-ec2b-73755f065e1c",
+   "census_class": "d-nohyphen",
+   "old_name": "CHamoru Land Trust Commission -- Native CHamoru Indigenous Land Rights [CLTC] ★",
+   "new_name": "CHamoru Land Trust Commission -- Native CHamoru Indigenous Land Rights",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "94935053-c9c1-c304-40c6-6dd622e2ed73",
+   "census_class": "d-nohyphen",
+   "old_name": "Disability Rights Maine (DRM) -- P&A Organization [DRM] ★",
+   "new_name": "Disability Rights Maine (DRM) -- P&A Organization",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "eca66752-4f32-91d2-168f-c0b971172249",
+   "census_class": "d-nohyphen",
+   "old_name": "Disability Rights New Jersey (DRNJ) — P&A Organization [DRNJ] ★",
+   "new_name": "Disability Rights New Jersey (DRNJ) — P&A Organization",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "38b2d199-a9b9-90b7-9ada-13f661f9fbcc",
+   "census_class": "d-nohyphen",
+   "old_name": "Disability Rights Vermont (DRVT) — P&A Organization [DRVT] ★",
+   "new_name": "Disability Rights Vermont (DRVT) — P&A Organization",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "3944c380-afc1-7bfb-9fad-90dbc93508d7",
+   "census_class": "d-nohyphen",
+   "old_name": "Greater Boston Legal Services (GBLS) — Eastern Massachusetts [GBLS] ★",
+   "new_name": "Greater Boston Legal Services (GBLS) — Eastern Massachusetts",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "53b42aae-e568-6c05-9ffb-3d412a2004ef",
+   "census_class": "d-nohyphen",
+   "old_name": "Guam Coalition Against Sexual Assault and Family Violence (GCASAFV) [GCASAFV] ★",
+   "new_name": "Guam Coalition Against Sexual Assault and Family Violence (GCASAFV)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "e18be3ea-afe9-33f2-9821-1890e9997a76",
+   "census_class": "d-nohyphen",
+   "old_name": "Guam Disability Rights Center (GDRC) -- P&A Organization [GDRC] ★",
+   "new_name": "Guam Disability Rights Center (GDRC) -- P&A Organization",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "777d6565-ebee-5c2b-b825-4c49cec5b6f1",
+   "census_class": "d-nohyphen",
+   "old_name": "Guam Legal Services Corporation (GLSC) -- Primary Civil Legal Aid [GLSC] ★",
+   "new_name": "Guam Legal Services Corporation (GLSC) -- Primary Civil Legal Aid",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "0a86002e-b3b9-3f1b-4e61-11a97bb4f8f4",
+   "census_class": "d-nohyphen",
+   "old_name": "Legal Services NYC (LSNYC) — Free Civil Legal Help All 5 Boroughs [LSNYC] ★",
+   "new_name": "Legal Services NYC (LSNYC) — Free Civil Legal Help All 5 Boroughs",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "17d9a135-19b1-f993-a127-44e7f28c72fb",
+   "census_class": "d-nohyphen",
+   "old_name": "Legal Services of New Jersey (LSNJ) — Statewide Hotline & Coordinator [LSNJ] ★",
+   "new_name": "Legal Services of New Jersey (LSNJ) — Statewide Hotline & Coordinator",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "70ec6ae7-51f5-70d2-9f4c-c473e56f99ea",
+   "census_class": "d-nohyphen",
+   "old_name": "Mashantucket Pequot Tribal Nation — Ledyard, CT (Federally Recognized) [MPTN] ★",
+   "new_name": "Mashantucket Pequot Tribal Nation — Ledyard, CT (Federally Recognized)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "ef6c8bcd-da22-5d37-b726-438784c762bf",
+   "census_class": "d-nohyphen",
+   "old_name": "NJ Coalition to End Domestic Violence (NJCEDV) [NJCEDV] ★",
+   "new_name": "NJ Coalition to End Domestic Violence (NJCEDV)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "818e637f-b48e-7c78-bcca-4dd9b7558a1d",
+   "census_class": "d-nohyphen",
+   "old_name": "NJ Institute for Social Justice [NJISJ] ★",
+   "new_name": "NJ Institute for Social Justice",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "7f45105a-0ed6-b5ab-31c4-0d154acddcee",
+   "census_class": "d-nohyphen",
+   "old_name": "Proyecto DILOU -- Disability Rights Puerto Rico [DILOU] ★",
+   "new_name": "Proyecto DILOU -- Disability Rights Puerto Rico",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "7831b13d-0281-363c-08b9-997265f22b7d",
+   "census_class": "d-nohyphen",
+   "old_name": "RI Disability Law Center (RIDLC) — P&A Organization [RIDLC] ★",
+   "new_name": "RI Disability Law Center (RIDLC) — P&A Organization",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "73f6644f-ece2-42d0-6d4a-9b69a324e951",
+   "census_class": "d-nohyphen",
+   "old_name": "Saint Regis Mohawk Tribe — Akwesasne, NY (Federally Recognized) [SRMT] ★",
+   "new_name": "Saint Regis Mohawk Tribe — Akwesasne, NY (Federally Recognized)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "2dc2b2d7-c21d-b75f-c759-fec0010f0995",
+   "census_class": "d-nohyphen",
+   "old_name": "New Haven Legal Assistance Association (NHLAA) — New Haven Region [NHLAA] ★",
+   "new_name": "New Haven Legal Assistance Association (NHLAA) — New Haven Region",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "c1f734c5-4da8-26fd-1f56-bf715c0d6723",
+   "census_class": "d-nohyphen",
+   "old_name": "NY PESH Bureau — Public Employee Safety & Health (Public Sector Workers Only) [NYPESH] ★",
+   "new_name": "NY PESH Bureau — Public Employee Safety & Health (Public Sector Workers Only)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "2eaa4acb-4bc5-ada8-d4df-80a3353fa2dd",
+   "census_class": "d-nohyphen",
+   "old_name": "VI Disability Rights Center (VIDRC) -- P&A Organization [VIDRC] ★",
+   "new_name": "VI Disability Rights Center (VIDRC) -- P&A Organization",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "25230179-bbe3-ad77-72fa-f8a885a4c44e",
+   "census_class": "d-nohyphen",
+   "old_name": "Legal Services of the Virgin Islands (LSVI) -- Primary Civil Legal Aid [LSVI] ★",
+   "new_name": "Legal Services of the Virgin Islands (LSVI) -- Primary Civil Legal Aid",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "2ee9948c-9ebc-dbfe-5cee-934eb7fe2950",
+   "census_class": "d-nohyphen",
+   "old_name": "ACLU of Massachusetts (ACLUM) [ACLUM] ★",
+   "new_name": "ACLU of Massachusetts (ACLUM)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "5fe53cc6-01b0-a0ed-a177-5da3fde01fa0",
+   "census_class": "d-nohyphen",
+   "old_name": "Vermont Commission on Native American Affairs (VCNAA) — State-Recognized Tribes [VCNAA] ★",
+   "new_name": "Vermont Commission on Native American Affairs (VCNAA) — State-Recognized Tribes",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "8002ce6f-5e2f-1e43-f57d-0d119a2087bb",
+   "census_class": "d-nohyphen",
+   "old_name": "Vermont Refugee Resettlement Program (VRRP) — Burlington [VRRP] ★",
+   "new_name": "Vermont Refugee Resettlement Program (VRRP) — Burlington",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "a8faddd0-8a3f-ec92-7dd7-46071023e8d9",
+   "census_class": "d-nohyphen",
+   "old_name": "CT Coalition Against Domestic Violence (CCADV) [CCADV] ★",
+   "new_name": "CT Coalition Against Domestic Violence (CCADV)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "826ed38a-399f-c178-3220-4d505c9ee0aa",
+   "census_class": "d-nohyphen",
+   "old_name": "US District Court for the Northern Mariana Islands [DCNMI] ★",
+   "new_name": "US District Court for the Northern Mariana Islands",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "9dc26097-5c19-9de9-a777-a7084149dd0e",
+   "census_class": "d-nohyphen",
+   "old_name": "US District Court for the Northern Mariana Islands [DCNMI] ★",
+   "new_name": "US District Court for the Northern Mariana Islands",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "e23bfd75-9f47-a692-b9ea-6f179c2f0b4c",
+   "census_class": "d-nohyphen",
+   "old_name": "Greater Hartford Legal Aid (GHLA) — Hartford Region [GHLA] ★",
+   "new_name": "Greater Hartford Legal Aid (GHLA) — Hartford Region",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "1b3ccc1a-765e-413d-41f4-27bd7cd3959c",
+   "census_class": "d-nohyphen",
+   "old_name": "Massachusetts Legal Assistance Corporation (MLAC) — Statewide Coordinator & MassLegalHelp [MLAC] ★",
+   "new_name": "Massachusetts Legal Assistance Corporation (MLAC) — Statewide Coordinator & MassLegalHelp",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "6d46f5a1-03cf-6c9b-1181-cc61b7b87171",
+   "census_class": "d-nohyphen",
+   "old_name": "Massachusetts Advocates for Children (MAC) [MAC] ★",
+   "new_name": "Massachusetts Advocates for Children (MAC)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "c5ed52d5-345a-d5ed-913e-853ce1f05436",
+   "census_class": "d-nohyphen",
+   "old_name": "Disability Rights Connecticut (DRCT) — P&A Organization [DRCT] ★",
+   "new_name": "Disability Rights Connecticut (DRCT) — P&A Organization",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "cb2f6b74-8fa4-7801-9288-4f20d34a2359",
+   "census_class": "d-nohyphen",
+   "old_name": "Connecticut Fair Housing Center (CFHC) [CFHC] ★",
+   "new_name": "Connecticut Fair Housing Center (CFHC)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "c89d07ff-3304-ec70-34df-1e68fe625263",
+   "census_class": "d-bracket-sweep",
+   "old_name": "603 Legal Aid — Statewide Centralized Intake Gateway [603-LegalAid] ★",
+   "new_name": "603 Legal Aid — Statewide Centralized Intake Gateway",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "93c5d85b-09e2-0cec-a3ac-c3d7bd9343a1",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Abenaki Nation of Missisquoi (State-Recognized — Swanton VT, Franklin County) [Missisquoi] ★",
+   "new_name": "Abenaki Nation of Missisquoi (State-Recognized — Swanton VT, Franklin County)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "bcf52456-88d1-c635-a347-5b545775227b",
+   "census_class": "d-bracket-sweep",
+   "old_name": "BIA Eastern Region — For Federally Recognized Tribe Members in NJ (ICWA Compliance) [BIA-Eastern-ICWA] ★",
+   "new_name": "BIA Eastern Region — For Federally Recognized Tribe Members in NJ (ICWA Compliance)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "65417809-262a-6397-3c73-a8e52937459a",
+   "census_class": "d-bracket-sweep",
+   "old_name": "BIA Eastern Region — For ICWA Compliance in NY Child Welfare Proceedings [BIA-Eastern-NY-ICWA] ★",
+   "new_name": "BIA Eastern Region — For ICWA Compliance in NY Child Welfare Proceedings",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "730e794b-bee8-4018-a974-67ca52cec503",
+   "census_class": "d-bracket-sweep",
+   "old_name": "BIA Eastern Region — For ICWA in CT Child Welfare Proceedings [BIA-Eastern-CT] ★",
+   "new_name": "BIA Eastern Region — For ICWA in CT Child Welfare Proceedings",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "64860cd1-b1da-1243-6bb8-3d8e4fd17ff6",
+   "census_class": "d-bracket-sweep",
+   "old_name": "BIA Eastern Region — For ICWA in NH Child Welfare Proceedings (Out-of-State Tribe Members) [BIA-Eastern-NH] ★",
+   "new_name": "BIA Eastern Region — For ICWA in NH Child Welfare Proceedings (Out-of-State Tribe Members)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "7dbe93ff-241c-ebb5-69bf-31a0b77c68b8",
+   "census_class": "d-bracket-sweep",
+   "old_name": "BIA Eastern Region — For ICWA in VT Child Welfare Proceedings (Out-of-State Tribes) [BIA-Eastern-VT] ★",
+   "new_name": "BIA Eastern Region — For ICWA in VT Child Welfare Proceedings (Out-of-State Tribes)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "b35073d1-768f-754d-f05b-2ac6e776c687",
+   "census_class": "d-bracket-sweep",
+   "old_name": "BIA Eastern Region — ICWA for MA's Two Federally Recognized Tribes [BIA-Eastern-MA] ★",
+   "new_name": "BIA Eastern Region — ICWA for MA's Two Federally Recognized Tribes",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "07dce6d5-f0ae-ff7e-c0b7-87d85e4f77b0",
+   "census_class": "d-bracket-sweep",
+   "old_name": "BIA Eastern Region — ICWA for Narragansett Indian Tribe Member Children [BIA-Eastern-RI] ★",
+   "new_name": "BIA Eastern Region — ICWA for Narragansett Indian Tribe Member Children",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "6cbb509a-7d8e-64ff-7e75-3a49755cf936",
+   "census_class": "d-bracket-sweep",
+   "old_name": "BIA Eastern Region — Nashville TN (ICWA for Federally Recognized Tribe Members in NJ) [BIA-Eastern-NJ] ★",
+   "new_name": "BIA Eastern Region — Nashville TN (ICWA for Federally Recognized Tribe Members in NJ)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "d2a16489-cbdf-e2ce-3982-a322060919b8",
+   "census_class": "d-bracket-sweep",
+   "old_name": "BIA Eastern Region — Nashville TN (ICWA for NY's Federally Recognized Tribes) [BIA-Eastern-NY] ★",
+   "new_name": "BIA Eastern Region — Nashville TN (ICWA for NY's Federally Recognized Tribes)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "27825395-15d1-ebbb-9f33-79435281b950",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Camden County Government — Human Services [Camden-County] ★",
+   "new_name": "Camden County Government — Human Services",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "69b02b4f-6e83-f709-6664-05ce2321495a",
+   "census_class": "d-bracket-sweep",
+   "old_name": "City of Boston — Office of Civil Rights / Human Services [Boston-City] ★",
+   "new_name": "City of Boston — Office of Civil Rights / Human Services",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "5bfee8e7-3e42-1990-81b4-1ea14d0bf625",
+   "census_class": "d-bracket-sweep",
+   "old_name": "City of Burlington — Vermont's Largest City & Human Rights Hub [Burlington-City] ★",
+   "new_name": "City of Burlington — Vermont's Largest City & Human Rights Hub",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "75ab978b-78d1-efbb-f38d-e4a0352ba1f0",
+   "census_class": "d-bracket-sweep",
+   "old_name": "City of Hartford — Office of Community Services / Human Services [Hartford-City] ★",
+   "new_name": "City of Hartford — Office of Community Services / Human Services",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "3d0c0b7b-7313-3ac9-de4d-7380f6e83470",
+   "census_class": "d-bracket-sweep",
+   "old_name": "City of Nashua — NH's 2nd Largest City [Nashua-City] ★",
+   "new_name": "City of Nashua — NH's 2nd Largest City",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "b5237fe0-98f0-fc4c-f6aa-64c023d3a7e4",
+   "census_class": "d-bracket-sweep",
+   "old_name": "City of Newark — Municipal Government [Newark-City] ★",
+   "new_name": "City of Newark — Municipal Government",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "733c2411-0c9e-9a02-93f8-6260f3fe6809",
+   "census_class": "d-bracket-sweep",
+   "old_name": "City of Pawtucket — Human Services [Pawtucket-City] ★",
+   "new_name": "City of Pawtucket — Human Services",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "21fab971-cf6a-3296-5385-2c81395a9ae6",
+   "census_class": "d-bracket-sweep",
+   "old_name": "City of Portland -- Maine Largest City [Portland-City] ★",
+   "new_name": "City of Portland -- Maine Largest City",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "58bfcaef-487d-fee4-b7f6-2b70cdf35a67",
+   "census_class": "d-bracket-sweep",
+   "old_name": "City of Providence — Human Services / Civil Rights [Providence-City] ★",
+   "new_name": "City of Providence — Human Services / Civil Rights",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "f3f67145-ad2c-5082-ec02-4d00bfcb8929",
+   "census_class": "d-bracket-sweep",
+   "old_name": "City of San Juan (San Juan Municipality) -- Capital and Largest City [SanJuan-City] ★",
+   "new_name": "City of San Juan (San Juan Municipality) -- Capital and Largest City",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "304d2892-9426-25e3-6fb9-1186305c98fe",
+   "census_class": "d-bracket-sweep",
+   "old_name": "City of Springfield — Human Services / Mayor's Office [Springfield-City] ★",
+   "new_name": "City of Springfield — Human Services / Mayor's Office",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "749df13f-ea37-4181-1707-02032cb6c493",
+   "census_class": "d-bracket-sweep",
+   "old_name": "City of Worcester — Human Services / Civil Rights [Worcester-City] ★",
+   "new_name": "City of Worcester — Human Services / Civil Rights",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "367a0f4e-e449-efc8-8fa9-7c383ad1a6cc",
+   "census_class": "d-bracket-sweep",
+   "old_name": "CNMI Supreme Court -- Highest Local Court [CNMI-SupCt] ★",
+   "new_name": "CNMI Supreme Court -- Highest Local Court",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "a5cc4eb0-bdda-fc13-d75f-86d1c366068b",
+   "census_class": "d-bracket-sweep",
+   "old_name": "CT Supreme Court — Highest State Court [CT.SC.] ★",
+   "new_name": "CT Supreme Court — Highest State Court",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "14c20101-2bb2-f562-cd24-44a89bf446e3",
+   "census_class": "d-bracket-sweep",
+   "old_name": "District Court of Guam (D. Guam) -- Single Courthouse in Hagatna [D.Guam] ★",
+   "new_name": "District Court of Guam (D. Guam) -- Single Courthouse in Hagatna",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "30e02cbf-9274-a216-80f7-aacb9c0cbf6a",
+   "census_class": "d-bracket-sweep",
+   "old_name": "District Court of the Virgin Islands -- St. Croix Division [D.VI.STX] ★",
+   "new_name": "District Court of the Virgin Islands -- St. Croix Division",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "c4022d04-1af2-76c2-b674-84356156a800",
+   "census_class": "d-bracket-sweep",
+   "old_name": "District Court of the Virgin Islands -- St. Thomas/St. John Division [D.VI.STT] ★",
+   "new_name": "District Court of the Virgin Islands -- St. Thomas/St. John Division",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "902375a9-eb02-2db1-85eb-d87d1b9747db",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Erie County (Buffalo) — Social Services / Human Services [Erie-County] ★",
+   "new_name": "Erie County (Buffalo) — Social Services / Human Services",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "435b8ca9-2407-5ff7-a7be-919ccb9ac8ec",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Essex County Government — Human Services [Essex-County] ★",
+   "new_name": "Essex County Government — Human Services",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "cc1ab651-273b-b58e-6215-e85099bd384c",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Fairfield County Government / Bridgeport Social Services [Fairfield-County] ★",
+   "new_name": "Fairfield County Government / Bridgeport Social Services",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "e51f9f48-e33c-7517-0dad-784d593ff69e",
+   "census_class": "d-bracket-sweep",
+   "old_name": "High Court of American Samoa -- Highest Local Court [AS-HighCourt] ★",
+   "new_name": "High Court of American Samoa -- Highest Local Court",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "ba9e6cbd-8414-bc09-1b3c-90bc80637e2f",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Houlton Band of Maliseet Indians -- Littleton, ME (Federally Recognized) [Maliseet] ★",
+   "new_name": "Houlton Band of Maliseet Indians -- Littleton, ME (Federally Recognized)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "42ad2c99-34b7-a89d-7a14-4c681f19cd6d",
+   "census_class": "d-bracket-sweep",
+   "old_name": "MA Supreme Judicial Court (SJC) — Highest State Court [MA.SJC.] ★",
+   "new_name": "MA Supreme Judicial Court (SJC) — Highest State Court",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "a81e0e36-5dd5-8a7d-7b79-52007c24d15f",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Maine Supreme Judicial Court (SJC / Law Court) -- Highest State Court [ME.SJC.] ★",
+   "new_name": "Maine Supreme Judicial Court (SJC / Law Court) -- Highest State Court",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "91e0f5b5-e404-0385-fcc4-7de6fb825c28",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Mashpee Wampanoag Tribe — Mashpee, MA (Federally Recognized — Cape Cod) [Mashpee-Wampanoag] ★",
+   "new_name": "Mashpee Wampanoag Tribe — Mashpee, MA (Federally Recognized — Cape Cod)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "b0b4e329-4377-6615-4ced-0d247484ccee",
+   "census_class": "d-bracket-sweep",
+   "old_name": "MassHealth — Medicaid / Commonwealth Care / Children's Medical Security Plan [MA-MassHealth] ★",
+   "new_name": "MassHealth — Medicaid / Commonwealth Care / Children's Medical Security Plan",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "59ab60ad-5f8b-3fae-3514-2c43acb4267f",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Mikmaq Nation -- Presque Isle, ME (Federally Recognized) [MikmaqNation] ★",
+   "new_name": "Mikmaq Nation -- Presque Isle, ME (Federally Recognized)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "4ad3462a-2e43-e615-995b-5a8359e17513",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Mikmaq Nation -- Presque Isle, ME (Federally Recognized) [MikmaqNation] ★",
+   "new_name": "Mikmaq Nation -- Presque Isle, ME (Federally Recognized)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "1175bbd5-db5c-331e-2ecd-abc7c7d3bcac",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Mohegan Tribe — Uncasville, CT (Federally Recognized) [Mohegan] ★",
+   "new_name": "Mohegan Tribe — Uncasville, CT (Federally Recognized)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "2e2a0702-a07f-f0f8-2e1f-a53521191dd0",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Municipalities of Bayamon, Ponce, and Caguas -- Key Metro Areas [PR-Metros] ★",
+   "new_name": "Municipalities of Bayamon, Ponce, and Caguas -- Key Metro Areas",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "7f1ef06d-8490-6dd0-e065-978982a9088f",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Municipalities of Bayamon, Ponce, and Caguas -- Key Metro Areas [PR-Metros] ★",
+   "new_name": "Municipalities of Bayamon, Ponce, and Caguas -- Key Metro Areas",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "59d86bb2-05a5-3c77-1206-391e7451a2f9",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Municipalities of Bayamon, Ponce, and Caguas -- Key Metro Areas [PR-Metros] ★",
+   "new_name": "Municipalities of Bayamon, Ponce, and Caguas -- Key Metro Areas",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "995ecb20-3263-257b-1525-c253be17a41e",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Nanticoke Lenni-Lenape Tribal Nation (NJ State-Recognized — Bridgeton, Cumberland County) [NLL-Nation] ★",
+   "new_name": "Nanticoke Lenni-Lenape Tribal Nation (NJ State-Recognized — Bridgeton, Cumberland County)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "ae8d8fc6-e9d3-e68c-1f73-f8afa5fdb5af",
+   "census_class": "d-bracket-sweep",
+   "old_name": "New Haven City Government — IRIS & Social Services [NewHaven-City] ★",
+   "new_name": "New Haven City Government — IRIS & Social Services",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "e6c07ee7-b116-77be-2a30-a62f32018abe",
+   "census_class": "d-bracket-sweep",
+   "old_name": "NJ Department of Labor & Workforce Development — NJDOL Main [NJ-DOL-Main] ★",
+   "new_name": "NJ Department of Labor & Workforce Development — NJDOL Main",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "8b3aa53d-6b9c-e5a0-7c4f-5741c8b2cd8c",
+   "census_class": "d-bracket-sweep",
+   "old_name": "NJ Superior Court — Appellate Division [NJ.App.Div.] ★",
+   "new_name": "NJ Superior Court — Appellate Division",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "e72b84dd-fc7e-2794-8792-52345ed10a47",
+   "census_class": "d-bracket-sweep",
+   "old_name": "NJ Superior Court — Clerk's Office (Statewide) [NJ.SC.Clerk] ★",
+   "new_name": "NJ Superior Court — Clerk's Office (Statewide)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "3fb2cdbb-52f5-c922-c0f4-56541b22a8a4",
+   "census_class": "d-bracket-sweep",
+   "old_name": "NJ Supreme Court [NJ.S.Ct.] ★",
+   "new_name": "NJ Supreme Court",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "6328a030-493d-8f98-3ef7-4de87ff1e2fe",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Nulhegan Band of the Coosuk Abenaki Nation (State-Recognized — Derby VT, Orleans County) [Nulhegan] ★",
+   "new_name": "Nulhegan Band of the Coosuk Abenaki Nation (State-Recognized — Derby VT, Orleans County)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "7d3a8161-2935-6cca-2a1f-1b1c7faf5eae",
+   "census_class": "d-bracket-sweep",
+   "old_name": "NY Court of Appeals — Highest State Court [NY.Ct.App.] ★",
+   "new_name": "NY Court of Appeals — Highest State Court",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "2aaa0a02-0bec-0e73-26c3-a9cc1c40538f",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Oneida Indian Nation — Verona, NY (Federally Recognized) [Oneida-Nation] ★",
+   "new_name": "Oneida Indian Nation — Verona, NY (Federally Recognized)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "2c939374-fff6-a485-6b4d-5c04dbac2a42",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Penobscot Nation -- Indian Island, Old Town ME (Federally Recognized) [Penobscot] ★",
+   "new_name": "Penobscot Nation -- Indian Island, Old Town ME (Federally Recognized)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "904d5f5b-1252-60e1-44a4-948cb65d6918",
+   "census_class": "d-bracket-sweep",
+   "old_name": "PR Supreme Court (Tribunal Supremo de Puerto Rico) -- Highest PR Court [PR.Sup.] ★",
+   "new_name": "PR Supreme Court (Tribunal Supremo de Puerto Rico) -- Highest PR Court",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "769b7d9b-b08e-9ab4-5b52-9bd54000ccf4",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Ramapough Lenape Nation (NJ State-Recognized — Mahwah, Bergen/Passaic Counties) [Ramapough] ★",
+   "new_name": "Ramapough Lenape Nation (NJ State-Recognized — Mahwah, Bergen/Passaic Counties)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "7fa0921e-6ae7-ca68-75e0-cbf179245398",
+   "census_class": "d-bracket-sweep",
+   "old_name": "RI Supreme Court — Highest State Court [RI.SC.] ★",
+   "new_name": "RI Supreme Court — Highest State Court",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "13491661-5c1c-27a0-0784-c716203b9f2f",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Superior Court of Guam -- Trial Court [GU.Sup.Ct.] ★",
+   "new_name": "Superior Court of Guam -- Trial Court",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "45399313-346c-00cb-f65e-f88e90c5b792",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Supreme Court of Guam -- Highest Local Court [GU.SC.] ★",
+   "new_name": "Supreme Court of Guam -- Highest Local Court",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "8d0e029c-5dff-faa5-2367-eb45ca98f672",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Supreme Court of the Virgin Islands -- Highest VI Court [VI.SC.] ★",
+   "new_name": "Supreme Court of the Virgin Islands -- Highest VI Court",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "b560beb8-9f07-4cca-45a9-860653f616ed",
+   "census_class": "d-bracket-sweep",
+   "old_name": "The Legal Aid Society — NYC (Nation's Oldest & Largest Legal Aid Organization) [LegalAid-NYC] ★",
+   "new_name": "The Legal Aid Society — NYC (Nation's Oldest & Largest Legal Aid Organization)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "c7f30b7e-cc28-dc8c-d459-eebedcd35640",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. Bankruptcy Court — District of New Hampshire (Concord) [Bankr.D.NH] ★",
+   "new_name": "U.S. Bankruptcy Court — District of New Hampshire (Concord)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "91c8dda0-ceaf-df11-8256-7d393d49c59b",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. Bankruptcy Court -- District of Puerto Rico (PROMESA / Title III) [Bankr.PR] ★",
+   "new_name": "U.S. Bankruptcy Court -- District of Puerto Rico (PROMESA / Title III)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "6bfee5d4-0ad5-c897-3521-ab2ca4c71eb2",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. Bankruptcy Court — District of Rhode Island [Bankr.D.RI] ★",
+   "new_name": "U.S. Bankruptcy Court — District of Rhode Island",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "4458d09c-3e6b-d830-66e2-b2e67337c48e",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. Bankruptcy Court — District of Vermont [Bankr.D.Vt.] ★",
+   "new_name": "U.S. Bankruptcy Court — District of Vermont",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "c90657d4-740b-63a8-99b4-e7853d5b11c5",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. Court of Appeals — First Circuit (Boston — Serves MA, ME, NH, RI, PR) [1st.Cir.] ★",
+   "new_name": "U.S. Court of Appeals — First Circuit (Boston — Serves MA, ME, NH, RI, PR)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "9fb69ac8-57af-1932-8b38-98e29cbe3ead",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. Court of Appeals -- First Circuit (Boston -- Serves Maine) [1st.Cir.ME] ★",
+   "new_name": "U.S. Court of Appeals -- First Circuit (Boston -- Serves Maine)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "4bf1af1d-c229-3de5-087b-ea3f45ce1056",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. Court of Appeals — First Circuit (Boston — Serves NH) [1st.Cir.NH] ★",
+   "new_name": "U.S. Court of Appeals — First Circuit (Boston — Serves NH)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "3e099669-72a8-676a-519d-ea91f898601b",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. Court of Appeals -- First Circuit (Boston -- Serves Puerto Rico) [1st.Cir.PR] ★",
+   "new_name": "U.S. Court of Appeals -- First Circuit (Boston -- Serves Puerto Rico)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "687156eb-72ca-07a9-cc9c-ff81858ca314",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. Court of Appeals — First Circuit (Boston — Serves RI) [1st.Cir.RI] ★",
+   "new_name": "U.S. Court of Appeals — First Circuit (Boston — Serves RI)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "b9cba3d1-4e21-d9b1-1817-d0fc66d6fec8",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. Court of Appeals -- Ninth Circuit (San Francisco -- Serves Guam) [9th.Cir.GU] ★",
+   "new_name": "U.S. Court of Appeals -- Ninth Circuit (San Francisco -- Serves Guam)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "ab889584-377a-3f60-972f-6e7ed1a242cb",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. Court of Appeals — Second Circuit (NYC — Serves NY, CT, VT) [2nd.Cir.] ★",
+   "new_name": "U.S. Court of Appeals — Second Circuit (NYC — Serves NY, CT, VT)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "6c1592ff-5c4c-adef-0cda-093210cdfa5a",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. Court of Appeals — Third Circuit (Philadelphia PA — Serves NJ) [3rd.Cir.] ★",
+   "new_name": "U.S. Court of Appeals — Third Circuit (Philadelphia PA — Serves NJ)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "3eedc09e-6804-65e4-123b-b0af4bba3b66",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. Court of Appeals -- Third Circuit (Philadelphia -- Serves USVI) [3rd.Cir.VI] ★",
+   "new_name": "U.S. Court of Appeals -- Third Circuit (Philadelphia -- Serves USVI)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "2543229d-e5c8-6acf-8119-4507598c0eb6",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. District Court — D. Mass., Central Division (Worcester) [D.Mass.Worcester] ★",
+   "new_name": "U.S. District Court — D. Mass., Central Division (Worcester)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "5d642a30-06fe-6d42-0bb9-ffb6c6447ad0",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. District Court — D. Mass., Eastern Division (Boston — HQ) [D.Mass.Boston] ★",
+   "new_name": "U.S. District Court — D. Mass., Eastern Division (Boston — HQ)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "15892008-295e-c519-ff2f-65013a1bf39b",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. District Court — D. Mass., Western Division (Springfield) [D.Mass.Springfield] ★",
+   "new_name": "U.S. District Court — D. Mass., Western Division (Springfield)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "4aebaa4f-ff44-0401-891a-363ce82b6b75",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. District Court — District of Connecticut, Bridgeport [D.Conn.Bpt] ★",
+   "new_name": "U.S. District Court — District of Connecticut, Bridgeport",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "3e70cdd3-cb62-92a7-3069-9da4aa384180",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. District Court — District of Connecticut, Hartford [D.Conn.Htfd] ★",
+   "new_name": "U.S. District Court — District of Connecticut, Hartford",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "77531aa8-93c3-0f1b-89cc-689718615715",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. District Court — District of Connecticut, New Haven (HQ) [D.Conn.NH] ★",
+   "new_name": "U.S. District Court — District of Connecticut, New Haven (HQ)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "0fc9335e-4393-dc53-f827-a349e2bbcf71",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. District Court -- District of Maine, Bangor [D.Me.Bangor] ★",
+   "new_name": "U.S. District Court -- District of Maine, Bangor",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "d324b72d-1bea-102f-a4d4-c8fe64044a79",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. District Court -- District of Maine, Portland (HQ) [D.Me.Portland] ★",
+   "new_name": "U.S. District Court -- District of Maine, Portland (HQ)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "590a8708-df38-feba-4157-eeb3c49b5060",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. District Court — District of New Hampshire (Concord) [D.NH] ★",
+   "new_name": "U.S. District Court — District of New Hampshire (Concord)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "4aea39e6-3308-07b8-391d-56420159229e",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. District Court — District of New Jersey, Newark Vicinage [D.NJ-Newark] ★",
+   "new_name": "U.S. District Court — District of New Jersey, Newark Vicinage",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "c369ce35-a881-0fff-5ae6-1f435b0e0387",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. District Court — District of New Jersey, Trenton Vicinage [D.NJ-Trenton] ★",
+   "new_name": "U.S. District Court — District of New Jersey, Trenton Vicinage",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "ebce6ab4-e90b-2b5b-86cf-d031289b8f6d",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. District Court -- District of Puerto Rico, Clemente Ruiz Nazario Courthouse (Hato Rey) [D.PR.Ruiz] ★",
+   "new_name": "U.S. District Court -- District of Puerto Rico, Clemente Ruiz Nazario Courthouse (Hato Rey)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "ebd716a9-a7e3-0e4d-d322-0cb711a8c27b",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. District Court -- District of Puerto Rico, Jose V. Toledo Courthouse (Old San Juan) [D.PR.Toledo] ★",
+   "new_name": "U.S. District Court -- District of Puerto Rico, Jose V. Toledo Courthouse (Old San Juan)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "68def48b-83fb-ddc9-46a9-9ce1b14a82e2",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. District Court — District of Vermont, Brattleboro [D.Vt.Bratt] ★",
+   "new_name": "U.S. District Court — District of Vermont, Brattleboro",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "6979814b-bcb0-676f-bea3-b9f22fd20d2e",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. District Court — District of Vermont, Burlington (HQ) [D.Vt.Burl] ★",
+   "new_name": "U.S. District Court — District of Vermont, Burlington (HQ)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "dac2635b-c5e4-cdc3-29ea-1e85e223bb26",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. District Court — District of Vermont, Rutland [D.Vt.Rutland] ★",
+   "new_name": "U.S. District Court — District of Vermont, Rutland",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "74b03fa3-5c02-1dc8-5be4-4142e93df4fe",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Vermont Network Against Domestic & Sexual Violence [VT-Network] ★",
+   "new_name": "Vermont Network Against Domestic & Sexual Violence",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "5d318726-2685-f906-24f0-9d9ab8afc424",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Vermont Supreme Court — Highest State Court [VT.SC.] ★",
+   "new_name": "Vermont Supreme Court — Highest State Court",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "40af901a-01c9-8371-408b-f4b50973cb6c",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Wampanoag Tribe of Gay Head (Aquinnah) — Martha's Vineyard (Federally Recognized) [Aquinnah-Wampanoag] ★",
+   "new_name": "Wampanoag Tribe of Gay Head (Aquinnah) — Martha's Vineyard (Federally Recognized)",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "6db9b9e1-b110-c290-da32-b460f28db1e7",
+   "census_class": "d-bracket-sweep",
+   "old_name": "211 American Samoa -- Human Services Referral [211-AS] ★",
+   "new_name": "211 American Samoa -- Human Services Referral",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "67ce697c-bb97-bac6-e7af-07ef95760ec0",
+   "census_class": "d-bracket-sweep",
+   "old_name": "211 Connecticut [211-CT] ★",
+   "new_name": "211 Connecticut",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "eb167f6d-94ea-42a0-83a5-336b282c2979",
+   "census_class": "d-bracket-sweep",
+   "old_name": "211 Maine [211-ME] ★",
+   "new_name": "211 Maine",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "65c84efa-8fba-f931-d147-5d579930a1c4",
+   "census_class": "d-bracket-sweep",
+   "old_name": "211 Massachusetts [211-MA] ★",
+   "new_name": "211 Massachusetts",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "ef52c63c-1548-09f5-1a3d-e8a210f0f512",
+   "census_class": "d-bracket-sweep",
+   "old_name": "211 New Hampshire [211-NH] ★",
+   "new_name": "211 New Hampshire",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "6cf18a5b-c0ad-79bf-236c-c06b2331d91d",
+   "census_class": "d-bracket-sweep",
+   "old_name": "211 New Jersey [211-NJ] ★",
+   "new_name": "211 New Jersey",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "1970629f-7f35-cacd-0b8e-c0df96492b6e",
+   "census_class": "d-bracket-sweep",
+   "old_name": "211 New York [211-NY] ★",
+   "new_name": "211 New York",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "f1979120-9e08-303c-277f-3707585c30bd",
+   "census_class": "d-bracket-sweep",
+   "old_name": "211 Puerto Rico [211-PR] ★",
+   "new_name": "211 Puerto Rico",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "a0ca4f62-af4c-7494-0364-2ee127d35137",
+   "census_class": "d-bracket-sweep",
+   "old_name": "211 Rhode Island [211-RI] ★",
+   "new_name": "211 Rhode Island",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "ef6dc682-d74e-af00-9f16-90a7459285e5",
+   "census_class": "d-bracket-sweep",
+   "old_name": "211 USVI -- Human Services Referral [211-VI] ★",
+   "new_name": "211 USVI -- Human Services Referral",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "ca94aa36-b779-5109-1f42-bcfecfa6f704",
+   "census_class": "d-bracket-sweep",
+   "old_name": "211 Vermont [211-VT] ★",
+   "new_name": "211 Vermont",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "fd2233f7-4596-816c-f9ab-ef0c15aa0a84",
+   "census_class": "d-bracket-sweep",
+   "old_name": "CT Courts Self-Help Center [CT.SelfHelp] ★",
+   "new_name": "CT Courts Self-Help Center",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "33d6a8f5-d107-b5b9-a713-758de07e1371",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Day One — RI's Statewide DV/SA Coalition [DayOne-RI] ★",
+   "new_name": "Day One — RI's Statewide DV/SA Coalition",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "0013acfc-22e4-5973-b140-3828349dca66",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Guam 211 / Dial 211 -- Human Services Referral [211-GU] ★",
+   "new_name": "Guam 211 / Dial 211 -- Human Services Referral",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "7e6b106d-794e-3e38-1c67-a57640fe3c00",
+   "census_class": "d-bracket-sweep",
+   "old_name": "MA Courts Self-Help Center — LawHelp [MA.SelfHelp] ★",
+   "new_name": "MA Courts Self-Help Center — LawHelp",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "d7a1001f-7f77-2d77-211a-612a8a076448",
+   "census_class": "d-bracket-sweep",
+   "old_name": "NH Courts Self-Help Center [NH.SelfHelp] ★",
+   "new_name": "NH Courts Self-Help Center",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "2ce5bc47-9171-23f6-b5bf-f67338f811a4",
+   "census_class": "d-bracket-sweep",
+   "old_name": "NH Supreme Court — Highest State Court [NH.SC.] ★",
+   "new_name": "NH Supreme Court — Highest State Court",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "94493cac-da80-2bf1-3a98-7a2e43c0e9a8",
+   "census_class": "d-bracket-sweep",
+   "old_name": "NJ Courts Self-Help Center [NJ.SelfHelp] ★",
+   "new_name": "NJ Courts Self-Help Center",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "e8b250a4-fa9f-e3ed-d517-c8cb3bde1d97",
+   "census_class": "d-bracket-sweep",
+   "old_name": "NY Courts Self-Help Center — CourtHelp [NY.SelfHelp] ★",
+   "new_name": "NY Courts Self-Help Center — CourtHelp",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "b6337535-c866-7ec8-ca54-b47d9adcd793",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Vermont Courts Self-Help Center [VT.SelfHelp] ★",
+   "new_name": "Vermont Courts Self-Help Center",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "7caa7aee-512f-378b-2469-3e73a2d11fdd",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Vermont Law Help / LAWline [VT-LawHelp] ★",
+   "new_name": "Vermont Law Help / LAWline",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "047f98ca-b43a-cafd-b1af-f70a6e891638",
+   "census_class": "d-bracket-sweep",
+   "old_name": "USVI Legislature (34th Legislature) -- Legislative Branch [GVI-Leg] ★",
+   "new_name": "USVI Legislature (34th Legislature) -- Legislative Branch",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "512bbcf5-df80-761e-279c-71c81bde05f5",
+   "census_class": "d-bracket-sweep",
+   "old_name": "City of Bangor -- Gateway to Northern Maine and Aroostook County [Bangor-City] ★",
+   "new_name": "City of Bangor -- Gateway to Northern Maine and Aroostook County",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "7e60d506-fb75-bb7d-9558-99b5bf8d0178",
+   "census_class": "d-bracket-sweep",
+   "old_name": "AyudaLegal Puerto Rico -- Legal Information Portal [AyudaLegal-PR] ★",
+   "new_name": "AyudaLegal Puerto Rico -- Legal Information Portal",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "80c7fae7-9193-9228-882b-2b43800249e8",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Neighborhood Legal Services (NLS) — Western NY / Buffalo Metro [NLS-Buffalo] ★",
+   "new_name": "Neighborhood Legal Services (NLS) — Western NY / Buffalo Metro",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "939460e8-4de0-e2ed-e353-97e53007108d",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Wabanaki REACH -- Tribal Domestic Violence Advocacy [Wabanaki-REACH] ★",
+   "new_name": "Wabanaki REACH -- Tribal Domestic Violence Advocacy",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "b5c9437d-12c0-7c58-47cc-4257b0f3a310",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Casa Pensamiento de Mujer / DV Services Network PR [Casa-PR] ★",
+   "new_name": "Casa Pensamiento de Mujer / DV Services Network PR",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "e18d3cdc-3ef9-b737-5f73-a203df712228",
+   "census_class": "d-bracket-sweep",
+   "old_name": "PR Courts Self-Help / Oficina de Acceso a la Justicia [PR.SelfHelp] ★",
+   "new_name": "PR Courts Self-Help / Oficina de Acceso a la Justicia",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "05be5254-7bbd-8223-e803-7e7ca96fe8b0",
+   "census_class": "d-bracket-sweep",
+   "old_name": "City of Manchester — Largest City in NH [Manchester-City] ★",
+   "new_name": "City of Manchester — Largest City in NH",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "8f544045-b929-4e93-14b1-20565d5e84c6",
+   "census_class": "d-bracket-sweep",
+   "old_name": "Bergen County Government [Bergen-County] ★",
+   "new_name": "Bergen County Government",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "a98a95e9-ed69-80cf-2a16-874366bcbc91",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. District Court — District of New Jersey, Camden Vicinage [D.NJ-Camden] ★",
+   "new_name": "U.S. District Court — District of New Jersey, Camden Vicinage",
+   "rule": "D1-bracket-strip"
+  },
+  {
+   "entity_id": "c8d5590d-2aaf-28ae-0a4b-72e330b48351",
+   "census_class": "d-bracket-sweep",
+   "old_name": "U.S. District Court — District of Rhode Island (Providence) [D.RI] ★",
+   "new_name": "U.S. District Court — District of Rhode Island (Providence)",
+   "rule": "D1-bracket-strip"
+  }
+ ],
+ "clears": [
+  {
+   "entity_id": "bdb14f8d-4982-41ac-9570-72f1d78c12b2",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "ebbcab70-a9f2-433d-8a1e-b2568acf2ddb",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "493c91ad-8c53-4177-892a-929d4edfcce6",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "6af9f20d-cc0b-43b0-9879-022819cdfd75",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "22667e79-4eff-40bc-bd21-702f220c3743",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "cbe027f3-6ad7-4ad2-9dbb-60f5f0a925d5",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-arizona-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "dc9c1a6e-c5fb-4afe-afde-5e37bb799ac9",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "10c9bc50-789f-4c14-a3f3-4279af58744c",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "1a456f92-d6df-423e-90a4-9f4c9884644b",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "a4cdd1eb-a1db-4e63-90e3-4bfd599a64b9",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "2d6f9520-07ff-4200-a733-54fbcccff674",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-illinois-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "2c7bac55-cd15-4211-818b-3ed58bf4275d",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "2c69d68b-f83b-4596-ae25-b301e03670a2",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "3a38df6f-74bc-45d3-9a40-e990b428e5ee",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "46a2165d-8ede-48d2-b94c-09e724e51220",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "57934c7b-92ec-44f8-92c8-c55ed841834d",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "c1bbad60-ddd2-4d8c-9e86-8e75dbfc6dfa",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-alabama-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "5052c2e8-6970-4882-912a-ba12316c22d4",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "a6b90836-e0cf-4fa4-bf29-0a3de75852ef",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-alabama-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "27597202-4395-41b2-957c-d86a5a29ccab",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "afc68be0-01a6-4c3e-b46a-3ae1da63366b",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "889ea61b-ac11-4848-ab84-e4cb6f5a9363",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "1b81f951-634e-424b-8a49-b3de6561f4f6",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "c75aea20-5d84-47b3-8173-187dcfbb250a",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "fe09bea8-1bc1-4ea5-8824-ae8274058e0d",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "57ff8a60-156c-4a70-9397-b6e7886ea755",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "2fa2316f-1e76-49c0-bb9c-cd1b43042be1",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "0062306e-609e-465c-b98f-8fd8712b4d5d",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-alabama-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "e17dba54-c4ee-40cd-b8ec-b8b1113f5084",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "a9636632-8d89-47bb-84ff-73e2ab76e1ff",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "6235f456-560e-464e-983d-e296a7c42d80",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "2dcfb6a2-a8e8-41d1-96b2-a63e09954796",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "2f5ee1d2-4513-4d79-917a-096691adad9e",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "9fc40e05-2441-4c9d-a576-09352cd97f2b",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "b94a96bf-c662-4c82-b64d-01a5098d89c1",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "d885ebfc-f51f-4ad2-8982-36e161e0f62d",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "320dbf7c-0ffa-49c1-a7ae-3e572ef8d76c",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "f7fadf80-f34e-4429-a9e2-d70969939f87",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "c9c1ec7e-dd64-4de2-9c2f-c6c1b59b35cd",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "c85780bb-7392-42ce-8907-596b86aac4bb",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "88070555-2ea9-4953-9eb8-903f1b59879a",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "3058b8ee-fc66-4e4b-8fd4-2d7d9a51b04d",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "f2f65a63-e0ad-44e0-bd0c-67035eb9fb6a",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "6c86f65c-3d79-4f35-8fc9-734ab430ca08",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "5bb18bac-c823-434c-9309-61e0acca8419",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "d944187d-8053-43f0-ace2-e88192d95b3d",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "1d359ad1-443f-4f57-a016-47562d31f845",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "47705c38-f0cd-4ca7-abe9-ddfedc4495e0",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "a93f2aef-6075-4263-884d-8c48448a4261",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-alabama-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "9262446e-7b11-4145-810b-5f0c84f765e0",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "85718ecb-a116-4a33-b272-d8ed98c659ec",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "b68d31db-08c4-4262-bd2b-61d7de9338a5",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "4b5c44f5-ac84-45b2-a6af-3d4d1224f85a",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-alabama-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "8cfd7084-0093-4a13-a97f-66da4d89cd31",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "eb46329e-dd07-467b-b20e-2c9ef28ae858",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "400c5692-7754-4e99-ba7a-d6eb36f742ef",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "d3f498b3-5741-438b-ac4e-178af933f294",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "7c290f50-fa30-4f0b-b65f-94bcc75419f8",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "7511a56a-c1e6-497d-a3e2-69462e0f364f",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "7dbfeb70-1b65-4037-b950-767bb48a701c",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "54cbef15-def7-42ec-8058-f59068d46aa6",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "2079879e-5489-409b-abf9-ed7a8a54208a",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "6a4a683b-1c79-44fe-9e47-0c8f8674d021",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "d5f97051-9e08-454e-9fdf-54baf91c36c6",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "09919266-3edd-4eef-aa45-13f73e827aa0",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "a5ca001b-d928-4de4-9da1-4e8d76125c22",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "25f1ca1b-b02a-4505-8133-970da244edd8",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "d2b52798-4c02-4a12-991b-8a57b0108f56",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "7eca9a38-2891-4c05-854d-dce556d011ab",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "980b3425-f70f-404e-aac6-7f3dba9cf48e",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "76a5864c-200b-456c-9c9d-d042bd7a5b19",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "3049e799-0630-49ea-b72f-480c26caa879",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "a8cd7b34-ef7f-45f2-bcaf-adec32e8686a",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "22e02802-d0d6-408c-b6e1-2ef1084910c4",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "b019a227-21da-4c98-b7e6-e70fa1cdf4fc",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "e40ebf79-f761-43c5-af92-f66527e22c85",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "90b009df-91b2-40e9-91a9-d48fc3d980ca",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "bf150f06-38e6-4e46-a0bf-9c7dbc0f1d8e",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "7a684aa2-c19b-462f-8ec6-c14501fd2e58",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "41462a73-c3b7-4cf6-99e5-44a23ee42410",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "4ac24d4e-f5f2-458b-90cf-bb26acdf8da5",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "1fe76e3f-d048-4f11-aa4e-6f2de351ef67",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-illinois-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "f95e6cab-803a-451b-968a-158fd6a2f16b",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "5585f938-2b5d-4b76-85d1-e09fc9c3bf61",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "0b78d0e5-06b5-41c4-acca-f3a181d2572b",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "e09961b7-ce05-4d77-84b2-f9a8a5ef8624",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-alabama-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "147f1f73-5c4c-4f67-b8fc-09cb0a5e2cd7",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "5fad39ed-4a7a-4e05-a07a-d401f69ae4cd",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "1d58c56b-680e-4bea-9ea2-76f74ff2a001",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "01fcdf21-80b0-41c8-976e-831e1ec06f0a",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "26faefb8-e1a6-455c-8782-de7067160e37",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "92409680-af27-4fb4-ba71-a2d445e0e51e",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "96fdad7f-62c7-4c59-9402-3f992c76aeb7",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "13dbe4a0-0032-4433-b099-702687992114",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "a84c3535-56bb-4825-b70b-eb322eef2f58",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "c9b1a150-7381-4456-8442-9a4b2131734d",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "9b8aa944-d798-4d3d-ba28-d92aa734dc67",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "d83c3d5c-2552-422d-b028-72c8a58fa805",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "a3c35be2-bad3-4a80-aaa8-53647eb51ea8",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "f3b9aa24-95a6-42e4-8810-511fd3d4283c",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "5b53e321-fc94-4b72-9182-e6f2e56488fc",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "48d322dc-7d6c-489b-84d0-76179fe5c801",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "156b2d8e-0853-411f-83d4-75fe7302219c",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "909814a3-1001-469c-a34d-711bc4bd2f7a",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "539aae6f-64d8-4164-a14e-8552e625068f",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "df20ace5-d963-4c3c-9d01-d119a8f4b34e",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "b239ed7d-8963-4bd1-914c-3cd17883df51",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "45774114-ec93-48a1-b5e9-00d852961057",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "3b71f3ea-df1b-48bb-9dab-2510af4da080",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "bc28653e-c171-46b1-8ea7-a03c3114db50",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "c70905ff-e7c8-4279-baf3-a280ac996f72",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "1865a57d-1aa4-4b3d-a3cd-c09686a6ba99",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "1835c7d8-307b-4285-9560-ed3986f6449b",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "51643df1-ce15-4203-8931-2212e003084c",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "e954349e-9a00-4610-b779-933e76a6bee8",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "2c27650e-a93c-4985-86ff-6719af63de96",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "d5d5c239-fc76-41f5-a6da-770d12b07bbb",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "f3eb5503-8adb-4f5e-bbd9-64c8e9312bff",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "07a17eb4-59f5-42d6-9dd5-4b05fdda4d57",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "c1599272-1086-43a6-8b9b-500ace0c7a2a",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "58e98d77-3eac-4e0d-8ae3-075e0b9c3b94",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "50572a37-d421-45bb-b6cd-58ae3034a964",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "8c4ff279-a90e-4689-8f95-70902dd07a97",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "b7ff8ae2-2454-4b74-a667-c6e9a5e8cdc4",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "33ede9a7-7c9b-4e0f-93d1-c4f8aece96c5",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "4ec1b660-6389-4b4d-be7b-2a9d0afe70b0",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "a4ef972b-3055-488c-8228-b317ae7ac44b",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "8412f957-f220-40fe-9617-b8cfc2c024bc",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "8498a483-4db7-4b4d-b29b-03f4fd3bac57",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "768f5028-595c-4167-b65e-707c9f74373d",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "f366d8c0-6056-440c-991f-8de4d1abf51f",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "b9b8c3c8-1961-4284-bcdd-8016432955b4",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-alabama-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "f21d4746-cfc4-47dc-9c08-cbed69e1c354",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "e9e1592c-a90d-4368-b774-190f28c19ad8",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "d5897702-8704-4e77-8afe-c66e85010d5f",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "bb7bf9dd-7376-4106-adba-3d1761ee8f02",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "fa42eaea-5fd9-4a34-ac14-1530fd0a79f5",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-alabama-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "d75ac6c5-40d1-478a-a563-d1c5242f3394",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "1c74fe0b-7795-4553-99cc-ee25ec3b8d4b",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-alabama-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "f0cbbb96-5216-4efc-8397-e8400bdd9885",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "ecc698e7-2e51-4037-9f40-fce640fc0aef",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "3db5d0b0-e90e-4adc-ab57-db29f248e962",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "e70e144c-9efb-4bbf-9b7e-95595d0e73c0",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "8e0c6313-a010-4660-89f2-16f07c899bc4",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "5c79d231-e142-49ac-81e7-d0a235b471a7",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "ad544ee6-e426-4888-bf28-c00e7e8da81a",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "39f5d2e8-23f6-46aa-9280-0a77002fba39",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "1744fc7f-dcfd-4619-900f-da57c54d3246",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "f53c3fa2-7c20-4a48-86be-67de2dd7efc7",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "71c2dd87-0751-42d5-8925-4e875b2caa4e",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "35282050-6287-414c-82dd-12b8d78a9ea8",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "f745e8af-dfb0-4fc5-b591-e440c39fed66",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-alabama-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "33b070f2-d470-401a-b6fe-ed1a91f17939",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "556decb2-f2fa-48d0-9f64-b787c6f2dc86",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "5afb221a-2ce8-4105-912d-c13b45cc33fd",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "f56c6ccf-02d2-4c03-a5e5-76b39bab6067",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "8c1e9c88-c11b-4b5a-acb8-ef1c763a0970",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "63558f27-4811-4593-a3e4-43d5f88a13c7",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "ac143a5e-3d66-4557-abfc-31454367356c",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "e156860a-9d6b-44db-a0c5-42c3fe76ae26",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "ae48c98c-530e-4d46-8bf5-16328a627c7d",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "2fc6a8ed-4354-4156-b141-ba0ed048fa20",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "86ea9f4c-016c-485b-a60a-8e0fea05d52f",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-alabama-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "2fcfd4db-8425-4eba-a3e7-149455106c5c",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "14176355-20e4-467a-9738-3824432c257c",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "5ae82cf7-ff7d-4580-af15-581bbf467c95",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "ad005b4c-73d9-4892-9713-30f6a5f7a03b",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-alabama-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "514ff4eb-903a-40f1-b2c7-1f2b1837641b",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "ea1e3915-1972-4c4c-9682-c8533efd0343",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "e141e03d-7a8f-4e18-9d41-b3f385146645",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "630855b9-064a-49f6-97bf-7a39d42217fe",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "a122d457-b897-45b7-ac2f-2194007dc666",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "a984735b-9af4-4c2f-be67-9fff88b43830",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-illinois-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "60f5869c-2dcc-45e7-9f22-ef6ca3c5180c",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "7dee3041-0e77-4d93-9b5b-2b25f271c7ee",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-alabama-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "120c625b-1665-4895-b1db-48583634eadf",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "29fe9f8d-5391-43ce-b0bb-72d195042072",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "9eb6c02c-d9d4-45ed-a1af-f6446512db6b",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-alabama-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "def92ea9-5d89-4aa0-b7cc-bbc7bdbb4add",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "ac2a87e7-2a06-4c1f-a363-261c7cd1e817",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "907d3402-ad09-4cdd-8324-279d85236693",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "bc320843-53c7-4f9d-8953-0dd6ee11be4f",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "5d9ca088-724f-411c-bca3-641718630a76",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "c59ea1f0-6512-4065-882b-8ceec07ec957",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "2c7da3e7-e3a8-4300-9897-8965df6c82aa",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "9a0df099-0096-4757-95a1-caabaa6d2e91",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-alabama-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "ba58e113-e75e-411c-bb7f-c9655ca17cc3",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "ca638416-2bc5-4309-8774-4a851cc7b910",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "d2f20ebb-d679-45bb-bd30-b9feb6dd1a4e",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "c00691fb-41fa-4c53-9782-6f32643b8542",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "e9d8a76a-6ce9-4f7e-bb12-c2ad5d5869ae",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "6d728f95-6fd3-41ba-9e8f-c877205f23b4",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "d2e70815-b7f4-47a7-9ec2-407d0d4f99d2",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "bc077737-e81b-49f9-bd4a-8865e7aba626",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "084927ea-3541-4057-a447-713365f00308",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "7e9af4a7-7807-4287-bf7c-5e5f904a60a3",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "ee1a426a-8206-49cb-98a8-e290e14762e0",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "e0e14216-5916-4608-9ea0-adc39fe1a68d",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "af35df29-7e73-4e7b-b7f4-003fd7f0da35",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "fc7478b8-ed89-489a-a6b8-98dca990326d",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "d581f937-97cc-4092-b539-486cf904481f",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "bcf42424-9fcb-42a9-a700-426bdfb346b3",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "97017a9d-0573-49ae-a056-587d71aae9ce",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "41795bf6-543d-4355-84db-54806b08947a",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "837cd530-74ae-4946-b7c0-9245e2a28a48",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "9481333f-c0f1-4dd5-a806-4cd5c93f86c0",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "fdc8b84d-d88a-42d2-80f8-2afe2dceaad1",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "6fe811f9-aa4e-45f1-a181-bba40c6c771a",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "27247f5f-783f-4c28-9255-66b94a1eefa8",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "1de2e24b-57c2-4541-8e1c-1fad21ba54f4",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "3f26b792-3683-4508-b926-961000acfd27",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "764d7ce9-5273-4909-bba8-5358d6f53aea",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "8b9db80c-7483-4372-af15-59b8ac16ec76",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "7ed8420a-a34f-40c5-8587-60d72fb6243d",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "8150f889-a0de-41b6-95a7-6eae0a3bfa85",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "8388e994-5729-4a28-ad10-dd99e98ab54e",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "1b38cdfd-1363-4f3e-9752-18604b1db6eb",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "ed4a9463-560e-4b4f-a8c9-ab07a56206c7",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-alabama-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "0ff7ec1f-8201-4510-9f14-e0a724288d51",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "971b51f6-e698-4694-b0cc-495914acef59",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "86815532-6180-4526-860b-e564eabd2071",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "154b4385-faaa-463d-a90a-0b3016421565",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-colorado-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "1c1ac7ef-3b10-4fe5-b9ac-f58c3555a810",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "06c50514-aecb-471d-8e36-a6c9ca12e977",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-florida-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "0cd8e7be-f308-40fe-9ce8-ad23f4525919",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-indiana-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "3789e326-4a48-4a74-a812-6f4b49405392",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "096c8990-3e5f-4ea8-9b1b-dd7e276944ea",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-alabama-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "1a20cc27-bfa4-45db-8cc4-6f5e6f7362e2",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-north-carolina-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "22fa1061-bfdb-4202-9c53-0b06e4ae3cf9",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-alabama-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "b01cce43-7b01-4f7d-a5dd-5b37c044f4d8",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-georgia-ENRICHED-PASS3-2026.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "b94bc306-94a6-49c9-9112-15e338551866",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "c8ce6735-eff7-46bd-b4db-0692d28ac15b",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-texas-registry.docx"
+    }
+   ]
+  },
+  {
+   "entity_id": "f3332ea5-6a61-4edf-a3d9-81e8ab4c3298",
+   "fields": [
+    {
+     "field": "description",
+     "old_value": "luminari-michigan-registry.docx"
+    }
+   ]
+  }
+ ]
+}

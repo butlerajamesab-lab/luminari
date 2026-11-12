@@ -82,6 +82,31 @@ const ARTIFACT_PREFIX_PATTERN = /^luminari[-_]/i;
 // narrowed rule (Westchester itself).
 const ARTIFACT_ENRICHED_PATTERN = /(^|[-_])enriched([-_]|$)/i;
 
+// Title-hygiene clauses (content census 2026-11-11, repair wave C1
+// 2026-11-12): the census measured person-facing titles that are not
+// names at all — ZIP-prefixed agency names, serialized-object blobs,
+// workbook bracket codes ([ACLU-GU], [D.NH]), editorial process text
+// (PARTIAL — verify…, CRITICAL:…, WARNING:…), street addresses, and
+// phone-leading contact lines. The deterministic repair wave renames
+// every title a mechanical rule can restore; these clauses hold the
+// unrepaired residue (and any future recurrence) out of person-facing
+// results. The street-word list uses letter-boundary guards so real
+// names containing the substring survive ("Statewide Centralized
+// Intake Gateway", "800 West Broadway"); the phone clause is
+// LEADING-only because a number can legitimately sit inside a name
+// ("National Network of Tobacco Cessation Quitlines (1-800-QUIT-NOW)").
+const ZIP_PREFIX_NAME_PATTERN = /^\s*\d{5}(-\d{4})?\s*(—|–|\||-|[A-Z])/;
+const SERIALIZED_NAME_PATTERN = /^\s*\{|'[a-z_]+':\s*'/;
+const BRACKET_CODE_NAME_PATTERN = /\[[A-Za-z0-9][A-Za-z0-9.-]*\]/;
+const PROCESS_TEXT_NAME_PATTERN =
+  /(verify remaining fields|—\s*verify|\(verify\)|not confirmed from|not published for|no dedicated hotline|shortest in|critical:|warning:)/i;
+const ADDRESS_LEADING_PATTERN = /^[0-9]{1,6}\s/;
+const STREET_WORD_PATTERN =
+  /(^|[^a-z])(street|avenue|road|boulevard|drive|lane|court|plaza|highway|parkway|circle|terrace|place|trail|square|way)([^a-z]|$)/i;
+const CITY_STATE_ZIP_PATTERN = /,\s*[A-Za-z][A-Za-z ]+\s+[A-Z]{2}\s+\d{5}/;
+const PHONE_LEADING_NAME_PATTERN =
+  /^\s*(1-\d{3}-[A-Z0-9-]+|\(?\d{3}\)?[-. ]\d{3}[-. ]\d{4})/;
+
 /**
  * The person-facing name test, mirrored in SQL by person_facing_name_sql.
  * A name a person could read as the name of a place or organization.
@@ -94,6 +119,16 @@ export function is_human_display_name(value: unknown): boolean {
   if (BARE_HEX_NAME_PATTERN.test(name)) return false;
   if (ARTIFACT_PREFIX_PATTERN.test(name)) return false;
   if (ARTIFACT_ENRICHED_PATTERN.test(name)) return false;
+  if (ZIP_PREFIX_NAME_PATTERN.test(name)) return false;
+  if (SERIALIZED_NAME_PATTERN.test(name)) return false;
+  if (BRACKET_CODE_NAME_PATTERN.test(name)) return false;
+  if (PROCESS_TEXT_NAME_PATTERN.test(name)) return false;
+  if (
+    (ADDRESS_LEADING_PATTERN.test(name) && STREET_WORD_PATTERN.test(name)) ||
+    CITY_STATE_ZIP_PATTERN.test(name)
+  )
+    return false;
+  if (PHONE_LEADING_NAME_PATTERN.test(name)) return false;
   return true;
 }
 
@@ -106,6 +141,13 @@ export function person_facing_name_sql(expression: string): string {
     and ${expression} !~* '^[0-9a-f]{24,}$'
     and ${expression} !~* '^luminari[-_]'
     and ${expression} !~* '(^|[-_])enriched([-_]|$)'
+    and ${expression} !~ '^[[:space:]]*[0-9]{5}(-[0-9]{4})?[[:space:]]*(—|–|\\||-|[A-Z])'
+    and ${expression} !~ '^[[:space:]]*\\{'
+    and ${expression} !~ '\\[[A-Za-z0-9][A-Za-z0-9.-]*\\]'
+    and ${expression} !~* '(verify remaining fields|—[[:space:]]*verify|\\(verify\\)|not confirmed from|not published for|no dedicated hotline|shortest in|critical:|warning:)'
+    and not ( (${expression} ~ '^[0-9]{1,6}[[:space:]]' and ${expression} ~* '(^|[^a-z])(street|avenue|road|boulevard|drive|lane|court|plaza|highway|parkway|circle|terrace|place|trail|square|way)([^a-z]|$)')
+              or ${expression} ~ ',[[:space:]][A-Za-z][A-Za-z ]+[[:space:]][A-Z]{2}[[:space:]][0-9]{5}' )
+    and ${expression} !~ '^[[:space:]]*(1-[0-9]{3}-[A-Z0-9-]+|\\(?[0-9]{3}\\)?[-. ][0-9]{3}[-. ][0-9]{4})'
   )`;
 }
 

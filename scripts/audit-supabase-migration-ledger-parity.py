@@ -426,6 +426,15 @@ APPROVED_REPOSITORY_ONLY = {
         "20261110250000_step3_wavea_ledger_v1.sql",
         "d4a6675c4a6e4796251fba8ce16a9b0f34a4e9f5",
     ),
+    # Title hygiene ledger (creates luminari_title_hygiene_repairs
+    # only). Repository-only pending the separately approved production
+    # installation that follows the merge. Exact Git blob pinned; no
+    # production installation or ledger rewrite is implied by this
+    # entry.
+    "20261110260000": (
+        "20261110260000_title_hygiene_ledger_v1.sql",
+        "",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
