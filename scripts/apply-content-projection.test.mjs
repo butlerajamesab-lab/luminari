@@ -185,7 +185,12 @@ describe("apply serialization + contact drift recheck", () => {
     };
     await acquireApplyLock(fakeClient);
     expect(calls).toHaveLength(1);
-    expect(calls[0].text).toContain("pg_advisory_xact_lock");
+    // Schema-qualified + integer casts: production carries a
+    // competing public.pg_advisory_xact_lock(integer, bigint)
+    // bridge overload; an uncast call raises 42725 there.
+    expect(calls[0].text).toContain(
+      "pg_catalog.pg_advisory_xact_lock($1::integer, $2::integer)",
+    );
     expect(calls[0].params).toEqual([APPLY_LOCK_KEY_1, APPLY_LOCK_KEY_2]);
     expect(Number.isInteger(APPLY_LOCK_KEY_1)).toBe(true);
     expect(Number.isInteger(APPLY_LOCK_KEY_2)).toBe(true);

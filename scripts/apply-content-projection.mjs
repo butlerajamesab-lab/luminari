@@ -453,12 +453,20 @@ async function buildPlan(client) {
 export const APPLY_LOCK_KEY_1 = 20261112;
 export const APPLY_LOCK_KEY_2 = 270000;
 
-/** Take the apply lock for the current transaction (released at commit/rollback). */
+/**
+ * Take the apply lock for the current transaction (released at
+ * commit/rollback). The call is schema-qualified and both
+ * parameters are cast to integer: the legacy function-resolution
+ * bridges migration installs a competing
+ * public.pg_advisory_xact_lock(integer, bigint) overload (verified
+ * live in production), against which an uncast bound-parameter
+ * call is ambiguous and raises 42725.
+ */
 export async function acquireApplyLock(client) {
-  await client.query("select pg_advisory_xact_lock($1, $2)", [
-    APPLY_LOCK_KEY_1,
-    APPLY_LOCK_KEY_2,
-  ]);
+  await client.query(
+    "select pg_catalog.pg_advisory_xact_lock($1::integer, $2::integer)",
+    [APPLY_LOCK_KEY_1, APPLY_LOCK_KEY_2],
+  );
 }
 
 /**
