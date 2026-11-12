@@ -9,6 +9,7 @@ import {
   Phone,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { humanErrorMessage } from "@/lib/directory-search";
 import { Link, useParams } from "wouter";
 import { CommitToCase } from "@/components/CommitToCase";
 
@@ -232,7 +233,10 @@ export default function ResourceRecord() {
               This record could not be loaded.
             </h1>
             <p className="mt-2 text-sm text-rose-100/70">
-              {detail_query.error.message}
+              {humanErrorMessage(
+                detail_query.error,
+                "The record could not be loaded. Please try again.",
+              )}
             </p>
             <Link
               href="/resource-directory"
