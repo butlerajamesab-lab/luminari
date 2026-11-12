@@ -31,6 +31,11 @@ import {
   siteKey,
   stableUuid,
   verifyEmbeddedMints,
+  applyBundle,
+  ENTITY_INSERT_COLUMNS,
+  LEDGER_COLUMNS,
+  LINK_INSERT_COLUMNS,
+  LOCATION_INSERT_COLUMNS,
 } from "./decompose-bundles.mjs";
 
 // The embedded apply set is the bundle census derivation, staged
@@ -527,6 +532,121 @@ describe("write builders", () => {
     // the insert must supply it (dress-rehearsal finding).
     expect(built.text).toContain("reviewed_at");
     expect(built.text).toContain("now()");
+  });
+});
+
+describe("applyBundle write order (foreign-key direction)", () => {
+  // The decomposition ledger's mint rows and the re-pointed link
+  // rows both carry minted_entity_id as an FK into
+  // luminari_resource_entities, so inside the per-bundle
+  // transaction the minted entities must be written BEFORE the
+  // ledger and the links. The first production apply (2026-11-11)
+  // ran ledger-first and died on the first bundle:
+  // luminari_bundle_decompositions_minted_entity_id_fkey, 23503,
+  // rolled back clean. This test drives applyBundle with a
+  // recording fake client and pins the statement sequence.
+  const bundle = {
+    bundle_entity_id: "00000000-0000-4000-8000-000000000001",
+    bundle_canonical_id: "crp_nh_aaaaaaaaaaaaaaaaaaaa",
+    state: "NH",
+    city: "Concord",
+    jurisdiction: "NH",
+    layer: "backbone_workbook",
+    shape: "shared_site_split",
+    held_rows: [],
+    location_descriptors: [
+      { location_id: "loc-1", site_key: "129 pleasant st", has_coords: true, city: "Concord" },
+    ],
+  };
+  const mint = {
+    bundle_entity_id: bundle.bundle_entity_id,
+    program_name: "NH SNAP (DHHS)",
+    norm_name: "nh snap (dhhs)",
+    minted_entity_id: "11111111-1111-4111-8111-111111111111",
+    minted_canonical_id: "bdp_nh_0123456789abcdef0123",
+    absorbed_names: [],
+    rows: [{ uid: "uid:1", sheet: "pass3_program_card", row: 10, gen: "v3_13", via: "direct" }],
+    site_keys: ["129 pleasant st"],
+    own_address_text: "129 Pleasant St, Concord NH 03301",
+    city: "Concord",
+  };
+  const live = {
+    linksByBundle: new Map([
+      [bundle.bundle_entity_id, new Map([
+        ["uid:1", { object_ref: "ref-1", artifact_key: "v3_13.xlsx", source_content_sha256: "abc" }],
+      ])],
+    ]),
+    locationsByBundle: new Map([
+      [bundle.bundle_entity_id, [{
+        location_id: "loc-1", address_line1: "129 Pleasant St", address_line2: null,
+        city: "Concord", county: null, state: "NH", postal_code: "03301",
+        country: "US", latitude: 43.2, longitude: -71.5,
+        coordinate_quality: "census_match_exact", geocode_source: "us_census_geocoder_batch",
+        metadata: { site_kind: "site" },
+      }]],
+    ]),
+  };
+
+  function recordingClient() {
+    const kinds = [];
+    const byTable = (sql, params, tableName, kind, perRow) => {
+      if (!sql.includes(`insert into public.${tableName}`)) return null;
+      kinds.push(kind);
+      return { rows: [], rowCount: params.length / perRow };
+    };
+    const client = {
+      async query(text, params = []) {
+        const sql = String(text).toLowerCase();
+        const control = sql.trim();
+        if (control === "begin" || control === "commit" || control === "rollback") {
+          kinds.push(control);
+          return { rows: [], rowCount: 0 };
+        }
+        const hit =
+          byTable(sql, params, "luminari_resource_entities", "entities", ENTITY_INSERT_COLUMNS.length) ??
+          byTable(sql, params, "luminari_resource_locations", "locations", LOCATION_INSERT_COLUMNS.length) ??
+          byTable(sql, params, "luminari_bundle_decomposition_source_rows", "links", LINK_INSERT_COLUMNS.length) ??
+          byTable(sql, params, "luminari_bundle_decompositions", "ledger", LEDGER_COLUMNS.length);
+        if (hit) return hit;
+        if (sql.includes("insert into public.luminari_resource_publication_resolutions")) {
+          kinds.push("resolution");
+          return { rows: [], rowCount: 1 };
+        }
+        throw new Error(`unexpected statement in fake client: ${text}`);
+      },
+    };
+    return { client, kinds };
+  }
+
+  it("writes entities before the ledger rows and link rows that FK-reference them", async () => {
+    const { client, kinds } = recordingClient();
+    const result = await applyBundle(
+      client,
+      { bundle, mints: [mint] },
+      live,
+      EXPECTED_MANIFEST,
+    );
+    expect(result).toEqual({
+      bundle_entity_id: bundle.bundle_entity_id,
+      entities: 1,
+      locations: 1,
+      links: 1,
+      ledger: 2,
+    });
+    expect(kinds).toEqual([
+      "begin",
+      "entities",
+      "locations",
+      "links",
+      "ledger",
+      "ledger",
+      "resolution",
+      "commit",
+    ]);
+    // The FK contract stated directly: no ledger or link insert
+    // may precede the entity insert it references.
+    expect(kinds.indexOf("entities")).toBeLessThan(kinds.indexOf("ledger"));
+    expect(kinds.indexOf("entities")).toBeLessThan(kinds.indexOf("links"));
   });
 });
 
