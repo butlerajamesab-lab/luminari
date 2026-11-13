@@ -444,6 +444,20 @@ APPROVED_REPOSITORY_ONLY = {
         "20261110270000_content_projection_ledger_v1.sql",
         "1e3a13af4194ef14ae0de43426ad5614ab8e550c",
     ),
+    # Restored production migration (legal authority catalog
+    # materialized view). Applied in the live production ledger on
+    # 2026-10-20 and verified there first-hand 2026-11-11, but absent
+    # from the frozen TSV receipt exports above — so from this
+    # audit's snapshot it is repository-only, the same posture as
+    # the two entries above. The migrations-dir file restores
+    # Supabase's live drift parity; its only divergence from the
+    # ledger bytes is the pg_cron capability guard on the final
+    # schedule call (mirrors 20261008165231), so fresh replay and
+    # preview branches without pg_cron do not abort.
+    "20261020111915": (
+        "20261020111915_materialize_legal_authority_catalog_v2_20261020.sql",
+        "7202fedb8b7cf1ba67a40a994797e4f54b010b9d",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
