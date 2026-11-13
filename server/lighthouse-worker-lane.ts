@@ -38,6 +38,9 @@ export function assertArchiveOnlyWorkerConfiguration(env: Configuration): void {
   if (env.DOCKET_BILL_ACTIVATION_CONCURRENCY !== "1") {
     throw new Error("docket_archive_host_initial_concurrency_must_be_one");
   }
+  if (env.DOCKET_ARCHIVE_PILOT_MODE !== "one_cycle") {
+    throw new Error("docket_archive_host_single_cycle_pilot_required");
+  }
   for (const key of DISALLOWED_ARCHIVE_FEATURE_GRANTS) {
     if (env[key] === "true") {
       throw new Error("docket_archive_host_unrelated_feature_enabled: " + key);
