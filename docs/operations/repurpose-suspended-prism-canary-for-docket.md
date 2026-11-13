@@ -20,6 +20,29 @@ existing Render instance, **not** a new paid service or a new activation path.
 - Never resume before exact deployed-commit confirmation and environment
   verification. Never touch or merge PR #791 as part of this conversion.
 
+## 2026-11-13 Render connector blocker
+
+An attempt to set the archive-only configuration on the **suspended**
+`lighthouse-prism-canary` service using the connected Render
+`update_environment_variables` action was rejected with HTTP 400:
+`cannot deploy suspended service`. Treat the environment as **not
+updated**; this attempt did not authorize or perform a service resume.
+
+The connected Render actions do not expose an existing-service
+build/start-command edit or a resume-with-new-deployment operation.
+**Do not resume the historical `prism-rosetta-worker.js` artifact**
+to work around this error: it can initialize legacy Prism/Rosetta
+workers, paid API routes and other cross-service processing.
+
+Safe remaining steps: exact-branch CI/review in a non-paid setting;
+switch existing service build to the reviewed dispatcher and set the
+archive-only config in Render **before** starting the service, using
+a supported operator action that atomically prevents the old runtime
+from starting. If Render cannot do that while suspended, keep it
+suspended and do not improvise a resume/redeploy sequence. A fresh
+paid service or Supabase preview must not be created without separate
+approval.
+
 ## Release preconditions
 
 1. Run focused unit tests for `server/lighthouse-worker-lane.test.ts`,
