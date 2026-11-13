@@ -1,0 +1,88 @@
+name: Docket unbased amendment populated acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/docket-unbased-amendment-populated-acceptance.yml"
+      - "supabase/proposals/20261105_remove_unbased_amendment_derived_records_v1.proposal.sql"
+      - "supabase/verification/docket_unbased_amendment_populated_*.sql"
+      - "supabase/migrations/**"
+  workflow_dispatch:
+
+concurrency:
+  group: docket-unbased-amendment-populated-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-populated:
+    name: Full-schema exact-population SQL proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout candidate exact head
+        uses: actions/checkout@v7
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.116.0
+
+      - name: Start isolated database
+        run: supabase db start
+
+      - name: Replay mainline full schema without unapproved deletion migration
+        run: supabase db reset --local --no-seed --debug
+
+      - name: Seed exact production-sized synthetic cohort
+        run: >-
+          psql postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          -X -v ON_ERROR_STOP=1
+          -f supabase/verification/docket_unbased_amendment_populated_fixture_20261105.sql
+
+      - name: Prove unexpected orphan count denies cleanup without partial writes
+        shell: bash
+        run: |
+          set -euo pipefail
+          DB=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          psql "$DB" -X -v ON_ERROR_STOP=1 <<'SQL'
+          INSERT INTO public.docket_bill_source_document
+            (source_document_key,source_bill_id,provider_document_id,
+             document_family,provider_document_type,normalized_version_type,
+             provider_sequence,stage_rank,source_url,latest_observed_at)
+          VALUES ('amendment:1900000000:9999999',1900000000,9999999,
+                  'amendment','Unexpected fixture','other_amendment',99999,250,
+                  'https://example.invalid/disallowed-extra',now());
+          SQL
+          set +e
+          psql "$DB" -X -v ON_ERROR_STOP=1 \
+            -f supabase/proposals/20261105_remove_unbased_amendment_derived_records_v1.proposal.sql \
+            > /tmp/docket-unbased-drift-denial.log 2>&1
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
+            echo "FAIL: unexpected cohort change was accepted"
+            exit 1
+          fi
+          grep -Fq 'unbased deletion manifest drift' /tmp/docket-unbased-drift-denial.log
+          test "$(psql "$DB" -X -Atqc "SELECT count(*) FROM public.docket_bill_source_document WHERE document_family='amendment' AND base_source_document_key IS NULL")" = 7265
+          test "$(psql "$DB" -X -Atqc "SELECT count(*) FROM public.civic_genome_bill_version WHERE document_family='amendment' AND base_bill_version_id IS NULL")" = 7264
+          test "$(psql "$DB" -X -Atqc "SELECT to_regclass('public.docket_unbased_amendment_removal_receipt_v1') IS NULL")" = t
+          psql "$DB" -X -v ON_ERROR_STOP=1 \
+            -c "DELETE FROM public.docket_bill_source_document WHERE source_document_key='amendment:1900000000:9999999'"
+          test "$(psql "$DB" -X -Atqc "SELECT count(*) FROM public.docket_bill_source_document WHERE document_family='amendment' AND base_source_document_key IS NULL")" = 7264
+          echo "PASS: unexpected orphan prevented cleanup; no partial writes; exact fixture restored"
+
+      - name: Apply prepared cleanup ONLY to disposable database
+        run: >-
+          psql postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          -X -v ON_ERROR_STOP=1
+          -f supabase/proposals/20261105_remove_unbased_amendment_derived_records_v1.proposal.sql
+
+      - name: Verify deletion counts, cross-service IDs, raw-source survival and no reentry
+        run: >-
+          psql postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          -X -v ON_ERROR_STOP=1
+          -f supabase/verification/docket_unbased_amendment_populated_verify_20261105.sql
