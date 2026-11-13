@@ -27,8 +27,26 @@ GRANT SELECT ON public.v_lighthouse_legal_authority_catalog_v2 TO service_role;
 
 ANALYZE public.v_lighthouse_legal_authority_catalog_v2;
 
-SELECT cron.schedule(
-  'refresh_legal_authority_catalog_v2',
-  '*/30 * * * *',
-  'refresh materialized view concurrently public.v_lighthouse_legal_authority_catalog_v2'
-);
+-- On production Supabase, pg_cron is installed and the schedule is mandatory
+-- (the original statement above created it; the production migration ledger
+-- for version 20261020111915 retains those exact bytes).
+-- Local and preview Supabase replay stacks need not expose that extension:
+-- replay creates the same materialized catalog, while truthfully leaving
+-- scheduled refresh unconfigured rather than fabricating a cron job.
+-- Guard mirrors 20261008165231_anomaly_viewfinder_materialized_v1.sql.
+do $legal_catalog_refresh_schedule$
+begin
+  if to_regclass('cron.job') is not null
+     and to_regprocedure('cron.schedule(text,text,text)') is not null then
+    execute $legal_catalog_cron$
+      select cron.schedule(
+        'refresh_legal_authority_catalog_v2',
+        '*/30 * * * *',
+        $refresh$refresh materialized view concurrently public.v_lighthouse_legal_authority_catalog_v2$refresh$
+      )
+    $legal_catalog_cron$;
+  else
+    raise notice 'legal_catalog_pg_cron_unavailable_refresh_not_scheduled';
+  end if;
+end
+$legal_catalog_refresh_schedule$;
