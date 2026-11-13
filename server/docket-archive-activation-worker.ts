@@ -6,6 +6,7 @@ import {
 import {
   resolve_docket_activation_source_scope,
   start_docket_bill_activation_queue_worker,
+  run_docket_bill_activation_queue_cycle,
   stop_docket_bill_activation_queue_worker,
 } from "./docket-jurisdiction-activation-queue-worker";
 
@@ -26,9 +27,23 @@ if (!background_feature_enabled("DOCKET_BILL_ACTIVATION_QUEUE_ENABLED")) {
   throw new Error("docket_archive_runtime_activation_grant_required");
 }
 
-start_docket_bill_activation_queue_worker();
+const single_cycle_pilot = process.env.DOCKET_ARCHIVE_PILOT_MODE === "one_cycle";
+if (single_cycle_pilot) {
+  // The repurposed canary may claim at most ONE eligible archive job per
+  // process start (concurrency is independently required to equal 1).
+  // No poll timer is installed in this mode.
+  if (process.env.DOCKET_BILL_ACTIVATION_CONCURRENCY !== "1") {
+    throw new Error("docket_archive_pilot_concurrency_must_be_one");
+  }
+  void run_docket_bill_activation_queue_cycle().then(() => {
+    console.log("[DocketArchiveWorker] one_cycle_pilot_finished");
+  });
+} else {
+  start_docket_bill_activation_queue_worker();
+}
 console.log("[DocketArchiveWorker] started", {
   source_scope: "legiscan_bulk_json",
+  pilot_mode: single_cycle_pilot ? "one_cycle" : "continuous",
   provider_api_requests_authorized: false,
   rosetta_execution_authorized: false,
   service_id: process.env.RENDER_SERVICE_ID ?? null,
