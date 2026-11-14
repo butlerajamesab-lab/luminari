@@ -25,6 +25,7 @@ import {
   docket_bill_activation_retry_delay_seconds,
   process_docket_bill_activation_job,
   resolve_docket_activation_source_scope,
+  resolve_docket_archive_witness_queue_id,
   run_docket_bill_activation_queue_cycle,
 } from "./docket-jurisdiction-activation-queue-worker";
 
@@ -79,6 +80,47 @@ describe("Docket jurisdiction activation queue", () => {
       .toThrow("docket_bill_activation_invalid_source_scope");
     expect(resolve_docket_activation_source_scope({ DOCKET_BILL_ACTIVATION_SOURCE_SCOPE: "legiscan_bulk_json" }))
       .toBe("legiscan_bulk_json");
+  });
+
+  it("requires a well-formed witness and archive scope", () => {
+    const candidate = "7f76ecdd-190d-4fc3-80af-591f2d327751";
+    expect(resolve_docket_archive_witness_queue_id({
+      DOCKET_BILL_ACTIVATION_SOURCE_SCOPE: "legiscan_bulk_json",
+      DOCKET_ARCHIVE_WITNESS_QUEUE_ID: candidate.toUpperCase(),
+    })).toBe(candidate);
+    expect(resolve_docket_archive_witness_queue_id({})).toBeNull();
+    expect(() => resolve_docket_archive_witness_queue_id({
+      DOCKET_BILL_ACTIVATION_SOURCE_SCOPE: "all",
+      DOCKET_ARCHIVE_WITNESS_QUEUE_ID: candidate,
+    })).toThrow("docket_archive_witness_queue_scope_or_identity_invalid");
+    expect(() => resolve_docket_archive_witness_queue_id({
+      DOCKET_BILL_ACTIVATION_SOURCE_SCOPE: "legiscan_bulk_json",
+      DOCKET_ARCHIVE_WITNESS_QUEUE_ID: "invalid-queue-id",
+    })).toThrow("docket_archive_witness_queue_scope_or_identity_invalid");
+  });
+
+  it("scopes BOTH supersession writes and queue claims to the exact witness job", async () => {
+    const originalScope = process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+    const originalWitness = process.env.DOCKET_ARCHIVE_WITNESS_QUEUE_ID;
+    const witness = "7f76ecdd-190d-4fc3-80af-591f2d327751";
+    process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = "legiscan_bulk_json";
+    process.env.DOCKET_ARCHIVE_WITNESS_QUEUE_ID = witness;
+    try {
+      await run_docket_bill_activation_queue_cycle();
+      const claim = query.mock.calls.find(call =>
+        call[2]?.label === "docket_bill_activation_queue_claim");
+      expect(claim).toBeDefined();
+      const sql = String(claim?.[0] ?? "");
+      expect(sql.split("and ($5::uuid is null or queue.queue_id = $5::uuid)")).toHaveLength(3);
+      expect(claim?.[1]?.[3]).toBe("legiscan_bulk_json");
+      expect(claim?.[1]?.[4]).toBe(witness);
+      expect(get_bill).not.toHaveBeenCalled();
+    } finally {
+      if (originalScope === undefined) delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+      else process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = originalScope;
+      if (originalWitness === undefined) delete process.env.DOCKET_ARCHIVE_WITNESS_QUEUE_ID;
+      else process.env.DOCKET_ARCHIVE_WITNESS_QUEUE_ID = originalWitness;
+    }
   });
 
   it("keeps the legacy live-API claim independent of the uninstalled archive receipt table", async () => {
