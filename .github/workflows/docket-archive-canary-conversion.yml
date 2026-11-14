@@ -10,6 +10,8 @@ on:
       - "server/lighthouse-worker-lane.test.ts"
       - "server/lighthouse-worker-host.ts"
       - "server/docket-archive-activation-worker.ts"
+      - "server/docket-jurisdiction-activation-queue-worker.ts"
+      - "server/docket-jurisdiction-activation-queue-worker.test.ts"
       - "package.json"
   pull_request:
     branches: [main]
@@ -19,6 +21,8 @@ on:
       - "server/lighthouse-worker-lane.test.ts"
       - "server/lighthouse-worker-host.ts"
       - "server/docket-archive-activation-worker.ts"
+      - "server/docket-jurisdiction-activation-queue-worker.ts"
+      - "server/docket-jurisdiction-activation-queue-worker.test.ts"
       - "package.json"
 
 permissions:
@@ -28,8 +32,23 @@ jobs:
   offline-gates:
     name: Guarded startup, Docket compatibility and both worker builds
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
     env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/app
       NODE_ENV: test
       LEGISCAN_API_KEY: ""
     steps:
@@ -79,3 +98,19 @@ jobs:
         run: pnpm run build:prism-worker-legacy
       - name: Build dedicated Docket worker executable
         run: pnpm run build:docket-archive-worker
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Apply isolated one-run Docket transport fixture
+        env:
+          PGPASSWORD: postgres
+        run: >-
+          psql -h localhost -U postgres -d app -v ON_ERROR_STOP=1
+          -f supabase/verification/docket_bulk_transport_ci_fixture.sql
+      - name: Apply archive receipt schema only to disposable database
+        env:
+          PGPASSWORD: postgres
+        run: >-
+          psql -h localhost -U postgres -d app -v ON_ERROR_STOP=1
+          -f supabase/proposals/20261102_docket_legiscan_bulk_receipts.proposal.sql
+      - name: Run REAL ZIP importer and one canonical queue worker in disposable PostgreSQL
+        run: pnpm exec tsx scripts/docket-bulk-transport-integration-acceptance.ts
