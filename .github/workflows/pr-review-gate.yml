@@ -37,6 +37,15 @@ jobs:
             const repo = context.repo.repo;
             const number = context.payload.pull_request.number;
             const CODEX_LOGIN = "chatgpt-codex-connector[bot]";
+            // GraphQL returns bot logins WITHOUT the "[bot]" suffix
+            // that the REST API uses, so the same account arrives as
+            // "chatgpt-codex-connector" from GraphQL queries and as
+            // CODEX_LOGIN from REST. Every author comparison goes
+            // through this normalizer so both forms match the one
+            // trusted reviewer — and nobody else.
+            const isCodexAuthor = (login) =>
+              (login ?? "").replace(/\[bot\]$/, "") ===
+              CODEX_LOGIN.replace(/\[bot\]$/, "");
 
             // Codex never resolves its own review threads — not even
             // after a finding is fixed and its re-review of the new
@@ -60,7 +69,7 @@ jobs:
                 // Only the reviewer's own comments carry its verdict.
                 // A marker in anyone else's comment is not Codex
                 // speaking and settles nothing.
-                if ((comment.user?.login ?? "") !== CODEX_LOGIN) continue;
+                if (!isCodexAuthor(comment.user?.login)) continue;
                 const match = /codex-review-state:v1 (\{.*?\}) -->/.exec(comment.body ?? "");
                 if (match) {
                   try { state = JSON.parse(match[1]); } catch { state = null; }
@@ -111,7 +120,7 @@ jobs:
               core.info("No unresolved current review threads");
             } else {
               const human = unresolved.filter(
-                (t) => (t.author?.login ?? "") !== CODEX_LOGIN,
+                (t) => !isCodexAuthor(t.author?.login),
               );
               if (
                 human.length === 0 &&
@@ -160,6 +169,15 @@ jobs:
             ]);
 
             const CODEX_LOGIN = "chatgpt-codex-connector[bot]";
+            // GraphQL returns bot logins WITHOUT the "[bot]" suffix
+            // that the REST API uses, so the same account arrives as
+            // "chatgpt-codex-connector" from GraphQL queries and as
+            // CODEX_LOGIN from REST. Every author comparison goes
+            // through this normalizer so both forms match the one
+            // trusted reviewer — and nobody else.
+            const isCodexAuthor = (login) =>
+              (login ?? "").replace(/\[bot\]$/, "") ===
+              CODEX_LOGIN.replace(/\[bot\]$/, "");
 
             // Same clearance rule as the gate job: Codex threads are
             // settled by Codex's own clean verdict for the current
@@ -175,7 +193,7 @@ jobs:
                 // Only the reviewer's own comments carry its verdict.
                 // A marker in anyone else's comment is not Codex
                 // speaking and settles nothing.
-                if ((comment.user?.login ?? "") !== CODEX_LOGIN) continue;
+                if (!isCodexAuthor(comment.user?.login)) continue;
                 const match = /codex-review-state:v1 (\{.*?\}) -->/.exec(comment.body ?? "");
                 if (match) {
                   try { state = JSON.parse(match[1]); } catch { state = null; }
@@ -219,7 +237,7 @@ jobs:
                 for (const thread of page.nodes) {
                   if (thread.isResolved || thread.isOutdated) continue;
                   const login = thread.comments.nodes[0]?.author?.login ?? "";
-                  if (login === CODEX_LOGIN) codex += 1;
+                  if (isCodexAuthor(login)) codex += 1;
                   else human += 1;
                 }
                 cursor = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null;
