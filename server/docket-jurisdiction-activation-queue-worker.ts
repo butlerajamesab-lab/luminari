@@ -195,8 +195,23 @@ export function classify_docket_bill_activation_failure(input: {
   };
 }
 
+export function resolve_docket_archive_witness_queue_id(
+  environment: NodeJS.ProcessEnv = process.env,
+): string | null {
+  const witness = environment.DOCKET_ARCHIVE_WITNESS_QUEUE_ID?.trim();
+  if (!witness) return null;
+  if (resolve_docket_activation_source_scope(environment) !== "legiscan_bulk_json" ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(witness)) {
+    throw new Error("docket_archive_witness_queue_scope_or_identity_invalid");
+  }
+  return witness.toLowerCase();
+}
+
 async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> {
   const source_scope = resolve_docket_activation_source_scope();
+  // A one-job witness must also constrain the supersession UPDATE CTE,
+  // not merely the candidate SELECT, or unrelated queue rows could change.
+  const witness_queue_id = resolve_docket_archive_witness_queue_id();
   // The legacy live API worker must never depend on proposal-only receipt DDL.
   // The receipt-bound settlement SQL is available only to the archive host.
   const supersession_sql = source_scope === "legiscan_bulk_json"
@@ -229,6 +244,7 @@ async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> 
         where queue.queue_id = binding.queue_id
           and queue.source_bill_id = binding.source_bill_id
           and activation.source = 'legiscan_bulk_json'
+          and ($5::uuid is null or queue.queue_id = $5::uuid)
           and detail.source like 'legiscan_get_bill%'
           and detail.fetched_at > activation.cache_fetched_at
           and detail.bill ->> 'state' = activation.state
@@ -294,6 +310,7 @@ async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> 
           )
         )
           and ($4::text = 'all' or activation.source = $4::text)
+          and ($5::uuid is null or queue.queue_id = $5::uuid)
           and not exists (select 1 from superseded
                            where superseded.queue_id = queue.queue_id)
           and queue.next_attempt_at <= now()
@@ -327,7 +344,7 @@ async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> 
                 queue.summary_fingerprint,
                 queue.observed_change_hash,
                 queue.attempt_count`,
-    [queue_worker_id, QUEUE_LEASE_MINUTES, limit, source_scope],
+    [queue_worker_id, QUEUE_LEASE_MINUTES, limit, source_scope, witness_queue_id],
     {
       label: "docket_bill_activation_queue_claim",
       pool_acquire_timeout_ms: 1_000,
