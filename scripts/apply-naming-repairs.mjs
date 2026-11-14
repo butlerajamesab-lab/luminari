@@ -55,6 +55,26 @@
 //     09ea44ecc09568a4ccf08ab3f602e520cb6fc0930be780ffdde34f2455c4fa7d
 //     for the embedded v1 set (2,316 rows).
 //
+// State-directory anchored admission (2026-11-11, STAGED — activation
+// is Alexander's decision; this amendment is prepared, not in force
+// until he gives the word): the fidelity gate holds the 161
+// benefits_program_master renames because that sheet's raw sources
+// do not survive. Stand-in pulls 3 + 3b (2026-11-11) checked those
+// 161 names against the federal agencies' OWN published state
+// program directories (ACF/FNS/CMS/HRSA/RSA/OSEP/ACL and peers) and
+// anchored 46 of them: an official directory carries the program
+// under the proposed name, with a per-row citation. That is the
+// same external-anchor standard the gate exists to enforce, met
+// from a surviving source instead of the lost sheet. The 46 are
+// embedded in scripts/naming-repair-state-anchors-v1.json; a held
+// benefits row is admitted ONLY when its entity is in that set, its
+// evidence sheet token is exactly benefits_program_master, and the
+// anchor names the same proposed name — and the directory citation
+// is appended to the evidence the ledger records. The other 115
+// stay held with their existing reason. With the anchors loaded the
+// approved set is 2,201 rows (the 2,155 already landed classify as
+// already_applied on a re-run; only the 46 are planned).
+//
 // Dry run by default; --apply writes. Re-runnable: ledger inserts
 // are conflict-guarded and already-renamed entities classify as
 // already_applied instead of drift.
@@ -125,6 +145,9 @@ export function passesPersonFacingNameTest(value) {
  * Rows anchored to benefits_program_master are HELD: that sheet is
  * UNVERIFIABLE (its federal-master raw sources do not survive), so
  * its 161 renames wait for a surviving source or Alexander's word.
+ * (2026-11-11: a surviving source has since spoken for 46 of the
+ * 161 — see the state-directory anchored admission below. This
+ * function is unchanged; the admission is a separate path.)
  */
 const FIDELITY_CLEARED_SHEETS = ["program_master", "pass3_program_card"];
 const FIDELITY_CLEARED_DOMAIN_ENTITY_IDS = new Set([
@@ -147,14 +170,82 @@ export function fidelityCleared(row) {
   return FIDELITY_CLEARED_SHEETS.some((sheet) => evidence.includes(sheet));
 }
 
+// ---------------------------------------------------------------------------
+// State-directory anchored admission (2026-11-11; see header). The
+// anchor set is embedded as scripts/naming-repair-state-anchors-v1.json
+// (derived from the stand-in pull 3 + 3b verdict CSVs; every entry
+// carries its directory citation). Matching discipline is token-exact
+// throughout — the substring trap above is pinned history here:
+//   - the row's sheet is read as an exact evidence TOKEN, never a
+//     substring, so "benefits_program_master" never satisfies a
+//     "program_master" test nor the reverse;
+//   - the entity lookup is an exact Map key match;
+//   - the anchor must name the SAME proposed name as the proposal.
+// ---------------------------------------------------------------------------
+
+export const STATE_ANCHOR_EVIDENCE_MARKER = "state_directory_anchor:";
+
+/** Split an evidence string into its exact [a-z0-9_] tokens. */
+export function evidenceTokens(evidence) {
+  return new Set(
+    String(evidence ?? "")
+      .toLowerCase()
+      .split(/[^a-z0-9_]+/)
+      .filter(Boolean),
+  );
+}
+
+/** True only when the row's evidence sheet token is exactly the held sheet. */
+export function isBenefitsAnchoredRow(row) {
+  return evidenceTokens(row?.evidence).has("benefits_program_master");
+}
+
+/** Index anchor entries by entity_id (exact-key Map). */
+export function indexStateAnchors(stateAnchors) {
+  const byId = new Map();
+  for (const anchor of stateAnchors ?? []) {
+    if (anchor?.entity_id) byId.set(anchor.entity_id, anchor);
+  }
+  return byId;
+}
+
+/**
+ * The directory anchor that admits a held benefits row, or null.
+ * Admits only a benefits_program_master row whose entity carries a
+ * complete citation naming the same proposed name.
+ */
+export function stateDirectoryAnchor(row, anchorsById) {
+  if (!isBenefitsAnchoredRow(row)) return null;
+  const anchor = anchorsById?.get(row?.entity_id ?? "");
+  if (!anchor) return null;
+  if (anchor.proposed_name !== row?.new_name) return null;
+  if (!anchor.source_name || !anchor.source_url || !anchor.retrieved_date) {
+    return null;
+  }
+  return anchor;
+}
+
+/** Evidence string recorded for an anchor-admitted row: the original
+ * workbook evidence plus the directory citation that anchors it. */
+export function anchoredEvidence(row, anchor) {
+  return (
+    `${row?.evidence ?? ""} | ${STATE_ANCHOR_EVIDENCE_MARKER} ` +
+    `${anchor.source_name} ${anchor.source_url} retrieved ${anchor.retrieved_date}`
+  );
+}
+
 /**
  * Filter raw proposal rows to the apply set. A row is approved only
  * when its tier is approved, its evidence anchor passed the workbook
- * fidelity gate, its fields are present, the rename is not a no-op,
- * and the proposed name passes the person-facing name test.
- * Everything else is returned with its exclusion reason.
+ * fidelity gate — or, for a held benefits row, it carries a
+ * state-directory anchor (see stateDirectoryAnchor) — its fields
+ * are present, the rename is not a no-op, and the proposed name
+ * passes the person-facing name test. Everything else is returned
+ * with its exclusion reason. With no anchors supplied (the default)
+ * the gate behaves exactly as the 2026-11-10 fidelity gate did.
  */
-export function filterApprovedProposals(proposals) {
+export function filterApprovedProposals(proposals, stateAnchors = []) {
+  const anchorsById = indexStateAnchors(stateAnchors);
   const approved = [];
   const excluded = [];
   for (const row of proposals ?? []) {
@@ -166,9 +257,13 @@ export function filterApprovedProposals(proposals) {
       excluded.push({ entity_id, reason: "tier_not_approved" });
       continue;
     }
+    let anchor = null;
     if (!fidelityCleared(row)) {
-      excluded.push({ entity_id, reason: "sheet_not_fidelity_cleared" });
-      continue;
+      anchor = stateDirectoryAnchor(row, anchorsById);
+      if (!anchor) {
+        excluded.push({ entity_id, reason: "sheet_not_fidelity_cleared" });
+        continue;
+      }
     }
     if (!entity_id || !old_name || !new_name) {
       excluded.push({ entity_id, reason: "missing_fields" });
@@ -187,7 +282,7 @@ export function filterApprovedProposals(proposals) {
       old_name,
       new_name,
       tier,
-      evidence: row.evidence ?? null,
+      evidence: anchor ? anchoredEvidence(row, anchor) : (row.evidence ?? null),
     });
   }
   return { approved, excluded };
@@ -344,9 +439,20 @@ export function loadEmbeddedProposals() {
   return JSON.parse(readFileSync(url, "utf-8"));
 }
 
+export function loadEmbeddedStateAnchors() {
+  const url = new URL(
+    "./naming-repair-state-anchors-v1.json",
+    import.meta.url,
+  );
+  return JSON.parse(readFileSync(url, "utf-8"));
+}
+
 async function main() {
   const apply = process.argv.includes("--apply");
-  const { approved, excluded } = filterApprovedProposals(loadEmbeddedProposals());
+  const { approved, excluded } = filterApprovedProposals(
+    loadEmbeddedProposals(),
+    loadEmbeddedStateAnchors(),
+  );
   const censusManifest = manifestFor(approved);
 
   const { default: pgDefault } = await loadPg();
@@ -378,6 +484,9 @@ async function main() {
       JSON.stringify({
         repair_version: REPAIR_VERSION,
         approved: approved.length,
+        state_anchored_admissions: approved.filter((r) =>
+          (r.evidence ?? "").includes(STATE_ANCHOR_EVIDENCE_MARKER),
+        ).length,
         excluded_by_filter: excluded.length,
         planned: planned.length,
         planned_by_tier: byTier,
