@@ -5,6 +5,7 @@ import {
   assertArchiveOnlyWorkerConfiguration,
   DISALLOWED_ARCHIVE_FEATURE_GRANTS,
   resolveLighthouseWorkerLane,
+  PILOT_QUEUE_ID,
 } from "./lighthouse-worker-lane";
 
 const valid = {
@@ -15,6 +16,7 @@ const valid = {
   DOCKET_BILL_ACTIVATION_CONCURRENCY: "1",
   DOCKET_BILL_ACTIVATION_QUEUE_POLL_MS: "5000",
   DOCKET_ARCHIVE_PILOT_MODE: "one_cycle",
+  DOCKET_ARCHIVE_WITNESS_QUEUE_ID: PILOT_QUEUE_ID,
 };
 
 describe("repurposed suspended Prism canary worker dispatch", () => {
@@ -46,6 +48,12 @@ describe("repurposed suspended Prism canary worker dispatch", () => {
     expect(() => assertArchiveOnlyWorkerConfiguration({
       ...valid, DOCKET_ARCHIVE_PILOT_MODE: "continuous",
     })).toThrow("single_cycle_pilot_required");
+    expect(() => assertArchiveOnlyWorkerConfiguration({
+      ...valid, DOCKET_ARCHIVE_WITNESS_QUEUE_ID: undefined,
+    })).toThrow("exact_witness_queue_required");
+    expect(() => assertArchiveOnlyWorkerConfiguration({
+      ...valid, DOCKET_ARCHIVE_WITNESS_QUEUE_ID: "99999999-9999-4999-8999-999999999999",
+    })).toThrow("exact_witness_queue_required");
   });
 
   it("rejects every legacy Prism/Rosetta/LegiScan-feature grant", () => {
@@ -75,6 +83,7 @@ describe("repurposed suspended Prism canary worker dispatch", () => {
     expect(host).not.toMatch(/^import ["']\.\/prism-rosetta-worker["']/m);
     expect(worker).toContain('resolve_docket_activation_source_scope() !== "legiscan_bulk_json"');
     expect(worker).toContain('run_docket_bill_activation_queue_cycle().then(');
+    expect(host).toContain('assertArchiveAmendmentIntegrityReleased();');
     expect(worker).toContain('if (single_cycle_pilot) {');
     expect(worker).toContain('start_docket_bill_activation_queue_worker();');
     expect(pkg.scripts["build:prism-worker"]).toContain("server/lighthouse-worker-host.ts");
