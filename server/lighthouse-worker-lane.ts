@@ -7,6 +7,10 @@ export type LighthouseWorkerLane = "docket_archive_only" | "prism_canary_legacy"
 
 type Configuration = Record<string, string | undefined>;
 
+// One witnessed live Docket queue item, proven by archive/member SHA and
+// existing activated-source receipt. Never select an arbitrary eligible bill.
+export const PILOT_QUEUE_ID = "7f76ecdd-190d-4fc3-80af-591f2d327751";
+
 export const DISALLOWED_ARCHIVE_FEATURE_GRANTS = [
   "PRISM_ROSETTA_QUEUE_ENABLED",
   "LEGISLATIVE_VERSION_QUEUE_ENABLED",
@@ -40,6 +44,9 @@ export function assertArchiveOnlyWorkerConfiguration(env: Configuration): void {
   }
   if (env.DOCKET_ARCHIVE_PILOT_MODE !== "one_cycle") {
     throw new Error("docket_archive_host_single_cycle_pilot_required");
+  }
+  if (env.DOCKET_ARCHIVE_WITNESS_QUEUE_ID !== PILOT_QUEUE_ID) {
+    throw new Error("docket_archive_host_exact_witness_queue_required");
   }
   for (const key of DISALLOWED_ARCHIVE_FEATURE_GRANTS) {
     if (env[key] === "true") {
