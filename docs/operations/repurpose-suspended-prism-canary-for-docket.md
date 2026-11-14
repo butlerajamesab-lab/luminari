@@ -43,6 +43,39 @@ suspended and do not improvise a resume/redeploy sequence. A fresh
 paid service or Supabase preview must not be created without separate
 approval.
 
+## P1 production amendment-integrity hold (2026-11-14)
+
+**DO NOT RESUME OR ACTIVATE THIS WORKER YET.** The [source registration
+defect / release gate, issue #813](https://github.com/butlerajamesab-lab/luminari/issues/813)
+was confirmed from installed Lighthouse Supabase SQL and read-only counts.
+The cache trigger `docket_legislative_version_spine_registration` fires on
+`docket_bill_detail_cache` INSERT or bill UPDATE and calls
+`register_docket_legislative_version_spine(new.bill_id, false)`. Although the
+`false` prevents version *queueing*, the function still creates amendment
+source and Genome-version derivatives even when no independent amendment
+attachment is verified. This happens during source admission independently
+of the suspended archive activation worker.
+
+Production contains **18,100** unbased amendment source rows and **18,100**
+unbased derived Genome versions; **10,398** of each were newly created from
+Nov 11 UTC onward, associated through `source_bill_id` with current
+`legiscan_bulk_json` cache rows. The previous PR #771 proposal's
+**7,264**-row manifest is stale; the draft PR #771 was not touched or merged.
+The source cron was active at 333,827 immutable receipts / 53 archive hashes
+during inspection, so source-ingestion continuation needs a separate
+explicit risk decision. Neither an offline worker build nor a source receipt
+is proof that the installed registration trigger is safe.
+
+**Mandatory before any canary resumption:** independently approve and
+install a forward-only canonical amendment admission guard + evidence and
+same-bill base requirements; reconcile dependencies/cross-service cleanup;
+prove on disposable populated PostgreSQL that the cache trigger no longer
+creates unbased derivatives for source-only intake; verify live function and
+constraint identity, updated orphan counts, and no paid provider calls.
+Until that is done, do not work around the blocker with a feature flag or
+by bypassing canonical Docket acceptance. This release hold supersedes the
+preconditions below.
+
 ## Release preconditions
 
 1. Run focused unit tests for `server/lighthouse-worker-lane.test.ts`,
