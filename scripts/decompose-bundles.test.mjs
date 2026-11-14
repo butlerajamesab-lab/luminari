@@ -19,6 +19,7 @@ import {
   coreName,
   domainOf,
   filterWave1Bundles,
+  filterWave2Bundles,
   manifestFor,
   mintedCanonicalFor,
   mintedEntityIdFor,
@@ -28,6 +29,7 @@ import {
   phone10,
   planDecomposition,
   planVariantPairs,
+  planVariantPairsWithDecisions,
   siteKey,
   stableUuid,
   verifyEmbeddedMints,
@@ -736,5 +738,171 @@ describe("embedded-set contract (the wave-1 census derivation)", () => {
     );
     expect(manifestFor(records)).toBe(EXPECTED_MANIFEST);
     expect(manifestFor([...records].reverse())).toBe(EXPECTED_MANIFEST);
+  });
+});
+
+describe("wave-2: recorded-decision planning (WA-217)", () => {
+  const rec = (program_name, uid, phone, website) => ({
+    program_name,
+    rows: [{ uid, phone, website }],
+  });
+  it("merges on a recorded merge decision even when contacts disagree", () => {
+    const { mints, held } = planVariantPairsWithDecisions(
+      [
+        rec("Legal Aid of NorthWest Texas (LANWT — North/West TX)", "u1", "806-374-4753", "lanwt.org"),
+        rec("Legal Aid of NorthWest Texas (LANWT)", "u2", "888-529-5277", "lanwt.org"),
+      ],
+      [{ a_norm: "legal aid of northwest texas (lanwt — north/west tx)", b_norm: "legal aid of northwest texas (lanwt)", decision: "merge" }],
+    );
+    expect(held).toEqual([]);
+    expect(mints).toHaveLength(1);
+    expect(mints[0].rows.map((r) => r.uid)).toEqual(["u1", "u2"]);
+    expect(mints[0].absorbed_names).toHaveLength(1);
+  });
+  it("splits on a recorded split decision even when contacts agree", () => {
+    const { mints, held } = planVariantPairsWithDecisions(
+      [
+        rec("Hopelink (Eastside)", "u1", "425-869-6000", "hope-link.org"),
+        rec("Hopelink Energy Assistance (Eastside)", "u2", "425-869-6000", "hope-link.org"),
+      ],
+      [{ a_norm: "hopelink (eastside)", b_norm: "hopelink energy assistance (eastside)", decision: "split" }],
+    );
+    expect(held).toEqual([]);
+    expect(mints).toHaveLength(2);
+  });
+  it("holds both names when a variant pair has no recorded decision", () => {
+    const { mints, held } = planVariantPairsWithDecisions(
+      [
+        rec("Prairie State Legal Services (North/Central IL — 36 Counties)", "u1", "309-674-2508", "pslegal.org"),
+        rec("Prairie State Legal Services (North/Central IL)", "u2", "800-531-7057", "pslegal.org"),
+      ],
+      [],
+    );
+    expect(mints).toEqual([]);
+    expect(held.map((h) => h.reason)).toEqual(["variant_pair_undecided", "variant_pair_undecided"]);
+  });
+  it("throws when a recorded decision names no variant pair of the bundle", () => {
+    expect(() =>
+      planVariantPairsWithDecisions(
+        [rec("Solo Program", "u1", "111-222-3333", "solo.org")],
+        [{ a_norm: "ghost a", b_norm: "ghost b", decision: "merge" }],
+      ),
+    ).toThrow(/no variant pair/);
+  });
+  it("throws on a decision value that is neither merge nor split", () => {
+    expect(() =>
+      planVariantPairsWithDecisions(
+        [
+          rec("Hopelink (Eastside)", "u1", "425-869-6000", "hope-link.org"),
+          rec("Hopelink Energy Assistance (Eastside)", "u2", "425-869-6000", "hope-link.org"),
+        ],
+        [{ a_norm: "hopelink (eastside)", b_norm: "hopelink energy assistance (eastside)", decision: "shrug" }],
+      ),
+    ).toThrow(/neither merge nor split/);
+  });
+});
+
+describe("wave-2: filter", () => {
+  const bundle = {
+    bundle_entity_id: "00000000-0000-4000-8000-000000000217",
+    bundle_canonical_id: "crp_wa_3988710a7749b4306852",
+    family: "catalog_remainder_projection_v1",
+    state: "WA",
+    city: null,
+    jurisdiction: "WA",
+    layer: "backbone_workbook",
+    current_name: "luminari-washington-state-registry",
+    shape: "needs_judgment",
+    n_rows_total: 3,
+    n_attributed: 2,
+    names: [
+      { program_name: "Program A", rows: [{ uid: "u1" }] },
+      { program_name: "Program B", rows: [{ uid: "u2" }] },
+    ],
+    held_rows: [{ uid: "u9", sheet: "pass3_program_card", row: 99, gen: "(9)" }],
+    pair_decisions: [{ a_norm: "program a", b_norm: "program b", decision: "split" }],
+    location_descriptors: [],
+  };
+  it("approves a well-formed judged bundle", () => {
+    const { approved, excluded } = filterWave2Bundles([bundle]);
+    expect(excluded).toEqual([]);
+    expect(approved).toHaveLength(1);
+  });
+  it("excludes a mechanical shape, missing decisions, unenumerated held rows, and broken accounting", () => {
+    expect(filterWave2Bundles([{ ...bundle, shape: "clean_split" }]).excluded[0].reason).toBe("shape_not_judged");
+    expect(filterWave2Bundles([{ ...bundle, pair_decisions: [] }]).excluded[0].reason).toBe("no_pair_decisions");
+    expect(filterWave2Bundles([{ ...bundle, held_rows: [] }]).excluded[0].reason).toBe("no_held_rows_enumerated");
+    expect(filterWave2Bundles([{ ...bundle, n_rows_total: 4 }]).excluded[0].reason).toBe("row_accounting_incomplete");
+    expect(filterWave2Bundles([{ ...bundle, held_rows: [{ uid: "u9" }] }]).excluded[0].reason).toBe("held_row_malformed");
+  });
+});
+
+describe("wave-2: held rows must stand retired (planDecomposition)", () => {
+  const bundle = {
+    bundle_entity_id: "00000000-0000-4000-8000-000000000217",
+    bundle_canonical_id: "crp_wa_3988710a7749b4306852",
+    family: "catalog_remainder_projection_v1",
+    state: "WA",
+    city: null,
+    jurisdiction: "WA",
+    layer: "backbone_workbook",
+    current_name: "luminari-washington-state-registry",
+    shape: "needs_judgment",
+    n_rows_total: 3,
+    n_attributed: 2,
+    held_rows: [{ uid: "uid:9", sheet: "pass3_program_card", row: 99, gen: "(9)" }],
+    pair_decisions: [],
+    names: [
+      {
+        program_name: "Program A",
+        rows: [{ uid: "uid:1", sheet: "pass3_program_card", row: 10, gen: "v3_13", via: "direct", phone: "", website: "" }],
+        site_keys: [],
+        own_address_text: "",
+      },
+      {
+        program_name: "Program B",
+        rows: [{ uid: "uid:2", sheet: "pass3_program_card", row: 11, gen: "v3_13", via: "direct", phone: "", website: "" }],
+        site_keys: [],
+        own_address_text: "",
+      },
+    ],
+    location_descriptors: [],
+  };
+  for (const n of bundle.names) {
+    n.minted_entity_id = mintedEntityIdFor(bundle.bundle_canonical_id, normName(n.program_name));
+    n.minted_canonical_id = mintedCanonicalFor(bundle.bundle_canonical_id, "WA", normName(n.program_name));
+    n.merged_from = [];
+  }
+  const liveBase = () => ({
+    entitiesById: new Map([
+      [bundle.bundle_entity_id, { resource_entity_id: bundle.bundle_entity_id, resource_name: bundle.current_name }],
+    ]),
+    linksByBundle: new Map([
+      [bundle.bundle_entity_id, new Map([["uid:1", {}], ["uid:2", {}], ["uid:9", {}]])],
+    ]),
+    locationsByBundle: new Map([[bundle.bundle_entity_id, []]]),
+    resolutionsById: new Map(),
+    ledgerBundleIds: new Set(),
+    entitiesByCanonical: new Map(),
+    retiredUidsByBundle: new Map([[bundle.bundle_entity_id, new Set(["uid:9"])]]),
+  });
+  const plan = (live) =>
+    planDecomposition([bundle], live, new Map([[bundle.bundle_entity_id, planVariantPairs(bundle.names)]]));
+  it("plans when every held uid stands retired and the link set is attributed + held", () => {
+    const { planned, drift } = plan(liveBase());
+    expect(drift).toEqual([]);
+    expect(planned).toHaveLength(1);
+  });
+  it("drifts held_rows_not_retired when a held uid is not retired", () => {
+    const live = liveBase();
+    live.retiredUidsByBundle.get(bundle.bundle_entity_id).clear();
+    const { planned, drift } = plan(live);
+    expect(planned).toEqual([]);
+    expect(drift[0].reason).toBe("held_rows_not_retired");
+  });
+  it("drifts link_set_changed when a held row vanished from the live links", () => {
+    const live = liveBase();
+    live.linksByBundle.get(bundle.bundle_entity_id).delete("uid:9");
+    expect(plan(live).drift[0].reason).toBe("link_set_changed");
   });
 });

@@ -116,7 +116,16 @@ function loadPg() {
 export const DECOMPOSITION_VERSION = "bundle_decomposition_v1";
 export const SOURCE_TABLE = "bundle_decomposition_v1";
 export const SOURCE_FAMILY_KEY = "bundle_decomposition";
-export const BATCH_ID = "bundle_decomposition_v1:wave1";
+export let BATCH_ID = "bundle_decomposition_v1:wave1";
+export let PAIR_DECIDER = "luminar_delegation_2026_11_10";
+/** Wave selection (main only): wave 2 runs under its own batch id and
+ * records the pairs-review decider on merged ledger rows. */
+export function setWave(wave) {
+  if (wave === 2) {
+    BATCH_ID = "bundle_decomposition_v1:wave2-wa217";
+    PAIR_DECIDER = "luminar_pairs_review_2026_11_14";
+  }
+}
 
 /** Shapes the wave-1 filter approves. */
 export const APPROVED_SHAPES = ["clean_split", "shared_site_split"];
@@ -399,6 +408,116 @@ export function planVariantPairs(nameRecords) {
   return { mints, held };
 }
 
+
+/**
+ * Wave-2 variant planning: pair dispositions come from RECORDED
+ * decisions (Alexander's PAIRS call, 2026-11-14; Luminar's per-pair
+ * review in pairs-review/decisions.json, embedded in the proposals
+ * file as pair_decisions), not from the contact-agreement rule.
+ * pairDecisions: [{ a_norm, b_norm, decision: "merge" | "split" }].
+ * A variant pair with NO recorded decision holds both names
+ * (fail-closed — the wave-1 posture for undecided pairs). A recorded
+ * decision that names no variant pair of this bundle throws: the
+ * plan and the decision record must agree exactly. Output shape
+ * mirrors planVariantPairs.
+ */
+export function planVariantPairsWithDecisions(nameRecords, pairDecisions) {
+  const records = (nameRecords ?? []).map((r) => ({
+    program_name: r.program_name,
+    rows: (r.rows ?? []).map((row) => ({
+      uid: row.uid,
+      phone: row.phone ?? "",
+      website: row.website ?? "",
+    })),
+  }));
+  const byName = new Map(records.map((r) => [r.program_name, r]));
+  const decisionKey = (a, b) => [normName(a), normName(b)].sort().join("|");
+  const decisions = new Map();
+  for (const d of pairDecisions ?? []) {
+    decisions.set(decisionKey(d.a_norm, d.b_norm), d.decision);
+  }
+  const heldReasons = new Map();
+  const mergePairs = [];
+  const seenDecisions = new Set();
+  for (let i = 0; i < records.length; i += 1) {
+    for (let j = i + 1; j < records.length; j += 1) {
+      const a = records[i];
+      const b = records[j];
+      const kind = classifyPair(a.program_name, b.program_name);
+      if (kind === null) continue;
+      const key = decisionKey(a.program_name, b.program_name);
+      const decision = decisions.get(key);
+      if (decision === undefined) {
+        for (const n of [a.program_name, b.program_name]) {
+          if (!heldReasons.has(n)) heldReasons.set(n, new Set());
+          heldReasons.get(n).add("variant_pair_undecided");
+        }
+        continue;
+      }
+      seenDecisions.add(key);
+      if (decision === "merge") {
+        mergePairs.push([a.program_name, b.program_name]);
+      } else if (decision !== "split") {
+        throw new Error(
+          `recorded pair decision '${decision}' is neither merge nor split (${key})`,
+        );
+      }
+    }
+  }
+  for (const key of decisions.keys()) {
+    if (!seenDecisions.has(key)) {
+      throw new Error(
+        `recorded pair decision names no variant pair of this bundle (${key})`,
+      );
+    }
+  }
+  const parent = new Map(records.map((r) => [r.program_name, r.program_name]));
+  const find = (x) => {
+    let p = parent.get(x);
+    while (parent.get(p) !== p) p = parent.get(p);
+    return p;
+  };
+  const union = (a, b) => {
+    const ra = find(a);
+    const rb = find(b);
+    if (ra !== rb) parent.set(ra, rb);
+  };
+  for (const [a, b] of mergePairs) {
+    if (!heldReasons.has(a) && !heldReasons.has(b)) union(a, b);
+  }
+  const groups = new Map();
+  for (const r of records) {
+    if (heldReasons.has(r.program_name)) continue;
+    const root = find(r.program_name);
+    if (!groups.has(root)) groups.set(root, []);
+    groups.get(root).push(r.program_name);
+  }
+  const fuller = (a, b) => {
+    const la = a.trim().length;
+    const lb = b.trim().length;
+    if (la !== lb) return la > lb ? a : b;
+    return a < b ? a : b;
+  };
+  const mints = [];
+  for (const members of groups.values()) {
+    const kept = members.reduce((best, n) => (best === null ? n : fuller(best, n)), null);
+    const absorbed = members.filter((n) => n !== kept).sort();
+    const rows = members
+      .flatMap((n) => byName.get(n).rows)
+      .sort((a, b) => (a.uid < b.uid ? -1 : a.uid > b.uid ? 1 : 0));
+    mints.push({ program_name: kept, absorbed_names: absorbed, rows });
+  }
+  mints.sort((a, b) => (normName(a.program_name) < normName(b.program_name) ? -1 : 1));
+  const held = [...heldReasons.entries()]
+    .map(([program_name, reasons]) => ({
+      program_name,
+      reasons: [...reasons].sort(),
+      reason: [...reasons].sort()[0],
+    }))
+    .sort((a, b) => (normName(a.program_name) < normName(b.program_name) ? -1 : 1));
+  return { mints, held };
+}
+
 /**
  * Filter raw proposal bundles to the wave-1 apply set. A bundle is
  * approved only when its shape is mechanical, every name has at
@@ -436,6 +555,67 @@ export function filterWave1Bundles(proposals) {
     }
     if (bundle.n_attributed !== bundle.n_rows_total) {
       excluded.push({ bundle_entity_id: id, reason: "attribution_incomplete" });
+      continue;
+    }
+    approved.push(bundle);
+  }
+  return { approved, excluded };
+}
+
+
+/**
+ * Filter raw proposal bundles to the WAVE-2 apply set (the WA-217
+ * split). A bundle is approved only when it is a judged bundle
+ * (shape needs_judgment) carrying recorded pair decisions and an
+ * enumerated held_rows set, every name has at least one attributed
+ * row, and attributed + held == total rows exactly. Held rows are
+ * the bundle's unattributable (9)-generation rows; planDecomposition
+ * additionally requires every held uid to stand retired in
+ * luminari_unattributable_row_retirements (live-state check).
+ */
+export function filterWave2Bundles(proposals) {
+  const approved = [];
+  const excluded = [];
+  for (const bundle of proposals ?? []) {
+    const id = bundle?.bundle_entity_id ?? null;
+    if (!id || !bundle.bundle_canonical_id || !bundle.state || !bundle.current_name) {
+      excluded.push({ bundle_entity_id: id, reason: "missing_fields" });
+      continue;
+    }
+    if (bundle.shape !== "needs_judgment") {
+      excluded.push({ bundle_entity_id: id, reason: "shape_not_judged" });
+      continue;
+    }
+    if (!Array.isArray(bundle.pair_decisions) || bundle.pair_decisions.length === 0) {
+      excluded.push({ bundle_entity_id: id, reason: "no_pair_decisions" });
+      continue;
+    }
+    if (!Array.isArray(bundle.held_rows) || bundle.held_rows.length === 0) {
+      excluded.push({ bundle_entity_id: id, reason: "no_held_rows_enumerated" });
+      continue;
+    }
+    const heldBad = bundle.held_rows.some((r) => !r || !r.uid || !r.sheet || !(r.row > 0) || !r.gen);
+    if (heldBad) {
+      excluded.push({ bundle_entity_id: id, reason: "held_row_malformed" });
+      continue;
+    }
+    const names = bundle.names ?? [];
+    if (names.length === 0) {
+      excluded.push({ bundle_entity_id: id, reason: "no_names" });
+      continue;
+    }
+    const nameless = names.some((n) => !n.program_name || !Array.isArray(n.rows) || n.rows.length === 0);
+    if (nameless) {
+      excluded.push({ bundle_entity_id: id, reason: "name_without_rows" });
+      continue;
+    }
+    const attributed = names.reduce((n, x) => n + x.rows.length, 0);
+    if (attributed !== bundle.n_attributed) {
+      excluded.push({ bundle_entity_id: id, reason: "attribution_count_mismatch" });
+      continue;
+    }
+    if (attributed + bundle.held_rows.length !== bundle.n_rows_total) {
+      excluded.push({ bundle_entity_id: id, reason: "row_accounting_incomplete" });
       continue;
     }
     approved.push(bundle);
@@ -543,6 +723,23 @@ export function planDecomposition(approved, live, mintsByBundle) {
       drift.push({ bundle_entity_id: id, reason: "variant_names_held", held });
       continue;
     }
+    // Wave-2 guard: a bundle carrying enumerated held rows (its
+    // unattributable (9)-generation rows) may decompose only when
+    // every held uid stands retired in the retirement ledger — the
+    // "nothing lost" proof for rows no minted entity can carry.
+    const heldRows = bundle.held_rows ?? [];
+    if (heldRows.length > 0) {
+      const retired = live.retiredUidsByBundle?.get(id) ?? new Set();
+      const unretired = heldRows.filter((r) => !retired.has(r.uid));
+      if (unretired.length > 0) {
+        drift.push({
+          bundle_entity_id: id,
+          reason: "held_rows_not_retired",
+          held_rows: unretired,
+        });
+        continue;
+      }
+    }
     const attributionByUid = new Map();
     for (const n of bundle.names ?? []) {
       for (const r of n.rows ?? []) attributionByUid.set(r.uid, r);
@@ -605,6 +802,11 @@ export function planDecomposition(approved, live, mintsByBundle) {
     const expectUids = new Set(
       mintRecords.flatMap((m) => m.rows.map((r) => r.uid)),
     );
+    // Wave 2: the bundle's held rows stay linked to the shell (their
+    // provenance stays with the bundle), so the expected live link
+    // set is attributed rows UNION held rows — nothing more, nothing
+    // less. Wave-1 bundles carry no held rows; behavior is unchanged.
+    for (const r of bundle.held_rows ?? []) expectUids.add(r.uid);
     const uidsMatch =
       liveLinks.size === expectUids.size &&
       [...expectUids].every((uid) => liveLinks.has(uid));
@@ -964,11 +1166,11 @@ export function buildLedgerMintInsert(bundle, mintRecords, manifestSha) {
         merged_from: mint.absorbed_names.map((name) => ({
           program_name: name,
           pair_decision: "merged_into",
-          decided_by: "luminar_delegation_2026_11_10",
+          decided_by: PAIR_DECIDER,
         })),
       }),
       "split",
-      mint.absorbed_names.length > 0 ? "luminar_delegation_2026_11_10" : null,
+      mint.absorbed_names.length > 0 ? PAIR_DECIDER : null,
       null,
       BATCH_ID,
       manifestSha,
@@ -1146,6 +1348,21 @@ async function fetchLiveState(client, approved, allCanonicals) {
     ).catch(() => ({ rows: [] })); // ledger may not exist yet in a dry run
     for (const row of led.rows) ledgerBundleIds.add(row.bundle_entity_id);
   }
+  const retiredUidsByBundle = new Map();
+  for (const batch of chunk(bundleIds, 200)) {
+    const res = await client.query(
+      `select bundle_entity_id, row_uid
+         from public.luminari_unattributable_row_retirements
+        where bundle_entity_id = any($1::uuid[]) and status = 'retired'`,
+      [batch],
+    ).catch(() => ({ rows: [] })); // ledger may not exist yet in a dry run
+    for (const row of res.rows) {
+      if (!retiredUidsByBundle.has(row.bundle_entity_id)) {
+        retiredUidsByBundle.set(row.bundle_entity_id, new Set());
+      }
+      retiredUidsByBundle.get(row.bundle_entity_id).add(row.row_uid);
+    }
+  }
   return {
     entitiesById,
     entitiesByCanonical,
@@ -1153,6 +1370,7 @@ async function fetchLiveState(client, approved, allCanonicals) {
     locationsByBundle,
     resolutionsById,
     ledgerBundleIds,
+    retiredUidsByBundle,
   };
 }
 
@@ -1241,25 +1459,35 @@ export function loadEmbeddedProposals() {
   return JSON.parse(readFileSync(url, "utf-8"));
 }
 
+export function loadEmbeddedProposalsV2() {
+  const url = new URL("./bundle-decomposition-proposals-v2.json", import.meta.url);
+  return JSON.parse(readFileSync(url, "utf-8"));
+}
+
 async function main() {
   const apply = process.argv.includes("--apply");
-  const { approved, excluded } = filterWave1Bundles(loadEmbeddedProposals());
+  const wave2 = process.argv.includes("--plan-v2");
+  if (wave2) setWave(2);
+  const { approved, excluded } = wave2
+    ? filterWave2Bundles(loadEmbeddedProposalsV2())
+    : filterWave1Bundles(loadEmbeddedProposals());
   const mintsByBundle = new Map();
   const allMintRecords = [];
   for (const bundle of approved) {
     // The variant plan is recomputed from the embedded row-level
     // phone/website evidence, then cross-checked against the
     // identities and pair decisions the derivation pinned.
-    const plan = planVariantPairs(
-      (bundle.names ?? []).map((n) => ({
-        program_name: n.program_name,
-        rows: (n.rows ?? []).map((r) => ({
-          uid: r.uid,
-          phone: r.phone ?? "",
-          website: r.website ?? "",
-        })),
+    const nameRecords = (bundle.names ?? []).map((n) => ({
+      program_name: n.program_name,
+      rows: (n.rows ?? []).map((r) => ({
+        uid: r.uid,
+        phone: r.phone ?? "",
+        website: r.website ?? "",
       })),
-    );
+    }));
+    const plan = wave2
+      ? planVariantPairsWithDecisions(nameRecords, bundle.pair_decisions)
+      : planVariantPairs(nameRecords);
     verifyEmbeddedMints(bundle, plan.mints);
     mintsByBundle.set(bundle.bundle_entity_id, plan);
     for (const mint of plan.mints) {
