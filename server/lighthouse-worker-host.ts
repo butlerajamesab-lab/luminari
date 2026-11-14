@@ -1,5 +1,6 @@
 import "dotenv/config";
 import {
+  assertArchiveAmendmentIntegrityReleased,
   assertArchiveOnlyWorkerConfiguration,
   resolveLighthouseWorkerLane,
 } from "./lighthouse-worker-lane";
@@ -16,6 +17,9 @@ const lane = resolveLighthouseWorkerLane(process.env);
 
 if (lane === "docket_archive_only") {
   assertArchiveOnlyWorkerConfiguration(process.env);
+  // Fail closed until production Docket cache trigger and amendment registrar
+  // are certified. A Render environment variable cannot waive this gate.
+  assertArchiveAmendmentIntegrityReleased();
 
   // Never let the archive-only service inherit paid API access, even if a
   // historical Render secret remains present on the repurposed instance.
