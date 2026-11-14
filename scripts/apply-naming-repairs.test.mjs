@@ -6,12 +6,17 @@ import {
   APPROVED_TIERS,
   LEDGER_COLUMNS,
   REPAIR_VERSION,
+  STATE_ANCHOR_EVIDENCE_MARKER,
   buildLedgerInsert,
   buildNameUpdate,
+  evidenceTokens,
   filterApprovedProposals,
+  indexStateAnchors,
+  isBenefitsAnchoredRow,
   manifestFor,
   passesPersonFacingNameTest,
   planRepairs,
+  stateDirectoryAnchor,
 } from "./apply-naming-repairs.mjs";
 
 // The embedded apply set is the census output, staged into the repo
@@ -35,6 +40,22 @@ const EXPECTED_CENSUS_MANIFEST =
 // reproduce before --apply.
 const EXPECTED_CLEARED_MANIFEST =
   "77423f2ac46811c5f869037abbbd705ac3e3fdb9020c29471824da465b8380c8";
+// The state-directory anchors (stand-in pulls 3 + 3b, 2026-11-11):
+// 46 of the 161 held benefits renames anchored to official state
+// program directories, each with its citation. With the anchors
+// loaded, the approved set is 2,201 and the dry run must reproduce
+// this manifest; against the post-landing production state the plan
+// is exactly the 46 (the 2,155 classify as already_applied).
+const ANCHORS = JSON.parse(
+  readFileSync(
+    new URL("./naming-repair-state-anchors-v1.json", import.meta.url),
+    "utf-8",
+  ),
+);
+const EXPECTED_ANCHORED_MANIFEST =
+  "5366a54b3e835a3723a60c1d6a304c44e136e707d7bbc0d7d59b6f9429e0bd1b";
+const EXPECTED_ANCHORED_PLAN_MANIFEST =
+  "055cb86d0721d89006ab082fc738bfaa4f1e0c8eb88f39def62a9814ed4ad836";
 
 const row = (overrides = {}) => ({
   entity_id: "11111111-2222-3333-4444-555555555555",
@@ -300,5 +321,203 @@ describe("embedded census set", () => {
 
   it("the raw embedded set still reproduces the census manifest", () => {
     expect(manifestFor(EMBEDDED)).toBe(EXPECTED_CENSUS_MANIFEST);
+  });
+});
+
+describe("state-directory anchored admission", () => {
+  const anchorFor = (overrides = {}) => ({
+    entity_id: "benefits-entity",
+    proposed_name: "Example State Benefit",
+    source_name: "Example State Directory",
+    source_url: "https://example.gov/directory",
+    retrieved_date: "2026-11-11",
+    verdict_pull: "pull3",
+    ...overrides,
+  });
+  const benefitsRow = (overrides = {}) =>
+    row({
+      entity_id: "benefits-entity",
+      tier: "identity_uuid",
+      new_name: "Example State Benefit",
+      evidence: "entity UUID == benefit_uuid at v3_13 benefits_program_master:row:84",
+      ...overrides,
+    });
+
+  it("reads the held sheet as an exact token, never a substring", () => {
+    expect(isBenefitsAnchoredRow(benefitsRow())).toBe(true);
+    expect(
+      isBenefitsAnchoredRow(
+        benefitsRow({
+          evidence: "(9)->v3_13 mirror benefits_program_master",
+        }),
+      ),
+    ).toBe(true);
+    // program_master is a different token; a longer sheet name that
+    // merely contains the held sheet's name is a different token too.
+    expect(
+      isBenefitsAnchoredRow(
+        benefitsRow({ evidence: "v3_13 program_master:row:84" }),
+      ),
+    ).toBe(false);
+    expect(
+      isBenefitsAnchoredRow(
+        benefitsRow({
+          evidence: "v3_13 benefits_program_master_archive:row:84",
+        }),
+      ),
+    ).toBe(false);
+    expect(evidenceTokens("v3_13 program_master:row:1").has("program_master")).toBe(
+      true,
+    );
+    expect(
+      evidenceTokens("v3_13 program_master:row:1").has(
+        "benefits_program_master",
+      ),
+    ).toBe(false);
+  });
+
+  it("admits a held benefits row whose entity carries a complete anchor", () => {
+    const { approved, excluded } = filterApprovedProposals(
+      [benefitsRow()],
+      [anchorFor()],
+    );
+    expect(excluded).toHaveLength(0);
+    expect(approved).toHaveLength(1);
+    expect(approved[0].evidence).toContain(STATE_ANCHOR_EVIDENCE_MARKER);
+    expect(approved[0].evidence).toContain("Example State Directory");
+    expect(approved[0].evidence).toContain("https://example.gov/directory");
+    expect(approved[0].evidence).toContain("retrieved 2026-11-11");
+    // The original workbook evidence is preserved ahead of the citation.
+    expect(approved[0].evidence).toContain("benefits_program_master:row:84");
+  });
+
+  it("keeps holding benefits rows with no anchor, another entity's anchor, a mismatched name, or an incomplete citation", () => {
+    const cases = [
+      [],
+      [anchorFor({ entity_id: "someone-else" })],
+      [anchorFor({ proposed_name: "A Different Program Name" })],
+      [anchorFor({ source_url: "" })],
+      [anchorFor({ retrieved_date: "" })],
+    ];
+    for (const anchors of cases) {
+      const { approved, excluded } = filterApprovedProposals(
+        [benefitsRow()],
+        anchors,
+      );
+      expect(approved).toHaveLength(0);
+      expect(excluded.map((e) => e.reason)).toEqual([
+        "sheet_not_fidelity_cleared",
+      ]);
+    }
+  });
+
+  it("an anchor never rescues a row held for a different reason", () => {
+    const { approved, excluded } = filterApprovedProposals(
+      [
+        benefitsRow({
+          entity_id: "other-source-entity",
+          evidence: "some other unverifiable source",
+        }),
+      ],
+      [anchorFor({ entity_id: "other-source-entity" })],
+    );
+    expect(approved).toHaveLength(0);
+    expect(excluded.map((e) => e.reason)).toEqual([
+      "sheet_not_fidelity_cleared",
+    ]);
+  });
+
+  it("a fidelity-cleared row keeps its original evidence even when an anchor exists for its entity", () => {
+    const { approved } = filterApprovedProposals(
+      [row({ entity_id: "cleared-entity" })],
+      [anchorFor({ entity_id: "cleared-entity", proposed_name: "Example Crisis Center" })],
+    );
+    expect(approved).toHaveLength(1);
+    expect(approved[0].evidence).toBe("v3_13 program_master:row:1");
+    expect(approved[0].evidence).not.toContain(STATE_ANCHOR_EVIDENCE_MARKER);
+  });
+
+  it("stateDirectoryAnchor is null without a benefits token or a complete matching anchor", () => {
+    const byId = indexStateAnchors([anchorFor()]);
+    expect(stateDirectoryAnchor(benefitsRow(), byId)).not.toBeNull();
+    expect(stateDirectoryAnchor(row(), byId)).toBeNull();
+    expect(stateDirectoryAnchor(benefitsRow(), indexStateAnchors([]))).toBeNull();
+  });
+});
+
+describe("embedded census set with state-directory anchors", () => {
+  const { approved, excluded } = filterApprovedProposals(EMBEDDED, ANCHORS);
+  const anchored = approved.filter((r) =>
+    (r.evidence ?? "").includes(STATE_ANCHOR_EVIDENCE_MARKER),
+  );
+
+  it("the anchors file carries exactly the 46 directory-anchored renames", () => {
+    expect(ANCHORS).toHaveLength(46);
+    expect(new Set(ANCHORS.map((a) => a.entity_id)).size).toBe(46);
+    for (const a of ANCHORS) {
+      expect(a.source_name).toBeTruthy();
+      expect(a.source_url).toBeTruthy();
+      expect(a.retrieved_date).toBe("2026-11-11");
+    }
+  });
+
+  it("approves 2,201 rows: the cleared 2,155 plus exactly the 46 anchored", () => {
+    expect(approved).toHaveLength(2201);
+    const byTier = {};
+    for (const r of approved) byTier[r.tier] = (byTier[r.tier] ?? 0) + 1;
+    expect(byTier).toEqual({
+      identity_direct: 2139,
+      identity_uuid: 50,
+      identity_mirror: 11,
+      c_strong: 1,
+    });
+    expect(anchored).toHaveLength(46);
+    expect(new Set(anchored.map((r) => r.entity_id))).toEqual(
+      new Set(ANCHORS.map((a) => a.entity_id)),
+    );
+    for (const r of anchored) {
+      const a = ANCHORS.find((x) => x.entity_id === r.entity_id);
+      expect(r.new_name).toBe(a.proposed_name);
+      expect(r.evidence).toContain(a.source_url);
+      expect(passesPersonFacingNameTest(r.new_name)).toBe(true);
+    }
+  });
+
+  it("the other 115 benefits rows stay held with their existing reason", () => {
+    expect(excluded).toHaveLength(115);
+    for (const e of excluded) {
+      expect(e.reason).toBe("sheet_not_fidelity_cleared");
+    }
+  });
+
+  it("reproduces the anchored apply-set manifest regardless of row order", () => {
+    expect(manifestFor(approved)).toBe(EXPECTED_ANCHORED_MANIFEST);
+    expect(manifestFor([...approved].reverse())).toBe(
+      EXPECTED_ANCHORED_MANIFEST,
+    );
+  });
+
+  it("re-running against the post-landing state plans only the 46 (the landed 2,155 skip as already_applied)", () => {
+    // The skip mechanism is two-layered, both layers read in the
+    // runner: planRepairs classifies a row whose current name
+    // already equals the proposed name as already_applied (never
+    // planned, never drift), and buildLedgerInsert is conflict-
+    // guarded on the entity PK (on conflict do nothing).
+    const anchoredIds = new Set(anchored.map((r) => r.entity_id));
+    const currentRows = approved.map((r) => ({
+      resource_entity_id: r.entity_id,
+      resource_name: anchoredIds.has(r.entity_id) ? r.old_name : r.new_name,
+    }));
+    const { planned, alreadyApplied, drift, missing } = planRepairs(
+      approved,
+      currentRows,
+    );
+    expect(planned.map((r) => r.entity_id).sort()).toEqual(
+      [...anchoredIds].sort(),
+    );
+    expect(alreadyApplied).toHaveLength(2155);
+    expect(drift).toHaveLength(0);
+    expect(missing).toHaveLength(0);
+    expect(manifestFor(planned)).toBe(EXPECTED_ANCHORED_PLAN_MANIFEST);
   });
 });

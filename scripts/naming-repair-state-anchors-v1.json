@@ -1,0 +1,370 @@
+[
+  {
+    "entity_id": "04a9bf49-5c53-af46-ca82-4368ad4ecfff",
+    "proposed_name": "Medicare Savings Programs (MSP)",
+    "source_name": "CMS Medicaid.gov \u2014 State Overviews (per-state Medicaid/CHIP agency profiles)",
+    "source_url": "https://www.medicaid.gov/state-overviews",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "04adeb15-8e5b-9930-e5f8-70d64c959f4f",
+    "proposed_name": "Unemployment Insurance (UI)",
+    "source_name": "U.S. Department of Labor, Employment and Training Administration \u2014 State Workforce Agencies listing; UIPL 26-01 Change 1, Attachment I (State UC Tax and TPS Contacts)",
+    "source_url": "https://www.dol.gov/agencies/eta/wotc/contact/state-workforce-agencies",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3b"
+  },
+  {
+    "entity_id": "0c3ce9a3-9765-7242-7fc9-dba19f97f34b",
+    "proposed_name": "SNAP (Supplemental Nutrition Assistance Program)",
+    "source_name": "USDA FNS \u2014 SNAP State Directory (per-state SNAP agency and application portal)",
+    "source_url": "https://www.fns.usda.gov/snap/state-directory",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "0f42af74-9849-bda5-5cae-8f8ea12d8d25",
+    "proposed_name": "Senior Farmers Market Nutrition Program",
+    "source_name": "USDA FNS \u2014 Contacts directory (per-state agency contacts, filterable by program: SNAP/WIC/Child Nutrition/Food Distribution)",
+    "source_url": "https://www.fns.usda.gov/contacts",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "113de8b2-6ae9-793e-ed15-6dcc077caeff",
+    "proposed_name": "Vocational Rehabilitation (VR)",
+    "source_name": "U.S. Department of Education, Rehabilitation Services Administration \u2014 State Vocational Rehabilitation Agencies",
+    "source_url": "https://rsa.ed.gov/about/states",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3b"
+  },
+  {
+    "entity_id": "152b3a9d-6894-7d8c-d078-c575ec6de28e",
+    "proposed_name": "ABLE Accounts (tax-advantaged savings)",
+    "source_name": "Internal Revenue Service \u2014 ABLE accounts: Tax benefit for people with disabilities",
+    "source_url": "https://www.irs.gov/government-entities/federal-state-local-governments/able-accounts-tax-benefit-for-people-with-disabilities",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3b"
+  },
+  {
+    "entity_id": "1a4992ab-7bbb-e04c-ee8c-4ec056f556c5",
+    "proposed_name": "IDEA (Individuals with Disabilities Education Act)",
+    "source_name": "U.S. Department of Education, Office of Special Education Programs \u2014 IDEA Contacts",
+    "source_url": "https://sites.ed.gov/idea/contacts/",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3b"
+  },
+  {
+    "entity_id": "1e574748-6dbb-5778-05eb-b9f67bfec74b",
+    "proposed_name": "Caregiver support programs (NFCSP)",
+    "source_name": "ACL Administration for Community Living \u2014 State Units on Aging",
+    "source_url": "https://acl.gov/programs/aging-and-disability-networks/state-units-aging",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3b"
+  },
+  {
+    "entity_id": "2057f451-a139-26a3-2ff6-51e47aca94c7",
+    "proposed_name": "National Fuel Assistance Program (Northeast)",
+    "source_name": "ACF LIHEAP Clearinghouse \u2014 National Fuel Gas utility profile (NY); Pennsylvania Public Utility Commission press release on National Fuel customer assistance programs (2026-10-22)",
+    "source_url": "http://liheapch.acf.gov/Utility/NY/nfg.htm",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3b"
+  },
+  {
+    "entity_id": "235ea713-6773-896d-4580-7479c5bca14c",
+    "proposed_name": "CACFP (Child & Adult Care Food Program)",
+    "source_name": "USDA FNS \u2014 Contacts directory (per-state agency contacts, filterable by program: SNAP/WIC/Child Nutrition/Food Distribution)",
+    "source_url": "https://www.fns.usda.gov/contacts",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "2f25f971-6e7d-f80a-362d-1fa71a20dbea",
+    "proposed_name": "Meals on Wheels / Congregate Meals",
+    "source_name": "ACL Administration for Community Living \u2014 State Units on Aging",
+    "source_url": "https://acl.gov/programs/aging-and-disability-networks/state-units-aging",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3b"
+  },
+  {
+    "entity_id": "3ed8bf9e-9514-d746-d212-d85a6f4d71e5",
+    "proposed_name": "Older Americans Act (OAA) \u2013 Title III services",
+    "source_name": "ACL Administration for Community Living \u2014 State Units on Aging",
+    "source_url": "https://acl.gov/programs/aging-and-disability-networks/state-units-aging",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3b"
+  },
+  {
+    "entity_id": "44fa0830-9d5b-1814-51f2-01ea6edce41d",
+    "proposed_name": "CSFP (Commodity Supplemental Food Program)",
+    "source_name": "USDA FNS \u2014 Contacts directory (per-state agency contacts, filterable by program: SNAP/WIC/Child Nutrition/Food Distribution)",
+    "source_url": "https://www.fns.usda.gov/contacts",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "49a4cf7f-6920-6929-7629-473c1d60ebb6",
+    "proposed_name": "Refugee Resettlement Program (ORR)",
+    "source_name": "ACF Office of Refugee Resettlement \u2014 Refugee Program Bureau Contacts (State Refugee Coordinator contacts)",
+    "source_url": "https://www.acf.hhs.gov/orr/programs-services/refugees/contacts",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "4e457063-1c0c-e4a3-8d28-cb880535de33",
+    "proposed_name": "Office of Refugee Resettlement (ORR) programs",
+    "source_name": "ACF Office of Refugee Resettlement \u2014 Refugee Program Bureau Contacts (State Refugee Coordinator contacts)",
+    "source_url": "https://www.acf.hhs.gov/orr/programs-services/refugees/contacts",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "5227f700-9562-6e3b-b6a2-361c4eb96808",
+    "proposed_name": "Assistive Technology programs (ATAP)",
+    "source_name": "ACL Administration for Community Living \u2014 State Assistive Technology Program; AT3 Center \u2014 State AT Programs directory",
+    "source_url": "https://at3center.net/state-at-programs/",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3b"
+  },
+  {
+    "entity_id": "5b4117b2-0b82-f528-d545-4ebfc7ae77e9",
+    "proposed_name": "TEFAP (Emergency Food Assistance Program)",
+    "source_name": "USDA FNS \u2014 Contacts directory (per-state agency contacts, filterable by program: SNAP/WIC/Child Nutrition/Food Distribution)",
+    "source_url": "https://www.fns.usda.gov/contacts",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "69356b8c-1a35-aa59-555e-cb96c2c8df84",
+    "proposed_name": "LIHEAP \u2013 Cooling Assistance",
+    "source_name": "ACF Office of Community Services \u2014 LIHEAP State and Territory Grant Recipient Contacts",
+    "source_url": "https://www.acf.hhs.gov/ocs/data/map/liheap-map-state-and-territory-contact-listing",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "6aabc692-44ab-6aab-cdc2-ab1cf71105e0",
+    "proposed_name": "Ryan White HIV/AIDS Program",
+    "source_name": "HRSA HIV/AIDS Bureau \u2014 FY25 Ryan White HIV/AIDS Program Part B Grant Awards; HRSA ADAP Manual 2025",
+    "source_url": "https://ryanwhite.hrsa.gov/about/parts-and-initiatives/part-b-adap/fy-2025-grant-awards",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3b"
+  },
+  {
+    "entity_id": "6aede6ef-c86a-fda1-1023-8c495c6df20f",
+    "proposed_name": "PACE (Program of All-Inclusive Care for the Elderly)",
+    "source_name": "CMS Medicaid.gov \u2014 State Overviews (per-state Medicaid/CHIP agency profiles)",
+    "source_url": "https://www.medicaid.gov/state-overviews",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "76ddb41c-a00a-978c-caab-7420881de673",
+    "proposed_name": "Trade Adjustment Assistance (TAA)",
+    "source_name": "U.S. Department of Labor, Employment and Training Administration \u2014 State Rapid Response Coordinators (Layoffs / WARN contact page)",
+    "source_url": "https://www.dol.gov/agencies/eta/layoffs/contact",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3b"
+  },
+  {
+    "entity_id": "79336d5b-37c8-9198-22a3-3e501eb890c0",
+    "proposed_name": "Area Agency on Aging (AAA) programs",
+    "source_name": "ACL Administration for Community Living \u2014 State Units on Aging",
+    "source_url": "https://acl.gov/programs/aging-and-disability-networks/state-units-aging",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3b"
+  },
+  {
+    "entity_id": "8be28589-787e-aa4a-767b-960f6f284d57",
+    "proposed_name": "CHIP (Children's Health Insurance Program)",
+    "source_name": "CMS Medicaid.gov \u2014 State Overviews (per-state Medicaid/CHIP agency profiles)",
+    "source_url": "https://www.medicaid.gov/state-overviews",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "8dcd23f1-c906-fb10-8d37-1fcb102eb659",
+    "proposed_name": "Refugee Medical Assistance (RMA)",
+    "source_name": "ACF Office of Refugee Resettlement \u2014 Refugee Program Bureau Contacts (State Refugee Coordinator contacts)",
+    "source_url": "https://www.acf.hhs.gov/orr/programs-services/refugees/contacts",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "8de36622-30dc-dfaf-67a9-da863873a483",
+    "proposed_name": "Medicaid (disability track)",
+    "source_name": "CMS Medicaid.gov \u2014 State Overviews (per-state Medicaid/CHIP agency profiles)",
+    "source_url": "https://www.medicaid.gov/state-overviews",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "8defafe8-c6a7-abf5-415a-a9042ba88131",
+    "proposed_name": "Crime Victim Legal Assistance programs",
+    "source_name": "U.S. Department of Justice, Office for Victims of Crime \u2014 State Support pages (per-state VOCA program listings)",
+    "source_url": "https://ovc.ojp.gov/states/alabama",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3b"
+  },
+  {
+    "entity_id": "9315b043-4789-9479-17e2-6f8b72e5d23b",
+    "proposed_name": "School Breakfast Program (SBP)",
+    "source_name": "USDA FNS \u2014 Contacts directory (per-state agency contacts, filterable by program: SNAP/WIC/Child Nutrition/Food Distribution)",
+    "source_url": "https://www.fns.usda.gov/contacts",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "9f9ac53c-35d9-f668-ae1d-63cde705946a",
+    "proposed_name": "Matching Grant Program",
+    "source_name": "ACF Office of Refugee Resettlement \u2014 Refugee Program Bureau Contacts (State Refugee Coordinator contacts)",
+    "source_url": "https://www.acf.hhs.gov/orr/programs-services/refugees/contacts",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "a023fada-3a48-de96-e8f0-42638876b732",
+    "proposed_name": "WIC (Women, Infants & Children)",
+    "source_name": "USDA FNS \u2014 Contacts directory (per-state agency contacts, filterable by program: SNAP/WIC/Child Nutrition/Food Distribution)",
+    "source_url": "https://www.fns.usda.gov/contacts",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "a23f3219-442c-0571-a68a-8928c476354c",
+    "proposed_name": "TANF (Temporary Assistance for Needy Families)",
+    "source_name": "ACF Office of Family Assistance \u2014 'Help for Families' TANF Program Contact Information",
+    "source_url": "https://www.acf.hhs.gov/ofa/map/about/help-families",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "a890efec-a9f9-04aa-372a-d301bf3ebc12",
+    "proposed_name": "Refugee Cash Assistance (RCA)",
+    "source_name": "ACF Office of Refugee Resettlement \u2014 Refugee Program Bureau Contacts (State Refugee Coordinator contacts)",
+    "source_url": "https://www.acf.hhs.gov/orr/programs-services/refugees/contacts",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "ae51fbc5-f78d-00c8-1617-216f6d0bf4cf",
+    "proposed_name": "ComEd CARES (Illinois)",
+    "source_name": "Illinois Commerce Commission \u2014 NOI Docket 20-NOI-01, Initial Comments of Commonwealth Edison Company (hosted at icc.illinois.gov); corroborated by ACF LIHEAP Clearinghouse Illinois utility profile",
+    "source_url": "https://iccqa.illinois.gov/downloads/public/noi/20-noi-01/initial-comments/ComEd - 20-NOI-01 - Initial Comments.pdf",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3b"
+  },
+  {
+    "entity_id": "b10b0899-217a-867c-4b29-f222e28db0f5",
+    "proposed_name": "Senior Legal Aid services",
+    "source_name": "ACL Administration for Community Living \u2014 State Units on Aging",
+    "source_url": "https://acl.gov/programs/aging-and-disability-networks/state-units-aging",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3b"
+  },
+  {
+    "entity_id": "b849c6a5-6957-4913-123c-0d68e50bc1bb",
+    "proposed_name": "Medicare Savings Programs (MSP)",
+    "source_name": "CMS Medicaid.gov \u2014 State Overviews (per-state Medicaid/CHIP agency profiles)",
+    "source_url": "https://www.medicaid.gov/state-overviews",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "b9c2fce9-6722-4c61-4085-2a377a27f9fd",
+    "proposed_name": "Medicaid",
+    "source_name": "CMS Medicaid.gov \u2014 State Overviews (per-state Medicaid/CHIP agency profiles)",
+    "source_url": "https://www.medicaid.gov/state-overviews",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "bad87f35-e65f-4eeb-33c9-a79d586bd948",
+    "proposed_name": "Long-Term Care Ombudsman",
+    "source_name": "ACL Administration for Community Living \u2014 The Long-Term Care Ombudsman Program",
+    "source_url": "http://acl.gov/programs/long-term-care-ombudsman/long-term-care-ombudsman-program-protecting-rights-residents",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3b"
+  },
+  {
+    "entity_id": "ccc73932-b80e-c7d5-8e59-968f3d4dc26a",
+    "proposed_name": "LIHEAP \u2013 Heating Assistance",
+    "source_name": "ACF Office of Community Services \u2014 LIHEAP State and Territory Grant Recipient Contacts",
+    "source_url": "https://www.acf.hhs.gov/ocs/data/map/liheap-map-state-and-territory-contact-listing",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "cedee31b-1135-c6eb-b510-89c4af4c9e7f",
+    "proposed_name": "SHIP (State Health Insurance Assistance Program)",
+    "source_name": "ACL Administration for Community Living \u2014 State Health Insurance Assistance Program (SHIP)",
+    "source_url": "https://acl.gov/programs/connecting-people-services/state-health-insurance-assistance-program-ship",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3b"
+  },
+  {
+    "entity_id": "d3e55bea-a591-8aac-0d91-3860160b6395",
+    "proposed_name": "National School Lunch Program (NSLP)",
+    "source_name": "USDA FNS \u2014 Contacts directory (per-state agency contacts, filterable by program: SNAP/WIC/Child Nutrition/Food Distribution)",
+    "source_url": "https://www.fns.usda.gov/contacts",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "d57c47a9-4c57-0dfa-22da-62d2c4e8ca70",
+    "proposed_name": "LIHEAP \u2013 Energy Crisis Intervention (ECIP)",
+    "source_name": "ACF Office of Community Services \u2014 LIHEAP State and Territory Grant Recipient Contacts",
+    "source_url": "https://www.acf.hhs.gov/ocs/data/map/liheap-map-state-and-territory-contact-listing",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "dc63595e-e5ea-afa6-53c7-0766150e818d",
+    "proposed_name": "Disaster Unemployment Assistance (DUA)",
+    "source_name": "U.S. Department of Labor, Employment and Training Administration \u2014 Disaster Unemployment Assistance (DUA) program page (oui.doleta.gov)",
+    "source_url": "https://oui.doleta.gov/unemploy/disaster.asp/aboutui.asp",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3b"
+  },
+  {
+    "entity_id": "df3f499a-67fa-7a9b-e223-2fe45aff3b8b",
+    "proposed_name": "Foster youth education support (Chafee, ETV)",
+    "source_name": "ACF Children's Bureau \u2014 John H. Chafee Foster Care Program for Successful Transition to Adulthood",
+    "source_url": "https://acf.gov/cb/grant-funding/john-h-chafee-foster-care-independence-program",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3b"
+  },
+  {
+    "entity_id": "e59c45c6-ee12-4ab9-5cd9-a66f97abd9b3",
+    "proposed_name": "Centers for Independent Living (CIL)",
+    "source_name": "ACL Administration for Community Living \u2014 Centers for Independent Living",
+    "source_url": "https://acl.gov/programs/aging-and-disability-networks/centers-independent-living",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3b"
+  },
+  {
+    "entity_id": "e8f5474c-f7a5-809b-abe9-633a53563058",
+    "proposed_name": "Child Care and Development Fund (CCDF)",
+    "source_name": "ACF Office of Child Care \u2014 Child Care and Development Fund Administrators (per-state CCDF administrator offices)",
+    "source_url": "https://www.acf.hhs.gov/occ/contact-information/state-and-territory-child-care-and-development-fund-administrators",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "ef15dc60-f1b4-32c5-50cf-6bd054a211dd",
+    "proposed_name": "TANF \u2013 Tribal TANF programs",
+    "source_name": "ACF Office of Family Assistance \u2014 'Help for Families' TANF Program Contact Information",
+    "source_url": "https://www.acf.hhs.gov/ofa/map/about/help-families",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  },
+  {
+    "entity_id": "fe196205-5b03-4153-837f-f21e16db42ad",
+    "proposed_name": "Summer Food Service Program (SFSP)",
+    "source_name": "USDA FNS \u2014 Contacts directory (per-state agency contacts, filterable by program: SNAP/WIC/Child Nutrition/Food Distribution)",
+    "source_url": "https://www.fns.usda.gov/contacts",
+    "retrieved_date": "2026-11-11",
+    "verdict_pull": "pull3"
+  }
+]
