@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
+  assertArchiveAmendmentIntegrityReleased,
   assertArchiveOnlyWorkerConfiguration,
   DISALLOWED_ARCHIVE_FEATURE_GRANTS,
   resolveLighthouseWorkerLane,
@@ -54,11 +55,19 @@ describe("repurposed suspended Prism canary worker dispatch", () => {
     }
   });
 
+  it("cannot waive the installed amendment trigger release hold via environment", () => {
+    expect(() => assertArchiveAmendmentIntegrityReleased()).toThrow(
+      "docket_archive_amendment_integrity_release_not_certified"
+    );
+    expect(() => assertArchiveOnlyWorkerConfiguration(valid)).not.toThrow();
+  });
+
   it("keeps legacy canary imports behind an explicit branch", () => {
     const host = readFileSync("server/lighthouse-worker-host.ts", "utf8");
     const worker = readFileSync("server/docket-archive-activation-worker.ts", "utf8");
     const pkg = JSON.parse(readFileSync("package.json", "utf8"));
     expect(host).toContain('if (lane === "docket_archive_only")');
+    expect(host).toContain('assertArchiveAmendmentIntegrityReleased();');
     expect(host).toContain('delete process.env.LEGISCAN_API_KEY');
     expect(host).toContain('await import("./docket-archive-activation-worker")');
     expect(host).toContain('await import("./prism-rosetta-worker")');
