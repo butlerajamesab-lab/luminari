@@ -48,6 +48,8 @@ jobs:
             // reporting no unresolved findings settles them. Threads
             // from anyone else are never settled this way, and a
             // verdict recorded for any other sha settles nothing.
+            // Only markers in the reviewer's own comments count —
+            // the marker text in anyone else's comment is ignored.
             async function codexCleanForHead(issueNumber, headSha) {
               const comments = await github.paginate(
                 github.rest.issues.listComments,
@@ -55,6 +57,10 @@ jobs:
               );
               let state = null;
               for (const comment of comments) {
+                // Only the reviewer's own comments carry its verdict.
+                // A marker in anyone else's comment is not Codex
+                // speaking and settles nothing.
+                if ((comment.user?.login ?? "") !== CODEX_LOGIN) continue;
                 const match = /codex-review-state:v1 (\{.*?\}) -->/.exec(comment.body ?? "");
                 if (match) {
                   try { state = JSON.parse(match[1]); } catch { state = null; }
@@ -166,6 +172,10 @@ jobs:
               );
               let state = null;
               for (const comment of comments) {
+                // Only the reviewer's own comments carry its verdict.
+                // A marker in anyone else's comment is not Codex
+                // speaking and settles nothing.
+                if ((comment.user?.login ?? "") !== CODEX_LOGIN) continue;
                 const match = /codex-review-state:v1 (\{.*?\}) -->/.exec(comment.body ?? "");
                 if (match) {
                   try { state = JSON.parse(match[1]); } catch { state = null; }
