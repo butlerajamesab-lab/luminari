@@ -446,6 +446,15 @@ APPROVED_REPOSITORY_ONLY = {
         "20261110270000_content_projection_ledger_v1.sql",
         "1e3a13af4194ef14ae0de43426ad5614ab8e550c",
     ),
+    # Unattributable-row retirements ledger (creates
+    # luminari_unattributable_row_retirements only). Repository-only
+    # pending the separately approved production installation that
+    # follows the merge. Exact Git blob pinned; no production
+    # installation or ledger rewrite is implied by this entry.
+    "20261110280000": (
+        "20261110280000_unattributable_row_retirements_v1.sql",
+        "4361de8b83e7bc113578e822e60850411d0fce37",
+    ),
     # Restored production migration (legal authority catalog
     # materialized view). Applied in the live production ledger on
     # 2026-10-20 and verified there first-hand 2026-11-11, but absent

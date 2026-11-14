@@ -1,0 +1,2970 @@
+[
+ {
+  "bundle_entity_id": "07fdb476-cbc2-3382-5b8f-c6277c5add0f",
+  "row_uid": "corpus:24cd94beab2a17542316871a3d40f00f785d4084d3d16432238b94c6f4dad039",
+  "sheet": "pass3_program_card",
+  "row_number": 1281,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "Hwy 40, Fort Duchesne UT 84026 (Duchesne County)"
+ },
+ {
+  "bundle_entity_id": "07fdb476-cbc2-3382-5b8f-c6277c5add0f",
+  "row_uid": "corpus:719f030bfa9f8d1ebfdf21895f3df4dae207f205ac41da45a6c63d318b50ddc3",
+  "sheet": "pass3_program_card",
+  "row_number": 1297,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "195 N 1950 W, Salt Lake City UT 84116 \u00b7 Local Community Action Agencies"
+ },
+ {
+  "bundle_entity_id": "07fdb476-cbc2-3382-5b8f-c6277c5add0f",
+  "row_uid": "corpus:7bffdb7017f21266b83290bbd4e65b9c9bb6663c4b38f9d5a32979bcc1d95933",
+  "sheet": "pass3_program_card",
+  "row_number": 1305,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "2900 4th Ave N, Billings MT 59101"
+ },
+ {
+  "bundle_entity_id": "13e52533-d297-42b8-f022-9d70522e9c24",
+  "row_uid": "corpus:37849e8f6b2672fc1adb060d64326ec884b0faa8cf6a83ff9fad278909975a2c",
+  "sheet": "pass3_program_card",
+  "row_number": 56,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "4315 Diplomacy Dr, Anchorage AK 99508"
+ },
+ {
+  "bundle_entity_id": "13e52533-d297-42b8-f022-9d70522e9c24",
+  "row_uid": "corpus:7aa2a94d0fe56b4ef1d7209c8e52681bb6188eb0a072bc6744ffba81ab97b43c",
+  "sheet": "pass3_program_card",
+  "row_number": 36,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "4315 Diplomacy Dr, Anchorage AK 99508"
+ },
+ {
+  "bundle_entity_id": "141579dc-96c1-9ca2-fd3f-4b66f275610c",
+  "row_uid": "corpus:1e9ed67ae1756e49e76ddd1e0f0cf740b1f6b60a71e5b6a14a80e0e9534f52c9",
+  "sheet": "pass3_program_card",
+  "row_number": 1430,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "OWCP Black Lung Program \u00b7 1835 Assembly St Ste 1316, Columbia SC (nearest office)"
+ },
+ {
+  "bundle_entity_id": "141579dc-96c1-9ca2-fd3f-4b66f275610c",
+  "row_uid": "corpus:78f9329f698a1c90ecc6537f6683a551ed0b9a9838384504b1e14c14d971ab1a",
+  "sheet": "pass3_program_card",
+  "row_number": 1417,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "1327 7th Ave, Huntington WV 25701 (Huntington HQ)"
+ },
+ {
+  "bundle_entity_id": "141579dc-96c1-9ca2-fd3f-4b66f275610c",
+  "row_uid": "corpus:b730bc2d873243332802cc0e9f3882562b40c626971d3467cf15009b831bd668",
+  "sheet": "pass3_program_card",
+  "row_number": 1416,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "350 Capitol St Rm 691, Charleston WV 25301 (DHHR) \u00b7 55 county DHHR offices statewide"
+ },
+ {
+  "bundle_entity_id": "141579dc-96c1-9ca2-fd3f-4b66f275610c",
+  "row_uid": "corpus:dca0dde44aa4a760a5fde63dfbf7dec026dcdd336650497e55c4556cf8544e23",
+  "sheet": "pass3_program_card",
+  "row_number": 1429,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "350 Capitol St, Charleston WV 25301 \u00b7 55 county DHHR offices"
+ },
+ {
+  "bundle_entity_id": "141579dc-96c1-9ca2-fd3f-4b66f275610c",
+  "row_uid": "corpus:f2a64bfb984b724d49f1ffaf5fc5047037573e2d32a30f3e51c5474e9a88c1bc",
+  "sheet": "pass3_program_card",
+  "row_number": 1427,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "350 Capitol St, Charleston WV 25301 \u00b7 55 county DHHR offices"
+ },
+ {
+  "bundle_entity_id": "17dafed7-4ef4-37bb-7447-03d1818e46a9",
+  "row_uid": "corpus:31d03ac9dab860cde96e0fff9f37f7e4c56a9110244d9d2cda369eac356c1175",
+  "sheet": "pass3_program_card",
+  "row_number": 563,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "311 W Saratoga St, Baltimore MD 21201 (DHR main) \u00b7 24 county LDSS offices statewide"
+ },
+ {
+  "bundle_entity_id": "17dafed7-4ef4-37bb-7447-03d1818e46a9",
+  "row_uid": "corpus:b726a41234abc1d661dca51b8210f588e17254af5de9cf57bcc2fe0112aaf643",
+  "sheet": "pass3_program_card",
+  "row_number": 579,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "311 W Saratoga St, Baltimore MD 21201 \u00b7 County LDSS offices"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:019cf51cfa4180b7e56766f340920dd164abb6d44a0174dea081bce5f5ea50bf",
+  "sheet": "pass3_program_card",
+  "row_number": 1707,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19338"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:030ac2945c2b8f53d5a9057a18e3715107f0c702ac5c5b04273714a891137da6",
+  "sheet": "pass3_program_card",
+  "row_number": 1527,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19214"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:044b043bae06eb98adba049dc5f1d510f8541ec00a9870f67a7da81ddb6289af",
+  "sheet": "pass3_program_card",
+  "row_number": 1647,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19177"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:04785cecb6e5b89d85b09dcb0149bd5c2d0736750a22d539b45e496dc091d1d2",
+  "sheet": "pass3_program_card",
+  "row_number": 1613,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19279"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:0562b2082454547dda201b8c5e0cbadf95c775d384c465b7dc5fdd5fff45892f",
+  "sheet": "pass3_program_card",
+  "row_number": 1544,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19177"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:05dc93e27722a0aba00f438d4ff5879d6c3b4c2ed6c34d489e7fcdac2e2e7cae",
+  "sheet": "pass3_program_card",
+  "row_number": 1548,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19230"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:062026de863e659a99b60006313d78142869db9d09d7a8f2f069d4986e94934f",
+  "sheet": "pass3_program_card",
+  "row_number": 1635,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19298"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:0631cf3b39234266657f672334877285f26cd9b32b86b5c1efcaf52f98a29a3b",
+  "sheet": "pass3_program_card",
+  "row_number": 1620,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19285"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:0a39d7f29c664395d4ce474e8f4f14ec5b5e9898e4a0d9183dcc6f22ba189b91",
+  "sheet": "pass3_program_card",
+  "row_number": 1545,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19177"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:0c659d648b86da1e3738a1acb610679cb7a76096fd640ce21ac941dd9202bb7f",
+  "sheet": "pass3_program_card",
+  "row_number": 1615,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19281"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:0ea73b0fa9a6ee022afb59ea6998532b51cae002a37628007b9ef08bddd3e195",
+  "sheet": "pass3_program_card",
+  "row_number": 1530,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19216"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:0eae71c0f4deb553386a7a191051d198d602ed206a42ddd9f3c8194df7b70910",
+  "sheet": "pass3_program_card",
+  "row_number": 1648,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19177"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:10325eeb957508186d3dc050499862ec8aa24b9e62268ddd2c3530981d74c698",
+  "sheet": "pass3_program_card",
+  "row_number": 1543,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19227"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:12540be98aa354161c02dd5ae1413e15561d889cb8d7a954d1b594451548743d",
+  "sheet": "pass3_program_card",
+  "row_number": 1601,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19268"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:12993d54199a8d6dbeb21df48dd6e142bbbb50a9c7b2a3f26b6d42d8c95116c5",
+  "sheet": "pass3_program_card",
+  "row_number": 1645,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19177"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:1465ee4b05053f74ed72d927be23dceb79be0bab0e4fea8e9d8c89333cd2293e",
+  "sheet": "pass3_program_card",
+  "row_number": 1559,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19189"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:14678848f3ba87baa1059b92602742ac76e73572b1bf582acd0ab64ad7fb565f",
+  "sheet": "pass3_program_card",
+  "row_number": 1684,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19328"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:175156cd22503ad30ca4e2cdb4dbcc9203ca4ea84a68741bf531edc67ece79fd",
+  "sheet": "pass3_program_card",
+  "row_number": 1574,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19250"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:17687a4b950b065b1497b74d75157f09f5a9f343cb3b7bbee949b73897d4cc1d",
+  "sheet": "pass3_program_card",
+  "row_number": 1599,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19266"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:179b737e691146cd19dfd5068748016ab4ccab60bdc73c41490467abf147e804",
+  "sheet": "pass3_program_card",
+  "row_number": 1576,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19252"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:1848d4f7611c18e5b99c52d1c685d55f8c03774d9e22cd943ad9d5dcfc3d4e6c",
+  "sheet": "pass3_program_card",
+  "row_number": 1490,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19180"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:18c552b2f960a1eeb780b41fce6f1747bbd77eed1a993aa3d6d7f493f581b949",
+  "sheet": "pass3_program_card",
+  "row_number": 1587,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19220"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:1cc7b861197162446fb33a20631d1c8bb14105593f29b52ef864a3f388736b7b",
+  "sheet": "pass3_program_card",
+  "row_number": 1685,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19329"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:1d52c7ea6d1d7897f5a3a260cb21c51b154bc591ea264545545cea45d80cc0a8",
+  "sheet": "pass3_program_card",
+  "row_number": 1499,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19188"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:1e1ca7b236bfd7e7058182813034df19f081d2bad433352a2896844c0acfa5a1",
+  "sheet": "pass3_program_card",
+  "row_number": 1695,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19332"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:1e660106ef10f77235b3e58397af9257a4aa1a771de72897799c63001ea7a35d",
+  "sheet": "pass3_program_card",
+  "row_number": 1541,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19225"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:1ee7c78cfbaceb92ffa3de0e824dd984746510f24b356f8d9c0fccd126f8e61a",
+  "sheet": "pass3_program_card",
+  "row_number": 1682,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19326"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:1ef7c79f6111a92ebf88d7444067463465844689e1ecda91c30531316596ebb3",
+  "sheet": "pass3_program_card",
+  "row_number": 1570,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19246"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:20a79f3a4e79bf70b90de926474627ee776fc44f0887ae93b500b395439b2f51",
+  "sheet": "pass3_program_card",
+  "row_number": 1696,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19333"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:219299071d47ffe6730aa8d0df5df04de1e374a8eeddcad01bcf5f5223a3b5a0",
+  "sheet": "pass3_program_card",
+  "row_number": 1591,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19260"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:222370724c84ae765d5539e5dbbc52889cb95e9d32c8436c4547261bb21d526b",
+  "sheet": "pass3_program_card",
+  "row_number": 1577,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19253"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:23ba549bb2944e51a53bf55d24dce1a96277fe0f19f7044cf5288c684823f41f",
+  "sheet": "pass3_program_card",
+  "row_number": 1603,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19270"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:23e401b658af2f03426cb1aabe8efaec685a4126c8334e7f8c51e303e8cf68eb",
+  "sheet": "pass3_program_card",
+  "row_number": 1608,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19275"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:247e0280ce0b573e0899c92ce254162303ce9a6cfca4982bc870ae924c60dcdd",
+  "sheet": "pass3_program_card",
+  "row_number": 1688,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19301"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:258f45fe14c530f5f30e56d75e5316955c3f172512e4fbef4b4056c2dd989c85",
+  "sheet": "pass3_program_card",
+  "row_number": 1522,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19209"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:269a9511dd21738c8f2b3af6227b8b174a4d3c22854d0a29a368553ea664ba90",
+  "sheet": "pass3_program_card",
+  "row_number": 1652,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19305"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:284b534b6b598234023ba1299608ea472f147af5933a58fd1aabe43fa6541634",
+  "sheet": "pass3_program_card",
+  "row_number": 1618,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19284"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:2955f1fd0eedabc69bccb3b700d08819f5cbf1c8f07fbe7db7f1913f71f1f2aa",
+  "sheet": "pass3_program_card",
+  "row_number": 1664,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19312"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:2984592927caed808604d37aba4637c2c9d02787a95b8a7144fe259c71156136",
+  "sheet": "pass3_program_card",
+  "row_number": 1595,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19263"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:2986ab243ab42893819b625e22249663931ad34e114926fa0f0073920d1ac7df",
+  "sheet": "pass3_program_card",
+  "row_number": 1536,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19199"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:2a0aeaf4fe79e7264c9d1a10bbc712f3dbe73d69a6af7de142dceb22cc2cefcf",
+  "sheet": "pass3_program_card",
+  "row_number": 1558,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19197"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:2b9f394c902c03656c196e815ff4afa149fec7762568db7c236755e76469337c",
+  "sheet": "pass3_program_card",
+  "row_number": 1585,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19189"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:2d4cc1c7f0254a6f33befbc3a4339244d863e48ea4b3e07b709bd947ff7ecf6a",
+  "sheet": "pass3_program_card",
+  "row_number": 1692,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19197"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:2ed24ce324c1cfe6b084544be6c0922cbcdf8fd49960a78e69143e9436a81943",
+  "sheet": "pass3_program_card",
+  "row_number": 1597,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19264"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:3004740423ab1362d653e2a5de2e20338e93613b06933581b2705625b7756c88",
+  "sheet": "pass3_program_card",
+  "row_number": 1507,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19196"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:30864098da389c234c54e7f5d04aa60c1b2d53c733bb6ed2b2f0992e9ececda6",
+  "sheet": "pass3_program_card",
+  "row_number": 1513,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19201"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:32f329c33cb45d448825421f407257ce9fbc165e9e260beb28c49e7619d7c15c",
+  "sheet": "pass3_program_card",
+  "row_number": 1533,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19218"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:34b32c0c205b3f2cf25e8e875bf9f0aafc19105fa0bb93aabf5a4f682cd92590",
+  "sheet": "pass3_program_card",
+  "row_number": 1506,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19195"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:350100540c979e49240b16ff3216a9e658bfe843948005b51621c7caae9de2b4",
+  "sheet": "pass3_program_card",
+  "row_number": 1611,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19277"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:375b36d833381a1c2c0632d1ffd863c6e61a133df0e47e3d89c600af902aeea4",
+  "sheet": "pass3_program_card",
+  "row_number": 1663,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19177"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:3a60b11e6a4262dc30ddde840e918bb7e009b3a3bda48432702eafd838381f9e",
+  "sheet": "pass3_program_card",
+  "row_number": 1487,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19177"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:3b4f7d1177354a4c0b0651f3d77c03401451c33c14db96efd34e418f3c997390",
+  "sheet": "pass3_program_card",
+  "row_number": 1562,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19240"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:3c798d6a849cbdf2772103c357ab34b76aeb39eedeb3e803c2fe951cac2c88f1",
+  "sheet": "pass3_program_card",
+  "row_number": 1671,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19193"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:3d8a6cb13b712aca08279c1ecfd7db0cd15714cd4d9a4139e84536720ec54ccf",
+  "sheet": "pass3_program_card",
+  "row_number": 1610,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19241"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:3e7e06f2f4b8bdced6f25507f92243079b427de815a1377c48496dfe5a01060f",
+  "sheet": "pass3_program_card",
+  "row_number": 1632,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19256"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:3f9b31a5e178fd601b947f714569824e70351cffad6cf072229edbfa2a580ae4",
+  "sheet": "pass3_program_card",
+  "row_number": 1702,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19214"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:40d49170e0b2751dcdcbb3bafdeeb0887b23202c313c0c2cf1c4a64b4534ebfe",
+  "sheet": "pass3_program_card",
+  "row_number": 1634,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19297"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:422a43e0fbeafa0e67120da5f61043270a17806632ad0bc725f33f56311d3e96",
+  "sheet": "pass3_program_card",
+  "row_number": 1679,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19323"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:42a91d4ccfa1b69dd3bec907cd4f83de91438749c32e404a37c82a6e972b5022",
+  "sheet": "pass3_program_card",
+  "row_number": 1528,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19212"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:43d801eeec1b7b6cd6185bd2b97b2bfe111cd62eafe18a289d0f98ae5b1e91d1",
+  "sheet": "pass3_program_card",
+  "row_number": 1502,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19191"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:4485761b3ac9393f97dca3d5d2d8d505e08acb776b5a86b747cfda4c86d122c4",
+  "sheet": "pass3_program_card",
+  "row_number": 1556,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19236"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:448e5f9dcc3bb7050e3a981dc8370c540ac465ce7d4cb0f1402779866a5ab81c",
+  "sheet": "pass3_program_card",
+  "row_number": 1561,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19239"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:48cc081ad6621587723906e7623c5bdfec3e95973cf683f448c164f5e1d09c25",
+  "sheet": "pass3_program_card",
+  "row_number": 1523,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19210"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:4bb91fb65e9f6d258ccfc15ed413c73999432e2615f04f3872879d6ec6dddd76",
+  "sheet": "pass3_program_card",
+  "row_number": 1674,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19319"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:4c5ce86b7645aebcc56d61ec4a6a1cb94d5e9a87f23aa49c408196065f17f3da",
+  "sheet": "pass3_program_card",
+  "row_number": 1693,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19198"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:4ce426749708ee68997268dfd20361bf03c230a585a662cb821c568bd9d2a103",
+  "sheet": "pass3_program_card",
+  "row_number": 1680,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19324"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:4e7c97a1320b33d06a3f5825f65181a03cd459eae20e86b8bcb0810d9e6c33dd",
+  "sheet": "pass3_program_card",
+  "row_number": 1701,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19297"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:4f2f04dde6d25c8f2d53265e000284df7dd78a067ac6f3fe891adf104e8466a1",
+  "sheet": "pass3_program_card",
+  "row_number": 1593,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19244"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:5148a086b187a89a59a4af313b76de345189eec9a50ff61ef9470bfb86768b1c",
+  "sheet": "pass3_program_card",
+  "row_number": 1517,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19204"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:5252db1f304729c457436f05ccb65100a39493056d40b54c15f749721edcfcf2",
+  "sheet": "pass3_program_card",
+  "row_number": 1567,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19232"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:5437a326a522fe24f1cf71f3bb70f78dcfe2ec61741ac9177d67e73fc62d4f86",
+  "sheet": "pass3_program_card",
+  "row_number": 1658,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19308"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:547e4be9c93543849533a65ca18dbcfbad963115dcce827c6b72f9164146b561",
+  "sheet": "pass3_program_card",
+  "row_number": 1687,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19331"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:55859a8650a4384aa9f0963d4d9077a183420830ef56f1724787a249053faa60",
+  "sheet": "pass3_program_card",
+  "row_number": 1616,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19282"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:560521c32da196daf0418028123a360328ae1a8123ba7c83742739857df639a2",
+  "sheet": "pass3_program_card",
+  "row_number": 1572,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19248"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:58063ddcc92ef175a5110c7bd380e36604c04a7ff7f1ac740f084657723cf0a9",
+  "sheet": "pass3_program_card",
+  "row_number": 1531,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19199"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:5907c366b58a6ca394f00faa3963a31a162e65475bc353ae5ab5e0ac24650238",
+  "sheet": "pass3_program_card",
+  "row_number": 1512,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19200"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:5ac8b7a9c3c2b3d0adc85e2f4cb1a6c611863cf89027670b0976072c7e852d5a",
+  "sheet": "pass3_program_card",
+  "row_number": 1498,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19187"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:5b4727e162cba3c2cf615b101ac6e2b48fffc9e209625663651aac192ff1399e",
+  "sheet": "pass3_program_card",
+  "row_number": 1706,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19337"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:5bf0f4953825ba209390ba5ebd61c295861906ae2100afb64ee541db906c67bb",
+  "sheet": "pass3_program_card",
+  "row_number": 1642,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19302"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:5dcb69cf189967fd68941bdf3ddf39b23081c22926aaf16159091b9d3ccbb121",
+  "sheet": "pass3_program_card",
+  "row_number": 1515,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19202"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:5f200ca234cd28aa49ca9ef81a4a15cfbd733f8c9a353a19cacfa36251f59dff",
+  "sheet": "pass3_program_card",
+  "row_number": 1582,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19254"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:5f669640d78117a1db75be69786cb15c75e7372638246917f4bb84e0cc636c77",
+  "sheet": "pass3_program_card",
+  "row_number": 1631,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19295"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:6105c49acd6843d488d6c282d39bb1a8a9081b42f134167b54b545ef956b831d",
+  "sheet": "pass3_program_card",
+  "row_number": 1625,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19289"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:624168bc8ce248a0b1ec3bd31f06f82aedd6356d6e7b3a866f2cd5b6fcad452a",
+  "sheet": "pass3_program_card",
+  "row_number": 1505,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19194"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:6273dae791c16262ecbe976700c73d7e73526b01966e2c2960fe5142929a0caa",
+  "sheet": "pass3_program_card",
+  "row_number": 1705,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19278"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:62dbcbd3cac2bf53a1f0d74fac129f5c88b553b2096665c900764146771b92b6",
+  "sheet": "pass3_program_card",
+  "row_number": 1673,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19318"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:633b1bb227790bef7ed6b98cf2d7818c6600b8ee684a44dda35d5facf017d5d2",
+  "sheet": "pass3_program_card",
+  "row_number": 1622,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19287"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:663f90fcae1c7b5052b3c01290ba2275573e567f0f2dc8787dabacb962451377",
+  "sheet": "pass3_program_card",
+  "row_number": 1650,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19303"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:6692e7c25563a45153fecd2b4ebc77aceda1b6fd379a68ecc28ca86dd5717448",
+  "sheet": "pass3_program_card",
+  "row_number": 1704,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19308"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:675b313762ce36a654209b8e90bc5804bfa19866f469bc031de3f471e198c42c",
+  "sheet": "pass3_program_card",
+  "row_number": 1629,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19293"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:67f448a84d5921e49808016843dcce66cb7b3f29c37d3c6fc687627d9fb18fea",
+  "sheet": "pass3_program_card",
+  "row_number": 1686,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19330"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:6afa7e926427a855876a63ecd7ca59a087d2ded15f5b2a148fbc651a7c2d9958",
+  "sheet": "pass3_program_card",
+  "row_number": 1654,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19307"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:6bb1ee1da4b939ba38d8d51842641b840ca3efa3768ddacdba03db34f3ab4e5b",
+  "sheet": "pass3_program_card",
+  "row_number": 1596,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19202"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:6c9f188cb7a3b5bf74eed2eef3df826b5b0939593bfa90f965899b237550b8dc",
+  "sheet": "pass3_program_card",
+  "row_number": 1624,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19288"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:6e3e2c10c4810d9793ad8de246639f60c129e287c356d655c8238627663cd995",
+  "sheet": "pass3_program_card",
+  "row_number": 1638,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19233"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:6f2db2930b9ac748fb6878f0d80d810560dd45694add1663f461ab5e2a05d115",
+  "sheet": "pass3_program_card",
+  "row_number": 1579,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19253"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:6f96b3ad8cf096a8383949e280ac7b22c8447b197bc05a80a37f8bac599c7d83",
+  "sheet": "pass3_program_card",
+  "row_number": 1521,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19208"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:728cdb87bff0dc29e7e9abc254a4f287bf350d63eacad74b38e608b3da19b4c2",
+  "sheet": "pass3_program_card",
+  "row_number": 1557,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19237"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:74f64a4f89af170d6f9bdeaad17cbde17b40dd4b71adf7be40ec17d099ce0cb6",
+  "sheet": "pass3_program_card",
+  "row_number": 1529,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19215"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:78ce84e28a88d74a61fffabc20b63b5cc8461d3e77754950b8b955b4ef5875e2",
+  "sheet": "pass3_program_card",
+  "row_number": 1619,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19273"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:793ba234a257812f608b396ba89829644e59b87541167d058aece7758ba9d19d",
+  "sheet": "pass3_program_card",
+  "row_number": 1504,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19193"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:7b29878ac6fc78fa2741228c72c0d50edd28b0574300319d840a357f4ba1a2fc",
+  "sheet": "pass3_program_card",
+  "row_number": 1617,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19283"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:7c59fd6d4f139406a421f374f616f56822e89e6a8690a06817cef650979baeb0",
+  "sheet": "pass3_program_card",
+  "row_number": 1698,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19334"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:7cb70351c5027219df8886e04c2773daa877b5bbd8580b44272025e35a18b5bd",
+  "sheet": "pass3_program_card",
+  "row_number": 1538,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19222"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:7dac67955977e12d1afaccf426b90c78692ecfd8a678348b1fedb9e2bc780651",
+  "sheet": "pass3_program_card",
+  "row_number": 1549,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19231"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:7e2821705ecbf8bde0a627e2a5f1d8546fe68885baf99158d21437ee7008bcca",
+  "sheet": "pass3_program_card",
+  "row_number": 1640,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19301"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:7e28dfa20ad7bb0a02909a2f8685ed078f4506346d712aea186e6419e1b0cb45",
+  "sheet": "pass3_program_card",
+  "row_number": 1646,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19177"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:7e2f4a2c5a11e83c46168400f159c53f955fa20c6b6ef718400ca4e8f80876f3",
+  "sheet": "pass3_program_card",
+  "row_number": 1636,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19299"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:7f3f9522b99238b1245e018ee516c71cbb76c3549479cb8a2e3920a2405599cd",
+  "sheet": "pass3_program_card",
+  "row_number": 1666,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19314"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:80506b9019089938ed1e13ef6d22e77c02a10db0b885a731d7548bfb6ef15090",
+  "sheet": "pass3_program_card",
+  "row_number": 1641,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19298"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:813dfb368c217a53dd61c3f3ec406d8c5088850c46615a4080e05338e9c16828",
+  "sheet": "pass3_program_card",
+  "row_number": 1566,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19243"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:82b04c6c49c8b53650c8df5ecd0a3ff0dc9013b87bbc0e34f223d24750e4bb9e",
+  "sheet": "pass3_program_card",
+  "row_number": 1667,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19177"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:82e9c5c06a9f5092103c37c1c625d0c02f97b58619eefd62548f3f74ce735f14",
+  "sheet": "pass3_program_card",
+  "row_number": 1568,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19244"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:8315ab8e243760d2a351a2c5a71828010a168fd59a2b8e79ca5d40f5674f8d97",
+  "sheet": "pass3_program_card",
+  "row_number": 1708,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19339"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:849fd82b90e1bb50c307c468da4a60867e02a8ca6c9613f2154c8e05bf6043d4",
+  "sheet": "pass3_program_card",
+  "row_number": 1630,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19294"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:885dc6e5abb4d08bb548789d980af1b33cfa6735957c6213758291ae8d58e5aa",
+  "sheet": "pass3_program_card",
+  "row_number": 1606,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19273"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:8a4963e2e99f2e11b0d15e9dded103752db87ca9ee808cbfbf204c85d6693688",
+  "sheet": "pass3_program_card",
+  "row_number": 1575,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19251"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:8a5a464016a0559507acc911def007769cacf4c7af58c5c313cc8250270a89cb",
+  "sheet": "pass3_program_card",
+  "row_number": 1588,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19257"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:8ac1cd4bb5a59abe1d280b7fdf3e16d528da3d45c8212918b6f13c381f2a7081",
+  "sheet": "pass3_program_card",
+  "row_number": 1583,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "685"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:8b8b5262b9cb004539ac99f7236dcb2ba4dbbcc72e3fdfcd24284e112f63b781",
+  "sheet": "pass3_program_card",
+  "row_number": 1672,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19317"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:8c35b0cde32659c3aec300e51e9def6ff9ceaeb160050d56cec94c3be9d78408",
+  "sheet": "pass3_program_card",
+  "row_number": 1580,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19254"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:90d5ad29a0452f955a74c208a7b2ef6e66902916a0aeb1f97747120fec6afe11",
+  "sheet": "pass3_program_card",
+  "row_number": 1633,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19296"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:924159206c75b9cbdc93fcc3544699f44a54b75cbd1ee79b18ee2e2462072a07",
+  "sheet": "pass3_program_card",
+  "row_number": 1677,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19322"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:92e010ba753d9a39e79a8c8996377c89d902512d26371341d1cad95e42f55d65",
+  "sheet": "pass3_program_card",
+  "row_number": 1563,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19241"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:937fa5f7518532e16e9c9cf2d33876343fa785afa089bcf3b6ee3ed541b4533f",
+  "sheet": "pass3_program_card",
+  "row_number": 1594,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19262"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:93fd5d5695ce54e8261e93b99d9147ec6b367fc3eab791a3e06a3bd069099ff2",
+  "sheet": "pass3_program_card",
+  "row_number": 1565,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19242"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:96dbb58051e4367d7a877345731f460a347ef3022db9cc38351f54ade71e7a0a",
+  "sheet": "pass3_program_card",
+  "row_number": 1709,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19340"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:9773cbae82b4f7045939739583a78f68ef9c3f51e95e5e7ebf57ccc8918a8fd5",
+  "sheet": "pass3_program_card",
+  "row_number": 1584,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19255"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:9788199cd40ce2c8ac79ed8d7828f0d8370381a46ee497cfb8869a8a7a151bfe",
+  "sheet": "pass3_program_card",
+  "row_number": 1598,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19265"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:979a2e4d92161e463d70063df0a79c4ab969166c1aa5f8c8222bc690415a3ed5",
+  "sheet": "pass3_program_card",
+  "row_number": 1540,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19224"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:992621169da62b8222c9eada9120807080e1ad57e8e263712fb21fe0233df583",
+  "sheet": "pass3_program_card",
+  "row_number": 1564,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19233"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:9a75e60bf9c19ff61db82ef5529d64d4097d7c5c4f5a63eff597e565906b74c3",
+  "sheet": "pass3_program_card",
+  "row_number": 1547,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19229"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:9cba74b0d06d616def9290eecee4830116a5e173fa7186b0f5791d35b3dca4f4",
+  "sheet": "pass3_program_card",
+  "row_number": 1525,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19212"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:9dc1b0b38d1af47d041abbe0efa30b07c1fefdf4c0110645d064c3039744b612",
+  "sheet": "pass3_program_card",
+  "row_number": 1511,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19200"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:9ec28d5b3cd163789b63909801717783fc7a3d8e6da8d6257745ce027f027dfc",
+  "sheet": "pass3_program_card",
+  "row_number": 1516,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19203"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:9fd22644a95bc1e129cfee614301db6596d6051d7e73a912818168c726c97239",
+  "sheet": "pass3_program_card",
+  "row_number": 1681,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19325"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:9feaefe3334aaf1013728f2c9e69c4ba05c81d46b55701b2e4bb7e3778459789",
+  "sheet": "pass3_program_card",
+  "row_number": 1592,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19261"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:a05b66673c64e9601406fa94cebbdf7955b7ec8e4cce6cf5e7325a53add43a28",
+  "sheet": "pass3_program_card",
+  "row_number": 1508,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19197"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:a0eed7ab726fc6d369f6a2a782b5ca305f9a9a14c9d26fe302de584b2aa75b98",
+  "sheet": "pass3_program_card",
+  "row_number": 1550,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19227"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:a3d9f8fb04c274e61efbba1bace3937f7fcfa088355975a782cd7b5c950ab835",
+  "sheet": "pass3_program_card",
+  "row_number": 1535,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19220"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:a588bc8d1e7626ee2819d89e42783a300d6abf81208e84118f1234785b2ce1a3",
+  "sheet": "pass3_program_card",
+  "row_number": 1489,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19179"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:a6f78739cca27bc23614081fcb338e5b74f23a731c42d309259f682bd1477f7b",
+  "sheet": "pass3_program_card",
+  "row_number": 1703,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19336"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:a823e944d1ec36fa41d710d5c770d6c9406bb508263856f57cfe3043fdfa6af4",
+  "sheet": "pass3_program_card",
+  "row_number": 1655,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19189"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:a92d337b216a716115afc2cf1b0846f0b860db51611c4ef5bb5cfe953c7e8879",
+  "sheet": "pass3_program_card",
+  "row_number": 1660,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19310"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:a9c121749dfb966251383b32e853522daa11fa5b57c5c326e75130972eed71a0",
+  "sheet": "pass3_program_card",
+  "row_number": 1628,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19292"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:a9fc352d056223060a71ad42564e670dee4204797eb67303ca76a65a426a6422",
+  "sheet": "pass3_program_card",
+  "row_number": 1665,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19313"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:aaf45b6ac7cfd96178180476a887e2c5c4a38140903192f357a5a8f78698c697",
+  "sheet": "pass3_program_card",
+  "row_number": 1495,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19184"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:aafb293a28a4859840effd03af38528344662eda5301c65ddbe4b11737ef9f7e",
+  "sheet": "pass3_program_card",
+  "row_number": 1581,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19254"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:ab5d04e3d1c1e16ef118eb273e32da99925a91e83dc66f6b19e03154358123a4",
+  "sheet": "pass3_program_card",
+  "row_number": 1621,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19286"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:ac5b88ddd29718500481e79d91648ebb101848a9e55da8547285fe360c5a76ca",
+  "sheet": "pass3_program_card",
+  "row_number": 1676,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19321"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:acfc703f688dc5a8ddb498ae6538063656d4210aa0eb75e5140c663d12ffe8a8",
+  "sheet": "pass3_program_card",
+  "row_number": 1623,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19287"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:b160003100061759f95030c182f71a3df0584de89a5e0e9e3313c31efdd1f911",
+  "sheet": "pass3_program_card",
+  "row_number": 1639,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19300"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:b196fbb2f826daf8136c6a216142786f213a56dc5b24a837270be69dbdb29e35",
+  "sheet": "pass3_program_card",
+  "row_number": 1497,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19186"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:b291a08b48d64ab8ec14b04a88a50a822ee23376b7480a3cff3b01e1b1c0dac0",
+  "sheet": "pass3_program_card",
+  "row_number": 1643,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19244"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:b326324dbce805fbf33fbfcced406e389e4b14c90bd02be0d42116713f700147",
+  "sheet": "pass3_program_card",
+  "row_number": 1644,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19177"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:b37b69bf0ac29d04544763f992fbe0ccaf3c0b15c82730061b0443798519c299",
+  "sheet": "pass3_program_card",
+  "row_number": 1518,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19205"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:b3ee074a635cb7f2812cf124fdad25bb89f2eb240d740f6a7f88bbdc952b0e84",
+  "sheet": "pass3_program_card",
+  "row_number": 1612,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19278"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:b40b534f2bcf57501a21325266db6f8d43df572c02e4fdf984e21fe1ebe81b9c",
+  "sheet": "pass3_program_card",
+  "row_number": 1590,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19259"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:b4a1537e574151270250b666714416e980120771b6099e1c42877bc5d57191fa",
+  "sheet": "pass3_program_card",
+  "row_number": 1552,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19233"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:b4fd7d1ff74cd761f24a53e506ad551255b390005f027883c914018985a78581",
+  "sheet": "pass3_program_card",
+  "row_number": 1500,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19189"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:b506a309cb38b000a683e13632a910514707a2396fa54f3058014ae5869623b2",
+  "sheet": "pass3_program_card",
+  "row_number": 1509,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19198"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:b76dac68f6366c410a7a963a416fe1ac7bcabc505fd110755ccf67422e73b7f1",
+  "sheet": "pass3_program_card",
+  "row_number": 1589,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19258"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:ba4120032beb363ada954bef8ccf304236e7622720c5829adbbbd9e4a8f31c7a",
+  "sheet": "pass3_program_card",
+  "row_number": 1493,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19182"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:bc3e1f611f446f8b42dffd720e9657bc1fc5e2774e1d2a1c34a5ed8d4fac9ffc",
+  "sheet": "pass3_program_card",
+  "row_number": 1488,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19178"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:bf147242efc567b670dff50585c1378a434806595842617ef48e01d3ea5f3d15",
+  "sheet": "pass3_program_card",
+  "row_number": 1605,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19272"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:bf7d6df605f3ed0cec1ef380bde57c6e1fd4e4b68e9dd5d266ef35e9f661c803",
+  "sheet": "pass3_program_card",
+  "row_number": 1602,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19269"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:c03765f2cec721dbabb3e64621cb32572d4059251278fc837f891eca414bf755",
+  "sheet": "pass3_program_card",
+  "row_number": 1551,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19232"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:c1dc40598986aabe0b46fd3b2b07e134d732e41ae11debba6755ec707a4ff16d",
+  "sheet": "pass3_program_card",
+  "row_number": 1675,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19320"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:c277d66e50bea1bf1ea3b2e778c2ee7e0cfdc33819115d1e693f1b391542d3cf",
+  "sheet": "pass3_program_card",
+  "row_number": 1678,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19211"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:c3343f68f9638546294740a46aaca1ab1560fa69d73ad88832a450b72fe61a44",
+  "sheet": "pass3_program_card",
+  "row_number": 1699,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19335"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:c38078979f9f376dbe43595a7fe622dcedcd62f48a41cd31f908591edd8486af",
+  "sheet": "pass3_program_card",
+  "row_number": 1491,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19181"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:c48cb338f0a5bf429e99b33e3bacb634d2c6953e35cf5eb3009936c6a726ca9d",
+  "sheet": "pass3_program_card",
+  "row_number": 1524,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19211"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:c67363366d5d337b72a65c03409093c9d26fee9055b4275ec359a41335b929ce",
+  "sheet": "pass3_program_card",
+  "row_number": 1546,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19228"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:c76533bab9de5a01ca1059118eea6d915a55b346f132bfcc26e59556bc783b1a",
+  "sheet": "pass3_program_card",
+  "row_number": 1600,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19267"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:c82c46a642a9b00692db1fb1e288ce56603e251d2c90c76643381c5cc08c2f44",
+  "sheet": "pass3_program_card",
+  "row_number": 1537,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19221"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:c8f09c13079baa76d12b4340b859920527ff8d2dbd43d89f05fe9fca0f22360d",
+  "sheet": "pass3_program_card",
+  "row_number": 1689,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19226"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:c9e85ac5cbe41b1a00c37521d8986fee8c986f3d3880df5d27932f103c8dbb72",
+  "sheet": "pass3_program_card",
+  "row_number": 1494,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19183"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:ca28f41f6d935f587276cea7b4c549c98b9f9640f59f8066de610f88bf9e2321",
+  "sheet": "pass3_program_card",
+  "row_number": 1653,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19306"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:cc7204d1087a5fa85683be7931367ebd4d572894bed7f3b0823b03672ccca019",
+  "sheet": "pass3_program_card",
+  "row_number": 1514,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19201"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:ccebbeb760dfcb1a59070e9896935ba5b173054a021d47537cdbe97cf429e4ea",
+  "sheet": "pass3_program_card",
+  "row_number": 1649,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19177"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:ce09171ef3810a78270f461cd7cae158fce4fdeb90e8c093146b46688b1dff39",
+  "sheet": "pass3_program_card",
+  "row_number": 1651,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19304"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:ce3ecde8d95cde56e0f67e48402402d057c1858a9e6685718d74814d0cd6cb70",
+  "sheet": "pass3_program_card",
+  "row_number": 1542,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19226"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:ce6f23951c1aa988d3f8b8bd4381c04d7300d50cba97740e4457de0ad4ea26f3",
+  "sheet": "pass3_program_card",
+  "row_number": 1492,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19177"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:ce761170f8882bebcc89596581ce71a2ef3c8ed4e2d2c0f141977d855ef82a88",
+  "sheet": "pass3_program_card",
+  "row_number": 1614,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19280"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:d2686dcaf84f55730b2d17a3cec84e53ab6cc8e5188fff4c11e1e28f8e65dab1",
+  "sheet": "pass3_program_card",
+  "row_number": 1637,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19233"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:d2ea0f4a8048f1ec1ed1b16c384227162e13bd5aeb714bc0bcbe8b0d42580e12",
+  "sheet": "pass3_program_card",
+  "row_number": 1520,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19207"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:d361d4b90dc821d92644e6cf02915ec22b4e7d7f0724e8ac88592ecb5cdb0df8",
+  "sheet": "pass3_program_card",
+  "row_number": 1691,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19273"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:d7ab03563e2c8f2dd18d0ee5c24e177f569b2edf11e1383e32351678557d0abc",
+  "sheet": "pass3_program_card",
+  "row_number": 1534,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19219"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:d7d70343d1a58d00df270c7fa90c0a97d2dafaf5e61e69824412b052ba92bc62",
+  "sheet": "pass3_program_card",
+  "row_number": 1659,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19309"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:d811a97046255560f4852aac5447e459b4216e600f6afe85f8160cd7ac097a31",
+  "sheet": "pass3_program_card",
+  "row_number": 1657,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19240"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:d830577d8c7efffe59ecba20fd2243e58480956d32023c1827101c0bd63a839c",
+  "sheet": "pass3_program_card",
+  "row_number": 1501,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19190"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:da6ab4fb9184e1ee1e9a4aa1973041b2b7f6c3cdfda077fef38c060fb74ae3e6",
+  "sheet": "pass3_program_card",
+  "row_number": 1553,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19216"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:da72da8170a915df35edbd8202558e489d7b021df722fcb44e4901ff6cc06ce7",
+  "sheet": "pass3_program_card",
+  "row_number": 1560,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19238"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:dab88c7db95d3ef241ff348149550c01d2ca4bc46505f868c0bb3a35d0c517a8",
+  "sheet": "pass3_program_card",
+  "row_number": 1710,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19177"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:db75c70d94f7438aac07127f79e5fab3a267fca5fd9cc23dbbde9262d1fb23bc",
+  "sheet": "pass3_program_card",
+  "row_number": 1683,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19327"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:dd13ed56d8be069c66e430b497dfd57bd3ca1dc45814171fc551c2321282bc64",
+  "sheet": "pass3_program_card",
+  "row_number": 1700,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19240"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:de8691689d88d0c442cd9597278e3ac7687ebfef4678b79a5ba8eeba32c04e19",
+  "sheet": "pass3_program_card",
+  "row_number": 1661,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19311"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:df23da16c55d1b0dd69d0daf17febbd2348f68d46d7eb7c8a89efce57c418691",
+  "sheet": "pass3_program_card",
+  "row_number": 1694,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19332"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:df4b855452784e7f377c2d8d080b327fc174caf41447c05b09f6e2793687513f",
+  "sheet": "pass3_program_card",
+  "row_number": 1690,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "18357"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:e23399ac9424060af755e5b5b040dd0d4cf45c10e32ff31bd5091042dc06b745",
+  "sheet": "pass3_program_card",
+  "row_number": 1697,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19298"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:e36b4d25c111450014aba52db606b05cc86000ecb7759726d73d1c2497c7a428",
+  "sheet": "pass3_program_card",
+  "row_number": 1670,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19316"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:e435a4de37e8d2520c68f410d05053fd2208b8c52f255d25c4321a49a4b16528",
+  "sheet": "pass3_program_card",
+  "row_number": 1656,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19256"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:e592faf7b3702162ca1c865f30af39f1f022b45b38773a7adb21c840a4f49ade",
+  "sheet": "pass3_program_card",
+  "row_number": 1503,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19192"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:e5a7010ee9ee090d0d9998d3f38944c29655390175322260244bee0aa0c74390",
+  "sheet": "pass3_program_card",
+  "row_number": 1573,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19249"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:e644c9c21c3c76de5e5f08a92186b8f5d274f3f5b443514f33fc9743f7b6c4cc",
+  "sheet": "pass3_program_card",
+  "row_number": 1626,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19290"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:e98eb03183b48687fb140cc3c3eff653ad90f4d20c53f68991d14c16f98700f1",
+  "sheet": "pass3_program_card",
+  "row_number": 1554,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19234"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:ead64ab08a104566d4e0582701f4f14690aebac027db13e239887c122a159e93",
+  "sheet": "pass3_program_card",
+  "row_number": 1555,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19235"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:ebd2572411905b224a9547bf555e26db7c282c5acbd90c054afbd82d9a6332cb",
+  "sheet": "pass3_program_card",
+  "row_number": 1586,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19256"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:ee6015ed5ca423935d116163006a935e46408c600c9246e882c9177e42ca07db",
+  "sheet": "pass3_program_card",
+  "row_number": 1571,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19247"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:f34973eb6d5c0e7183c611ab3a58b114e577dc9731d76b3cc0039caa7eeb9958",
+  "sheet": "pass3_program_card",
+  "row_number": 1607,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19274"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:f69bdfc456b9ebc01e9363bfec29fdd205ae6012a459cdb8699f1fca38a2afce",
+  "sheet": "pass3_program_card",
+  "row_number": 1669,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19315"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:f722a2ecb6a4bef512dc761e572887c422e53c9de82a0254c85c59753fb7ae2b",
+  "sheet": "pass3_program_card",
+  "row_number": 1539,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19223"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:f80541016b114f722221d014c199717fe20862f4cd9ce0aeff1f36489f85ebee",
+  "sheet": "pass3_program_card",
+  "row_number": 1496,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19185"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:f8a3f563ed4342faafb26371c10ba933b0db62c1a31e3688784c6b4bb20ff1a0",
+  "sheet": "pass3_program_card",
+  "row_number": 1532,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19217"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:fa21ae0a9f8f57cb8e5be3f7dbec10017402384e5c84caafd280fe071a9402e5",
+  "sheet": "pass3_program_card",
+  "row_number": 1668,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19177"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:fa317f53ddb01a7d664231f5d2d39328eff43985e16771a9ea5b094b1024d78c",
+  "sheet": "pass3_program_card",
+  "row_number": 1569,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19245"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:fa80ca0e582dc0004012365e8c5079f72154f6ae3a41ea0e4bd7fbe09286707a",
+  "sheet": "pass3_program_card",
+  "row_number": 1578,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19253"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:fb2705c69d122ad7294931e6959f439179a74eff8e63526200536ed439fbff16",
+  "sheet": "pass3_program_card",
+  "row_number": 1526,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19213"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:fb85f11ec6b416f40d09ecda6df531d0bdb93e9aa92d3d6f63c6c1578d5493aa",
+  "sheet": "pass3_program_card",
+  "row_number": 1510,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19199"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:fc14b41b84e7c06fdaafc6b1a49a1b448c822833804b4d85f439481b14e0b914",
+  "sheet": "pass3_program_card",
+  "row_number": 1662,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "685"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:fc8486db8a332f569343cbf633d7beb758050dcca505a1ffb0c79bc98abebde9",
+  "sheet": "pass3_program_card",
+  "row_number": 1519,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19206"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:fe42907c6e9fdb7f7a1c5f9419a9efab3cec40c8a21bf06fa63beab25bd47b0b",
+  "sheet": "pass3_program_card",
+  "row_number": 1627,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19291"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:ff50ae1f49973c207b593db6a9b4fd38a528d8ac7512124e9fa501914670a276",
+  "sheet": "pass3_program_card",
+  "row_number": 1609,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19276"
+ },
+ {
+  "bundle_entity_id": "25001ce8-958e-290f-e981-f318f01294f8",
+  "row_uid": "corpus:ff6cdd512439854c24ae692aa131f68981395d9e46adab157f2497d98542b8a1",
+  "sheet": "pass3_program_card",
+  "row_number": 1604,
+  "evidence_tier": "zip_unverifiable_no_bundle_zips",
+  "address_fragment": "19271"
+ },
+ {
+  "bundle_entity_id": "300e94a1-cdd7-8944-a424-ac6f47d59845",
+  "row_uid": "corpus:102855ff0407729c913e0a1def6c5aeeb42455d6e788e3e7b05ae9bb842b81bd",
+  "sheet": "pass3_program_card",
+  "row_number": 973,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "820 S Boylan Ave, Raleigh NC 27603 \u00b7 100 county DSS offices"
+ },
+ {
+  "bundle_entity_id": "300e94a1-cdd7-8944-a424-ac6f47d59845",
+  "row_uid": "corpus:6bd583faba3143993c00183a6f423a9b411a0bff1a7981228dc4edf3ffa590ab",
+  "sheet": "pass3_program_card",
+  "row_number": 971,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Online \u2014 statewide"
+ },
+ {
+  "bundle_entity_id": "300e94a1-cdd7-8944-a424-ac6f47d59845",
+  "row_uid": "corpus:7c15573069333a6d30a3a7282efe082261827363ec95de8917ca6e187bbe5a9e",
+  "sheet": "pass3_program_card",
+  "row_number": 966,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "National service"
+ },
+ {
+  "bundle_entity_id": "300e94a1-cdd7-8944-a424-ac6f47d59845",
+  "row_uid": "corpus:b64cabd188614464a24085ecf333922e772b6424a0e228f3b9c50202a3dac0eb",
+  "sheet": "pass3_program_card",
+  "row_number": 957,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "820 S Boylan Ave, Raleigh NC 27603 (DHHS) \u00b7 Local WIC clinics statewide"
+ },
+ {
+  "bundle_entity_id": "300e94a1-cdd7-8944-a424-ac6f47d59845",
+  "row_uid": "corpus:df24a5fa0f50bd5caf75064ef0587e544f4f1929b32ca42ca3fdd38162b341db",
+  "sheet": "pass3_program_card",
+  "row_number": 947,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "820 S Boylan Ave, Raleigh, NC 27603 (NCDHHS main)"
+ },
+ {
+  "bundle_entity_id": "317dd9b8-87be-1839-89fc-f145f14bb780",
+  "row_uid": "corpus:290d7fe10cafede612a510e2bfe453aca529ecdc88914c38afb4f2cd9b9f0727",
+  "sheet": "pass3_program_card",
+  "row_number": 69,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "DES/FAA offices statewide \u00b7 Apply online: healthearizonaplus.gov"
+ },
+ {
+  "bundle_entity_id": "317dd9b8-87be-1839-89fc-f145f14bb780",
+  "row_uid": "corpus:293f8015ebc0581a388601b703681edb3206835add79e93405632b27a5f9a76c",
+  "sheet": "pass3_program_card",
+  "row_number": 106,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Statewide \u2014 100+ cooling stations coordinated by United Way + AZ State"
+ },
+ {
+  "bundle_entity_id": "317dd9b8-87be-1839-89fc-f145f14bb780",
+  "row_uid": "corpus:33b89ae2342d8191f5b8c812bd09450c213d34294a2139d89588267bd7335161",
+  "sheet": "pass3_program_card",
+  "row_number": 105,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "DES/FAA offices statewide \u00b7 Online: healthearizonaplus.gov"
+ },
+ {
+  "bundle_entity_id": "37d60d9a-9d98-10a1-d0cb-1a1fc7391fd5",
+  "row_uid": "corpus:07fb87f0f0fb3a321b20cdb925170538a5a4d204f6805c197190db46a01612c0",
+  "sheet": "pass3_program_card",
+  "row_number": 1239,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "2525 Holly Hall St, Houston, TX 77054 (admin) \u00b7 Ben Taub: 1504 Taub Loop \u00b7 LBJ: 5656 Kelley St"
+ },
+ {
+  "bundle_entity_id": "37d60d9a-9d98-10a1-d0cb-1a1fc7391fd5",
+  "row_uid": "corpus:2a00c3dd3336b33732696968975faa4b7224e0b43b7a8457167fc99f5e15e4f5",
+  "sheet": "pass3_program_card",
+  "row_number": 1243,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Find nearest: findahealthcenter.hrsa.gov \u00b7 TAHC: 512-329-5959"
+ },
+ {
+  "bundle_entity_id": "37d60d9a-9d98-10a1-d0cb-1a1fc7391fd5",
+  "row_uid": "corpus:2e20b8f806b9d7e0b6536e059b4425201199b96faaced87bf9bfb1411f06d319",
+  "sheet": "pass3_program_card",
+  "row_number": 1262,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Online \u2014 statewide"
+ },
+ {
+  "bundle_entity_id": "37d60d9a-9d98-10a1-d0cb-1a1fc7391fd5",
+  "row_uid": "corpus:379f0f4dfa203ffb0821f87ebc4f0811ddab098e951fcb052414b2e936ab212f",
+  "sheet": "pass3_program_card",
+  "row_number": 1246,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "4900 N Lamar Blvd, Austin, TX 78751 \u00b7 Local HHSC offices statewide"
+ },
+ {
+  "bundle_entity_id": "37d60d9a-9d98-10a1-d0cb-1a1fc7391fd5",
+  "row_uid": "corpus:6a78682f275c28bf86b8103ae848b7ce0338378220cd1f9e73444d0d2ea5bd54",
+  "sheet": "pass3_program_card",
+  "row_number": 1265,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "4900 N Lamar Blvd, Austin TX 78751 \u00b7 Local Community Action Agencies"
+ },
+ {
+  "bundle_entity_id": "37d60d9a-9d98-10a1-d0cb-1a1fc7391fd5",
+  "row_uid": "corpus:70db45656e91cc28a2d336a2d1de98018a7796103ab962a35982d325f14ce2af",
+  "sheet": "pass3_program_card",
+  "row_number": 1248,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "1111 N Main Ave, San Antonio, TX 78212 (HQ) \u00b7 Multiple offices"
+ },
+ {
+  "bundle_entity_id": "37d60d9a-9d98-10a1-d0cb-1a1fc7391fd5",
+  "row_uid": "corpus:9b8850e56085e2aac68ade7aecd58426d3caf05d975f8dd38a1a83026b59c201",
+  "sheet": "pass3_program_card",
+  "row_number": 1263,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "4900 N Lamar Blvd, Austin TX 78751 \u00b7 Local HHSC offices"
+ },
+ {
+  "bundle_entity_id": "37d60d9a-9d98-10a1-d0cb-1a1fc7391fd5",
+  "row_uid": "corpus:b413b40ea148f3258ad74ff5f013b84958ba4b6eedc0b2816337d52e25ef95ca",
+  "sheet": "pass3_program_card",
+  "row_number": 1238,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "4900 N Lamar Blvd, Austin, TX 78751"
+ },
+ {
+  "bundle_entity_id": "37d60d9a-9d98-10a1-d0cb-1a1fc7391fd5",
+  "row_uid": "corpus:eae2d5ae5d21fac5cd734ff5c9fa72e1abd0d525560e9e68ef40bde03be24706",
+  "sheet": "pass3_program_card",
+  "row_number": 1247,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "1100 W 49th St, Austin, TX 78756 (DSHS main) \u00b7 600+ local WIC sites"
+ },
+ {
+  "bundle_entity_id": "3da6e65b-ce88-5f79-c7e7-67a9846dfe48",
+  "row_uid": "corpus:33c057e783fbf292c2411844b86fe365fcee42018c967e683d01106e72464d31",
+  "sheet": "pass3_program_card",
+  "row_number": 500,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Kentucky Legal Aid: 325 W Broadway Ste 202 \u00b7 LMHRC: 410 W Chestnut St Ste 300A"
+ },
+ {
+  "bundle_entity_id": "3da6e65b-ce88-5f79-c7e7-67a9846dfe48",
+  "row_uid": "corpus:670b83468ebf244b39957e1eec680ceefd381d8b93c908ad858c83bd6f8fc465",
+  "sheet": "pass3_program_card",
+  "row_number": 472,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "275 E Main St, Frankfort, KY 40621"
+ },
+ {
+  "bundle_entity_id": "3da6e65b-ce88-5f79-c7e7-67a9846dfe48",
+  "row_uid": "corpus:830e357b219f64f4d6193310394bc17d5e03743ed4099a6f2fc4fa18df89b418",
+  "sheet": "pass3_program_card",
+  "row_number": 491,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "National service"
+ },
+ {
+  "bundle_entity_id": "3da6e65b-ce88-5f79-c7e7-67a9846dfe48",
+  "row_uid": "corpus:8761d371f451c9c94955d3fa603367ec7dc85234d87e996a76d1c08685d21590",
+  "sheet": "pass3_program_card",
+  "row_number": 499,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "275 E Main St, Frankfort KY 40621 \u00b7 Community Action Agencies statewide"
+ },
+ {
+  "bundle_entity_id": "3da6e65b-ce88-5f79-c7e7-67a9846dfe48",
+  "row_uid": "corpus:acb4f8fa0b20a09b9f125426356ef2e8d1e9c675bdc9366dd88cbe60d0c0004d",
+  "sheet": "pass3_program_card",
+  "row_number": 482,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "275 E Main St, Frankfort KY 40621 \u00b7 Local WIC clinics"
+ },
+ {
+  "bundle_entity_id": "3da6e65b-ce88-5f79-c7e7-67a9846dfe48",
+  "row_uid": "corpus:b105ed92dd0b8c6bed878dbd0fb4cbf231178a8433077f623628202a5dc87cb4",
+  "sheet": "pass3_program_card",
+  "row_number": 497,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "275 E Main St, Frankfort KY 40621 \u00b7 120 county DCBS offices"
+ },
+ {
+  "bundle_entity_id": "3da6e65b-ce88-5f79-c7e7-67a9846dfe48",
+  "row_uid": "corpus:ef635f41c6807c1db2ecae35fda56b53507434b970b9900cd44963ba43d556fd",
+  "sheet": "pass3_program_card",
+  "row_number": 478,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "275 E Main St, Frankfort, KY 40621 \u00b7 120 county DCBS offices"
+ },
+ {
+  "bundle_entity_id": "3da6e65b-ce88-5f79-c7e7-67a9846dfe48",
+  "row_uid": "corpus:fec7205f36d5b4bc77812655f0aba6e61b87e99eb937938b54b6df087d32e7ce",
+  "sheet": "pass3_program_card",
+  "row_number": 477,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Statewide \u2014 KY HELP LINE"
+ },
+ {
+  "bundle_entity_id": "425b1464-7153-b3c7-0765-84b66fd59ce8",
+  "row_uid": "corpus:5b2360f8d2157266fa41144f7d2f65b554f9d4acd7a2353814fcee97c62715b8",
+  "sheet": "pass3_program_card",
+  "row_number": 1119,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "625 Forster St, Harrisburg PA 17120 \u00b7 County CAO offices statewide"
+ },
+ {
+  "bundle_entity_id": "425b1464-7153-b3c7-0765-84b66fd59ce8",
+  "row_uid": "corpus:6af892785085ae42983c55c653ff2cd2021d3777d91a14d10dc97058ec941782",
+  "sheet": "pass3_program_card",
+  "row_number": 1141,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Online \u2014 statewide"
+ },
+ {
+  "bundle_entity_id": "425b1464-7153-b3c7-0765-84b66fd59ce8",
+  "row_uid": "corpus:ee3e2c09563dbd9aa9f82ce957aad6cfa07246e3f82bd46c3ce86fa4eebf50c9",
+  "sheet": "pass3_program_card",
+  "row_number": 1143,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "625 Forster St, Harrisburg PA 17120 \u00b7 County CAO offices statewide"
+ },
+ {
+  "bundle_entity_id": "425b1464-7153-b3c7-0765-84b66fd59ce8",
+  "row_uid": "corpus:f8476e84858f20cfd907589189b3ae3c172408c725d8bad43ddc97c0359a2b71",
+  "sheet": "pass3_program_card",
+  "row_number": 1112,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "625 Forster St, Harrisburg PA 17120 (DHS main)"
+ },
+ {
+  "bundle_entity_id": "45073504-8dca-c08c-d6b9-507558f63972",
+  "row_uid": "corpus:9819cee97c9f770c5eaa22999842e3e5e0cae01739f848b4d00641e89b2720f4",
+  "sheet": "pass3_program_card",
+  "row_number": 264,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "Bay Area Legal Services: 1302 N 19th St Ste 400, Tampa FL 33605"
+ },
+ {
+  "bundle_entity_id": "4b1327bb-1615-7ab1-3bc0-11d0be09d4a0",
+  "row_uid": "corpus:00550619fcd6534bd0794108db264fdb0f79eedf38384b40077187cfd5f6696c",
+  "sheet": "pass3_program_card",
+  "row_number": 1401,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "NJP: 401 2nd Ave S Ste 407, Seattle WA 98104 \u00b7 Harborview: 325 9th Ave, Seattle WA 98104"
+ },
+ {
+  "bundle_entity_id": "4b1327bb-1615-7ab1-3bc0-11d0be09d4a0",
+  "row_uid": "corpus:0cc87a768f587e07d8ac88ec3006f7027900c5d593915fb2f206cd1e4fc28bc9",
+  "sheet": "pass3_program_card",
+  "row_number": 1391,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "1402 3rd Ave Ste 406, Seattle WA 98101"
+ },
+ {
+  "bundle_entity_id": "52523f10-6a08-de87-36fa-4a00f7ec03b7",
+  "row_uid": "corpus:2385648cfcf8b83847bf3a6ccebf77422c79bff8b563feb0dc54f38ac64c343a",
+  "sheet": "pass3_program_card",
+  "row_number": 208,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "55 Farmington Ave, Hartford CT 06105 \u00b7 Local Community Action Agencies statewide"
+ },
+ {
+  "bundle_entity_id": "52523f10-6a08-de87-36fa-4a00f7ec03b7",
+  "row_uid": "corpus:2845a55c852170dcf2882495c7e6f3e5b044670cacb4c3df326a040a50d9239b",
+  "sheet": "pass3_program_card",
+  "row_number": 206,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "55 Farmington Ave, Hartford CT 06105 (DSS) \u00b7 12 local DSS offices statewide"
+ },
+ {
+  "bundle_entity_id": "52523f10-6a08-de87-36fa-4a00f7ec03b7",
+  "row_uid": "corpus:c31950c97289328fffb39a195bfe901803d5d90927d7ead7e66924887cdab8a5",
+  "sheet": "pass3_program_card",
+  "row_number": 195,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "55 Farmington Ave, Hartford CT 06105 (DSS main) \u00b7 12 DSS offices statewide"
+ },
+ {
+  "bundle_entity_id": "53ef6be5-f319-fb88-3fc1-241726f723d9",
+  "row_uid": "corpus:0e8667e6aa347e821829111cb7091b54440b8b088db3a4a11ed00369739eab66",
+  "sheet": "pass3_program_card",
+  "row_number": 394,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Find nearest: findahealthcenter.hrsa.gov \u00b7 Indiana Primary Health Care Association: 317-630-0845"
+ },
+ {
+  "bundle_entity_id": "53ef6be5-f319-fb88-3fc1-241726f723d9",
+  "row_uid": "corpus:5ae84b0a0f4df7000995a45ed18850abbb4eb6b7e4aa50fbb3387836ce7e2b69",
+  "sheet": "pass3_program_card",
+  "row_number": 400,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "2 N Meridian St, Indianapolis, IN 46204 (ISDH main) \u00b7 Local WIC clinics statewide"
+ },
+ {
+  "bundle_entity_id": "53ef6be5-f319-fb88-3fc1-241726f723d9",
+  "row_uid": "corpus:6c474f3de2492e16587691165ab931187a541bcc77e64c43568c1376540ebada",
+  "sheet": "pass3_program_card",
+  "row_number": 396,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "402 W Washington St Rm W461, Indianapolis, IN 46204 (DFR main) \u00b7 92 county DFR offices"
+ },
+ {
+  "bundle_entity_id": "53ef6be5-f319-fb88-3fc1-241726f723d9",
+  "row_uid": "corpus:97f1a71d8f9d05da7fdb9d5b2dcae8d58ca70838ac9309c0eff52adb4872c579",
+  "sheet": "pass3_program_card",
+  "row_number": 417,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "NWICA: 5240 Fountain Dr, Crown Point IN 46307 \u00b7 Indiana Legal Services Gary: 219-886-3161"
+ },
+ {
+  "bundle_entity_id": "53ef6be5-f319-fb88-3fc1-241726f723d9",
+  "row_uid": "corpus:986feb4514f20d92044bf691f56c5af41bc46e31892a1f2105f21b274a861938",
+  "sheet": "pass3_program_card",
+  "row_number": 415,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "30 S Meridian St Ste 900, Indianapolis IN 46204 (IHCDA) \u00b7 Community Action Agencies statewide"
+ },
+ {
+  "bundle_entity_id": "53ef6be5-f319-fb88-3fc1-241726f723d9",
+  "row_uid": "corpus:9c7c4614ad3cd33e81b3846b2d4da88ef65ca8c34e28f17a651716da8cc4f867",
+  "sheet": "pass3_program_card",
+  "row_number": 413,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "402 W Washington St Rm W461, Indianapolis, IN 46204 \u00b7 92 county DFR offices"
+ },
+ {
+  "bundle_entity_id": "53ef6be5-f319-fb88-3fc1-241726f723d9",
+  "row_uid": "corpus:ac029ca6dcac5c16b6c0830cda740a07003009f8bb1362bacc0332569eda6af2",
+  "sheet": "pass3_program_card",
+  "row_number": 408,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "National service"
+ },
+ {
+  "bundle_entity_id": "55a5b2f9-f7e8-1b8c-bd71-c126cf205256",
+  "row_uid": "corpus:717257d4a6c7904e3f8a1a1ed0e3dc906a4a1aa5cc4c65d0b803ebb3d336679b",
+  "sheet": "pass3_program_card",
+  "row_number": 784,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "301 Centennial Mall S, Lincoln NE 68509 \u00b7 County DHHS offices"
+ },
+ {
+  "bundle_entity_id": "55a5b2f9-f7e8-1b8c-bd71-c126cf205256",
+  "row_uid": "corpus:a0fdffc80353de33c958dcd5382aad2bb86dc51f12ee400ebe64863934dd6ce1",
+  "sheet": "pass3_program_card",
+  "row_number": 805,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "115 4th Ave SE, Aberdeen SD 57401"
+ },
+ {
+  "bundle_entity_id": "55a5b2f9-f7e8-1b8c-bd71-c126cf205256",
+  "row_uid": "corpus:a799789866a340f353d61e1f780efa7dc58e7ad642163669d1cde065c7ee397f",
+  "sheet": "pass3_program_card",
+  "row_number": 795,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "301 Centennial Mall S, Lincoln NE 68509 \u00b7 County DHHS offices"
+ },
+ {
+  "bundle_entity_id": "55a5b2f9-f7e8-1b8c-bd71-c126cf205256",
+  "row_uid": "corpus:b6dcb4afa60bee46d224ab85e287b3d44fc2cecc5e2e86b500bcde74828e2fd1",
+  "sheet": "pass3_program_card",
+  "row_number": 778,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "301 Centennial Mall S, Lincoln NE 68509 (DHHS main) \u00b7 County DHHS offices statewide"
+ },
+ {
+  "bundle_entity_id": "55a5b2f9-f7e8-1b8c-bd71-c126cf205256",
+  "row_uid": "corpus:ce706024ba2732f0a2726946425dfdbce9825dafab4cd8ad63cdf1197dcfd06c",
+  "sheet": "pass3_program_card",
+  "row_number": 799,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Per tribal nation"
+ },
+ {
+  "bundle_entity_id": "55a5b2f9-f7e8-1b8c-bd71-c126cf205256",
+  "row_uid": "corpus:ff333d19baf6830fc1ce1d174aba8e923ce82e6dd0733d3d5448336fe7a0e61d",
+  "sheet": "pass3_program_card",
+  "row_number": 797,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "301 Centennial Mall S, Lincoln NE 68509 \u00b7 Community Action Agencies statewide"
+ },
+ {
+  "bundle_entity_id": "5e0fd7ed-422e-a827-14a7-a328ff2b3ad4",
+  "row_uid": "corpus:9fc4d96b65cc9f78b88c5484d177a4611da748b185f0a2f74378fd6f51ec18a8",
+  "sheet": "pass3_program_card",
+  "row_number": 13,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "AIDS Alabama: 3521 7th Ave S, Birmingham, AL 35222"
+ },
+ {
+  "bundle_entity_id": "5e0fd7ed-422e-a827-14a7-a328ff2b3ad4",
+  "row_uid": "corpus:baa7ed4b2c23798f74d6028545a546b4c1f3320baa508870f404ed19856cb3b2",
+  "sheet": "pass3_program_card",
+  "row_number": 9,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "619 19th St S, Birmingham, AL 35249"
+ },
+ {
+  "bundle_entity_id": "5e0fd7ed-422e-a827-14a7-a328ff2b3ad4",
+  "row_uid": "corpus:f9476db5afd920a98e756f9e103c7e5cbe2a912fbd89b34a43956ef2af2162a5",
+  "sheet": "pass3_program_card",
+  "row_number": 33,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Administered through Alabama DHR and Community Action Agencies"
+ },
+ {
+  "bundle_entity_id": "667c836f-38ea-18c4-0868-46f10fdc9513",
+  "row_uid": "corpus:9950fecf56c2e53ab13c148aa3a4e1fa75d55555ae11196222d369edfc245777",
+  "sheet": "pass3_program_card",
+  "row_number": 1080,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "520 SW 6th Ave Ste 1130, Portland OR 97204 (LASO Portland main)"
+ },
+ {
+  "bundle_entity_id": "740e8092-6de6-7d76-ce61-0d6f6c2fe3ab",
+  "row_uid": "corpus:12ec48d5ca4dd02b7fb17918f09628e950916fdeee7cd74007218b23666de1c5",
+  "sheet": "pass3_program_card",
+  "row_number": 939,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "40 N Pearl St, Albany NY 12243 (OTDA) \u00b7 NYC HRA: 180 Water St, New York NY 10038"
+ },
+ {
+  "bundle_entity_id": "740e8092-6de6-7d76-ce61-0d6f6c2fe3ab",
+  "row_uid": "corpus:4b18f4cf7000a10110c7389a575e0f6c2f8d1be9036b00c96007e70f83a4a1cc",
+  "sheet": "pass3_program_card",
+  "row_number": 918,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "40 N Pearl St, Albany NY 12243 (OTDA) \u00b7 NYC HRA: 180 Water St, New York NY 10038"
+ },
+ {
+  "bundle_entity_id": "7709a9fe-1e7c-4741-242e-ebeb5c307d2e",
+  "row_uid": "corpus:3030864ccc6dec000a123e1d7b705a216c4186fdcb27fcd199106069273b6b81",
+  "sheet": "pass3_program_card",
+  "row_number": 334,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "275 S Kimball Ave, Caldwell ID 83605 (main) \u00b7 Twin Falls: 208-733-8770"
+ },
+ {
+  "bundle_entity_id": "7709a9fe-1e7c-4741-242e-ebeb5c307d2e",
+  "row_uid": "corpus:512f5b0ed32bea8be5e0abe03edb1889cf7d4db6f939b2707bd59c4a439fa505",
+  "sheet": "pass3_program_card",
+  "row_number": 351,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "450 W State St, Boise ID 83702 \u00b7 Local Community Action Agencies"
+ },
+ {
+  "bundle_entity_id": "7709a9fe-1e7c-4741-242e-ebeb5c307d2e",
+  "row_uid": "corpus:9367ea9ba9ec00973369fb1055c3708c7a487d4677713d9825fd7d9999cb0cdf",
+  "sheet": "pass3_program_card",
+  "row_number": 349,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "450 W State St, Boise ID 83702 \u00b7 44 county IDHW offices"
+ },
+ {
+  "bundle_entity_id": "7709a9fe-1e7c-4741-242e-ebeb5c307d2e",
+  "row_uid": "corpus:9e928e9cfe8445b596ebdaf151f1eb9facbfccd925b46e70c34a23cd4dc0ef23",
+  "sheet": "pass3_program_card",
+  "row_number": 339,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "145 2nd Ave S, Twin Falls ID 83301"
+ },
+ {
+  "bundle_entity_id": "7709a9fe-1e7c-4741-242e-ebeb5c307d2e",
+  "row_uid": "corpus:c51d7bdb95514fae9f53a14939fbd46e8461110ecb94effae74bd238f20c3119",
+  "sheet": "pass3_program_card",
+  "row_number": 342,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "156 2nd Ave W Ste 100, Twin Falls ID 83301"
+ },
+ {
+  "bundle_entity_id": "7709a9fe-1e7c-4741-242e-ebeb5c307d2e",
+  "row_uid": "corpus:c75f9187570e8a7bc1b2b64b52315d1ba8c234e3da37c7ebd471c031d2a9fe0e",
+  "sheet": "pass3_program_card",
+  "row_number": 331,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "450 W State St, Boise ID 83702 (IDHW main) \u00b7 44 county IDHW offices statewide"
+ },
+ {
+  "bundle_entity_id": "7709a9fe-1e7c-4741-242e-ebeb5c307d2e",
+  "row_uid": "corpus:caa0802e53e76237289de0d9c612bf04e8b247d61eb1c8760a69d50a3487b06d",
+  "sheet": "pass3_program_card",
+  "row_number": 337,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "450 W State St, Boise ID 83702 (IDHW) \u00b7 44 county offices statewide"
+ },
+ {
+  "bundle_entity_id": "7709a9fe-1e7c-4741-242e-ebeb5c307d2e",
+  "row_uid": "corpus:f2ad126e993aac3055e2e341727c5689abb5ae3c6852c4bd3042cd1926e7915f",
+  "sheet": "pass3_program_card",
+  "row_number": 352,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "156 2nd Ave W Ste 100, Twin Falls ID 83301 (Magic Valley main)"
+ },
+ {
+  "bundle_entity_id": "8a12f2f6-a3d3-2040-a2a3-f84d4e207f62",
+  "row_uid": "corpus:5449d8a18daa9f7585ef018a2681a8a33e22b91e14da3fe97cf2c2cc66fae11b",
+  "sheet": "pass3_program_card",
+  "row_number": 312,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "Maui Food Bank: 760 Kolu St, Wailuku HI 96793 The Foodbasket Hilo: 1145 Middle Rd, Hilo HI 96720 Kauai: 808-335-0019"
+ },
+ {
+  "bundle_entity_id": "8a8371d9-cd25-145a-c9ed-863ee2f9ae6f",
+  "row_uid": "corpus:495d151f60d0961994c8b60b6833d94684a2ec53f3a3c1e49427be2efd2cd8e9",
+  "sheet": "pass3_program_card",
+  "row_number": 1097,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Local ODHS offices statewide"
+ },
+ {
+  "bundle_entity_id": "8a8371d9-cd25-145a-c9ed-863ee2f9ae6f",
+  "row_uid": "corpus:50f00eaba5160fde951ad11e7cc48e5f069ac58404322d62abd0f6639cc8134e",
+  "sheet": "pass3_program_card",
+  "row_number": 1094,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Online \u2014 statewide"
+ },
+ {
+  "bundle_entity_id": "8a8371d9-cd25-145a-c9ed-863ee2f9ae6f",
+  "row_uid": "corpus:639e4dbedc9184209a1e9b19118e4498180531b4b683087fdfdecbc2fd76046f",
+  "sheet": "pass3_program_card",
+  "row_number": 1075,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "17645 NW St Helens Rd, Portland OR 97231 (Healing Lodge) \u00b7 15 NW 3rd Ave (main clinic)"
+ },
+ {
+  "bundle_entity_id": "8a8371d9-cd25-145a-c9ed-863ee2f9ae6f",
+  "row_uid": "corpus:7cc357ec6bdc06f8f854bc77ac5abe19dfe252b69c42883d8262df24076ededa",
+  "sheet": "pass3_program_card",
+  "row_number": 1100,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "500 Summer St NE, Salem OR 97301 \u00b7 Community Action Agencies statewide"
+ },
+ {
+  "bundle_entity_id": "8a8371d9-cd25-145a-c9ed-863ee2f9ae6f",
+  "row_uid": "corpus:8f0c850eb9ab06e7f41e6a222dae047ef87a53702d08ab8f13af6422bc3bff33",
+  "sheet": "pass3_program_card",
+  "row_number": 1076,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "500 Summer St NE, Salem OR 97301 (ODHS main) \u00b7 Local ODHS offices statewide"
+ },
+ {
+  "bundle_entity_id": "8a8371d9-cd25-145a-c9ed-863ee2f9ae6f",
+  "row_uid": "corpus:a49bdc0328610291648c90794aa3d4cdf67deddfaba9dbfd22888b9db6e4ea0e",
+  "sheet": "pass3_program_card",
+  "row_number": 1096,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "500 Summer St NE, Salem OR 97301 \u00b7 Local ODHS offices statewide"
+ },
+ {
+  "bundle_entity_id": "8a8371d9-cd25-145a-c9ed-863ee2f9ae6f",
+  "row_uid": "corpus:a4a6afd5b9320de80425c50c48c97bcfa0ad4b259472b0c2f7c210b7a8494844",
+  "sheet": "pass3_program_card",
+  "row_number": 1081,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "230 Lancaster Dr NE, Salem OR 97301 \u00b7 Woodburn: 503-981-5291"
+ },
+ {
+  "bundle_entity_id": "8a8371d9-cd25-145a-c9ed-863ee2f9ae6f",
+  "row_uid": "corpus:ae135a21315de4a024df27071239b9c0e84c7b693de65dedd8635e8a9f1016e6",
+  "sheet": "pass3_program_card",
+  "row_number": 1079,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "500 Summer St NE, Salem OR 97301 \u00b7 Local WIC clinics statewide"
+ },
+ {
+  "bundle_entity_id": "8c5f91ab-b662-8e04-fdee-5a4fa812d5ae",
+  "row_uid": "corpus:9d23025e00fbcd6337a1abcaddc0f2ed617134833c2581b3b751277fd3acd646",
+  "sheet": "pass3_program_card",
+  "row_number": 263,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "CLSMF: 122 E Colonial Dr Ste 200, Orlando FL 32801"
+ },
+ {
+  "bundle_entity_id": "99d74591-0acf-8e1b-bae6-94c441654ddf",
+  "row_uid": "corpus:cdfb565ffc4b74559e6bafec613bcf824e7798e83cf0a70e4bf04401e0dc48ce",
+  "sheet": "pass3_program_card",
+  "row_number": 265,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "Three Rivers Legal Services: 1 W Adams St Ste 600, Jacksonville FL 32202"
+ },
+ {
+  "bundle_entity_id": "99de289d-f5c1-a207-9224-a9543c339ff3",
+  "row_uid": "corpus:079b16f170d38584c8797e1e631c5a9301a0fe119c011c03fd1d727ee82a7a20",
+  "sheet": "pass3_program_card",
+  "row_number": 371,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "975 N Main St, Rockford IL 61103 (main) \u00b7 Multiple offices"
+ },
+ {
+  "bundle_entity_id": "99de289d-f5c1-a207-9224-a9543c339ff3",
+  "row_uid": "corpus:28bebb1365da103329c18681242cf830b4899f82ff9bf2a563e1e091f5ed455f",
+  "sheet": "pass3_program_card",
+  "row_number": 378,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "National service"
+ },
+ {
+  "bundle_entity_id": "99de289d-f5c1-a207-9224-a9543c339ff3",
+  "row_uid": "corpus:2bf9814f825c434b9a423f1aeeb40dce5f9b2b2ab10d5ee1b5bcaf2f9ed36e6c",
+  "sheet": "pass3_program_card",
+  "row_number": 384,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "100 S Grand Ave E, Springfield IL 62762 \u00b7 Local DHS offices"
+ },
+ {
+  "bundle_entity_id": "99de289d-f5c1-a207-9224-a9543c339ff3",
+  "row_uid": "corpus:541b3d16915dd35c983caef67e54d7728004f6a5c92676fb7e61654d7440c842",
+  "sheet": "pass3_program_card",
+  "row_number": 366,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "100 S Grand Ave E, Springfield IL 62762 (DHS main) \u00b7 Local DHS offices statewide"
+ },
+ {
+  "bundle_entity_id": "99de289d-f5c1-a207-9224-a9543c339ff3",
+  "row_uid": "corpus:8c9ffb20fbc79960efc5cb4e4c994bcde71e102e740301a85001db05ae70acf2",
+  "sheet": "pass3_program_card",
+  "row_number": 386,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Administered through Community Action Agencies"
+ },
+ {
+  "bundle_entity_id": "99de289d-f5c1-a207-9224-a9543c339ff3",
+  "row_uid": "corpus:93a4e2f721d9a7222b453da7642533c5bb4e794b9a5c2778da5129c16e6a4853",
+  "sheet": "pass3_program_card",
+  "row_number": 387,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "Chicago City Hall: 121 N LaSalle St, Chicago IL 60602 \u00b7 Chicago RLTO: Metropolitan Tenants Organization: 1 N Dearborn Ste 1250"
+ },
+ {
+  "bundle_entity_id": "99de289d-f5c1-a207-9224-a9543c339ff3",
+  "row_uid": "corpus:ab4abc35bd103eddfee2cd397364e19e2aab8a0743b9fe728fc300b65609080f",
+  "sheet": "pass3_program_card",
+  "row_number": 369,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "535 W Jefferson St, Springfield IL 62761 (IDPH main) \u00b7 Local WIC agencies statewide"
+ },
+ {
+  "bundle_entity_id": "99de289d-f5c1-a207-9224-a9543c339ff3",
+  "row_uid": "corpus:ce389106be5f95034c3b1c6dd6a275d535e733369604ed5eec028bd4e2e996ca",
+  "sheet": "pass3_program_card",
+  "row_number": 363,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Apply through IL HFS or local enrollment assister"
+ },
+ {
+  "bundle_entity_id": "99de289d-f5c1-a207-9224-a9543c339ff3",
+  "row_uid": "corpus:ed1ad54a9039ef24af436f0fc84a2538ca63640d43e3b0c8dc7868644af9786b",
+  "sheet": "pass3_program_card",
+  "row_number": 364,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Find nearest: findahealthcenter.hrsa.gov \u00b7 IAPCHA: 312-629-5670"
+ },
+ {
+  "bundle_entity_id": "9a89ae9a-5285-2a1c-524c-bccd4c36a781",
+  "row_uid": "corpus:6ae37dab5319f60c017c492a6cc4fcd2594ad261a1ad028b410fb0136b1c01cc",
+  "sheet": "pass3_program_card",
+  "row_number": 1453,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Find local W-2 agency at dhs.wisconsin.gov/w2 \u00b7 W-2 agencies statewide (private contractors)"
+ },
+ {
+  "bundle_entity_id": "9a89ae9a-5285-2a1c-524c-bccd4c36a781",
+  "row_uid": "corpus:6e849931eccfe5fabf8ccbb1dec7f2ddb1ec5577fbccf0336fae7181f09575fb",
+  "sheet": "pass3_program_card",
+  "row_number": 1452,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Fox Valley Hmong Mutual Assistance Assoc, Appleton WI"
+ },
+ {
+  "bundle_entity_id": "9a89ae9a-5285-2a1c-524c-bccd4c36a781",
+  "row_uid": "corpus:6ede4aed173662c95f4eece8076542cc8b07bc61598366d44eb0f0dae292af30",
+  "sheet": "pass3_program_card",
+  "row_number": 1455,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "1 W Wilson St, Madison WI 53703 (DHS) \u00b7 Local Community Action Agencies statewide"
+ },
+ {
+  "bundle_entity_id": "9a89ae9a-5285-2a1c-524c-bccd4c36a781",
+  "row_uid": "corpus:9c9dc42d0904738faa3fa77cc281c84f20c04dd5f1cea1969ee29ee7c5eaf14d",
+  "sheet": "pass3_program_card",
+  "row_number": 1439,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "1 W Wilson St, Madison WI 53703 (DHS) \u00b7 72 county DHS offices statewide"
+ },
+ {
+  "bundle_entity_id": "a3f1f181-bf19-963a-1b19-22d62b5d2ffd",
+  "row_uid": "corpus:4408c29b2a5f9399a219af5a44995579681ba679944b3b518896dd931dcfc3a1",
+  "sheet": "pass3_program_card",
+  "row_number": 1374,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "Legal Aid Society DC SE: 1331 H St NE, Washington DC 20002 Unity Health Care Ward 7: various sites"
+ },
+ {
+  "bundle_entity_id": "ad0c11d2-8a52-8ff5-4374-8efa3d5ad22c",
+  "row_uid": "corpus:1c946e2cbe0d76d5f6274002e280451194723c882cff686eb9e920d9257730b7",
+  "sheet": "pass3_program_card",
+  "row_number": 1253,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "PO Box 161810, Austin, TX 78716"
+ },
+ {
+  "bundle_entity_id": "ad0c11d2-8a52-8ff5-4374-8efa3d5ad22c",
+  "row_uid": "corpus:2c055ca83ca30dbe824b0c74776d9eb63bcce2dcf9d73bd815c9181166876863",
+  "sheet": "pass3_program_card",
+  "row_number": 1252,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "PO Box 161810, Austin, TX 78716"
+ },
+ {
+  "bundle_entity_id": "b5161b04-679f-b544-fd4e-a4dab76b5108",
+  "row_uid": "corpus:222ec0c1015918bbf674004f7388fbe5eed5d2529604a16b741ce6d90f1eed68",
+  "sheet": "pass3_program_card",
+  "row_number": 152,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "County DPSS offices \u00b7 Online: BenefitsCal.com"
+ },
+ {
+  "bundle_entity_id": "b5161b04-679f-b544-fd4e-a4dab76b5108",
+  "row_uid": "corpus:42bed02845d931c09aa0f0eedaeac342f6e0867c6018d6fcb2921962ac9e6946",
+  "sheet": "pass3_program_card",
+  "row_number": 171,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Statewide via regional legal aid programs"
+ },
+ {
+  "bundle_entity_id": "b5161b04-679f-b544-fd4e-a4dab76b5108",
+  "row_uid": "corpus:4cbc65f5d7a2672548fb3f618762003db1e86f67b94f9baf5c292690d0e3ac55",
+  "sheet": "pass3_program_card",
+  "row_number": 147,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "County DPSS offices statewide \u00b7 Online: BenefitsCal.com"
+ },
+ {
+  "bundle_entity_id": "b5161b04-679f-b544-fd4e-a4dab76b5108",
+  "row_uid": "corpus:73105d59e7f27a50598453eb80978b6017896f1edbdf1e00d375c90cbbdcc1fe",
+  "sheet": "pass3_program_card",
+  "row_number": 178,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Online portal \u2014 statewide"
+ },
+ {
+  "bundle_entity_id": "b5161b04-679f-b544-fd4e-a4dab76b5108",
+  "row_uid": "corpus:ed3bc47339912f80cd270cdc7d19659a5a5afe4948035ebd6d9f7e55f866c71d",
+  "sheet": "pass3_program_card",
+  "row_number": 181,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "County DPSS offices (rules vary by county)"
+ },
+ {
+  "bundle_entity_id": "b62463d1-e3d7-fbfc-d703-e65e1cbf6b04",
+  "row_uid": "corpus:76563f60006678903343206688750b6d83cdec42fd6bcabdfe194cc090231a9a",
+  "sheet": "pass3_program_card",
+  "row_number": 3,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "50 N Ripley St, Montgomery, AL 36130"
+ },
+ {
+  "bundle_entity_id": "b64bb670-fc28-48b3-e1bc-b97a6d19b208",
+  "row_uid": "corpus:20c435393c6308e93ac132153dc1fbf5830bb37d9122fc7682b49f5188e7fa21",
+  "sheet": "pass3_program_card",
+  "row_number": 642,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "235 S Grand Ave, Lansing MI 48909 \u00b7 County MDHHS offices"
+ },
+ {
+  "bundle_entity_id": "b64bb670-fc28-48b3-e1bc-b97a6d19b208",
+  "row_uid": "corpus:4c7ca194ad55b71e55dd43979c16a00716813a1dfef1748bb00e36ddfbffa444",
+  "sheet": "pass3_program_card",
+  "row_number": 622,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "235 S Grand Ave, Lansing, MI 48909 \u00b7 County MDHHS offices statewide"
+ },
+ {
+  "bundle_entity_id": "b64bb670-fc28-48b3-e1bc-b97a6d19b208",
+  "row_uid": "corpus:69ad162b087319754615759dcc2e27f73dd6b2ddbce0186546732d7a6118e004",
+  "sheet": "pass3_program_card",
+  "row_number": 626,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "235 S Grand Ave, Lansing MI 48909 \u00b7 Local WIC clinics statewide"
+ },
+ {
+  "bundle_entity_id": "b64bb670-fc28-48b3-e1bc-b97a6d19b208",
+  "row_uid": "corpus:824cc9218a44824160792a3aca9f4d0576a8fff8fe58e589d5d82713322cdb38",
+  "sheet": "pass3_program_card",
+  "row_number": 619,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Find nearest: findahealthcenter.hrsa.gov \u00b7 Michigan Primary Care Assoc: 517-381-8000"
+ },
+ {
+  "bundle_entity_id": "b64bb670-fc28-48b3-e1bc-b97a6d19b208",
+  "row_uid": "corpus:83ceb93b40cb60ed821cdf3b23d37e1e9c4217df69d114e46a1a5c0e8e031a61",
+  "sheet": "pass3_program_card",
+  "row_number": 641,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Online \u2014 statewide"
+ },
+ {
+  "bundle_entity_id": "b64bb670-fc28-48b3-e1bc-b97a6d19b208",
+  "row_uid": "corpus:f00b7c3e45a2b77e7a4c2a2c2817c6c76118132c034b0bcdca196940f7c7101c",
+  "sheet": "pass3_program_card",
+  "row_number": 635,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "National service"
+ },
+ {
+  "bundle_entity_id": "b64bb670-fc28-48b3-e1bc-b97a6d19b208",
+  "row_uid": "corpus:fa2c90855e4e537770af8963135d7f4844bead49ead5472f883a34a19feac891",
+  "sheet": "pass3_program_card",
+  "row_number": 644,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "235 S Grand Ave, Lansing MI 48909 \u00b7 Community Action Agencies statewide"
+ },
+ {
+  "bundle_entity_id": "c0fb4684-13c9-f1ce-89eb-c184e913fc1b",
+  "row_uid": "corpus:5d70c67788226f8006d9f69b08109771d48b80f19d82a4012aee512bde4826bd",
+  "sheet": "pass3_program_card",
+  "row_number": 451,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "555 S Kansas Ave, Topeka KS 66603 (DCF main) \u00b7 DCF offices in all counties"
+ },
+ {
+  "bundle_entity_id": "c0fb4684-13c9-f1ce-89eb-c184e913fc1b",
+  "row_uid": "corpus:c98cfcd0a117aa09efd250673194b468e95ebdd93203b39dc7d81d6cff9b2fcc",
+  "sheet": "pass3_program_card",
+  "row_number": 464,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Contact tribal social services directly"
+ },
+ {
+  "bundle_entity_id": "c745c109-572e-3cb9-725a-f8ca982a3245",
+  "row_uid": "corpus:59016a22fa990bad0e9419f6e6c21f704f914ef4a8e70b55b11528d1744fc9d2",
+  "sheet": "pass3_program_card",
+  "row_number": 139,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "700 Main St, Little Rock AR 72201 \u00b7 75 county DHS offices"
+ },
+ {
+  "bundle_entity_id": "c745c109-572e-3cb9-725a-f8ca982a3245",
+  "row_uid": "corpus:5924107a4afecc4bd17d47eb4004e0bb8085257f5efaeed5af00246083adba08",
+  "sheet": "pass3_program_card",
+  "row_number": 123,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "700 Main St, Little Rock AR 72201 (DHS) \u00b7 75 county DHS offices statewide"
+ },
+ {
+  "bundle_entity_id": "c745c109-572e-3cb9-725a-f8ca982a3245",
+  "row_uid": "corpus:9dce868df45adbffb74fe640e13da056ce85cf2ffac3c2bf2e88de6c3bcb74d6",
+  "sheet": "pass3_program_card",
+  "row_number": 141,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "700 Main St, Little Rock AR 72201 \u00b7 Local CAAs statewide"
+ },
+ {
+  "bundle_entity_id": "ceaa1068-f2f2-0404-527d-377bdfcfd716",
+  "row_uid": "corpus:0b11f9eba88266b581e07fbc9b7ee008210f997ad68689b558f7460ddc50af99",
+  "sheet": "pass3_program_card",
+  "row_number": 606,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Online \u2014 statewide"
+ },
+ {
+  "bundle_entity_id": "ceaa1068-f2f2-0404-527d-377bdfcfd716",
+  "row_uid": "corpus:169522249765e9a9013e3e6da5dd24331464b04da788bd7ef7b31fa0927cba63",
+  "sheet": "pass3_program_card",
+  "row_number": 608,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "600 Washington St, Boston MA 02111 (DTA) \u00b7 Local DTA offices statewide"
+ },
+ {
+  "bundle_entity_id": "ceaa1068-f2f2-0404-527d-377bdfcfd716",
+  "row_uid": "corpus:572d7e5315314f3060631a3963c4470d575630488cfed2c799f2079c382193e0",
+  "sheet": "pass3_program_card",
+  "row_number": 589,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "600 Washington St, Boston MA 02111 (DTA main) \u00b7 Local DTA offices statewide"
+ },
+ {
+  "bundle_entity_id": "ceaa1068-f2f2-0404-527d-377bdfcfd716",
+  "row_uid": "corpus:f73ad557637ddac11e63aee4861e7402e0c964696d33f2bcec2d1e0040707a3b",
+  "sheet": "pass3_program_card",
+  "row_number": 603,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "95 State St Ste 309, Springfield MA 01103 \u00b7 Worcester: 370 Main St 5th Fl"
+ },
+ {
+  "bundle_entity_id": "d0079022-8d9b-d010-4fab-b8dc8eb63839",
+  "row_uid": "corpus:2188a727302e48f5a5a5059ce093525aaf575ce7211e27177c8163335034346b",
+  "sheet": "pass3_program_card",
+  "row_number": 664,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "166 4th St E Ste 200, Saint Paul MN 55101"
+ },
+ {
+  "bundle_entity_id": "d0079022-8d9b-d010-4fab-b8dc8eb63839",
+  "row_uid": "corpus:38a8582199b8cc447fd341b74e63417f9030a1e169914d9069c4639dc5f54420",
+  "sheet": "pass3_program_card",
+  "row_number": 683,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "2300 15th Ave S, Minneapolis MN 55404"
+ },
+ {
+  "bundle_entity_id": "d0079022-8d9b-d010-4fab-b8dc8eb63839",
+  "row_uid": "corpus:4f743e1c0ea11626993d1407210cad4c2d0d5f70e3283dd47d7ab9eb1749e822",
+  "sheet": "pass3_program_card",
+  "row_number": 673,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "540 Cedar St, Saint Paul MN 55101 (DHS) \u00b7 Local Community Action Agencies statewide"
+ },
+ {
+  "bundle_entity_id": "d0079022-8d9b-d010-4fab-b8dc8eb63839",
+  "row_uid": "corpus:50b8a8fac1795ca32870a260112d66210f2c8ee794c2d2538bfcf215f69d5f66",
+  "sheet": "pass3_program_card",
+  "row_number": 678,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "115 6th St NW Ste E, Cass Lake MN 56633"
+ },
+ {
+  "bundle_entity_id": "d0079022-8d9b-d010-4fab-b8dc8eb63839",
+  "row_uid": "corpus:6d2490b6bcbc28a508a7c04aad9f6bc7405d21f8f02fb2c31857a4dca63c384d",
+  "sheet": "pass3_program_card",
+  "row_number": 670,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "540 Cedar St, Saint Paul MN 55101 (DHS) \u00b7 County social services statewide"
+ },
+ {
+  "bundle_entity_id": "d0079022-8d9b-d010-4fab-b8dc8eb63839",
+  "row_uid": "corpus:8ab9468112639f5daadf5bd445021172bae57fdc0d74b4c763fb2f16ff21dafe",
+  "sheet": "pass3_program_card",
+  "row_number": 666,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "2300 15th Ave S, Minneapolis MN 55404"
+ },
+ {
+  "bundle_entity_id": "d0079022-8d9b-d010-4fab-b8dc8eb63839",
+  "row_uid": "corpus:96bfae7b8f485d28cf7f58d31aa37bf73b628ac94c50faaf4707c7aa5dbb317e",
+  "sheet": "pass3_program_card",
+  "row_number": 658,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "540 Cedar St, Saint Paul MN 55101 (DHS) \u00b7 87 county social services offices statewide"
+ },
+ {
+  "bundle_entity_id": "d86b8210-6eb5-0773-b1a8-ad678d41d484",
+  "row_uid": "corpus:ab63d5e12f57d78abb4e3b877d1342339c2a712c6112856379722ab14e61a877",
+  "sheet": "pass3_program_card",
+  "row_number": 441,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "Iowa Legal Aid Waterloo: 1900 Independence Ave Ste 400, Waterloo IA 50703 \u00b7 Iowa Legal Aid Storm Lake: 712-279-9300 (NW Iowa office Sioux City)"
+ },
+ {
+  "bundle_entity_id": "d86b8210-6eb5-0773-b1a8-ad678d41d484",
+  "row_uid": "corpus:afc9c70cfbb9a96df31c99d1adc3836c7ede5cfbacdd6ab27b2ab0084195f1ab",
+  "sheet": "pass3_program_card",
+  "row_number": 427,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "Hoover State Office Bldg, Des Moines IA 50319 \u00b7 99 county DHS offices statewide"
+ },
+ {
+  "bundle_entity_id": "ea96692c-5b24-de09-9bcb-ef3bd5bc933a",
+  "row_uid": "corpus:1988a16a881b56fd5fa81597ee4fe0e7abb8e31ebf11300d96871b0c15082fbe",
+  "sheet": "pass3_program_card",
+  "row_number": 262,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "Legal Services of Greater Miami: 3000 Biscayne Blvd Ste 500, Miami FL 33137"
+ },
+ {
+  "bundle_entity_id": "eea78895-23a2-0356-11fc-5d302633c920",
+  "row_uid": "corpus:055f73c6705185dc76e6c17a36bd268ff6b6b3fa6fb59ea3d07badd6ad658de8",
+  "sheet": "pass3_program_card",
+  "row_number": 769,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "MLSA Billings: 3001 2nd Ave N Ste 103, Billings MT 59101 \u00b7 Billings Clinic: 2800 10th Ave N, Billings MT 59101"
+ },
+ {
+  "bundle_entity_id": "eea78895-23a2-0356-11fc-5d302633c920",
+  "row_uid": "corpus:06c9ae5cc1d248913195c27d86b556f842a908ada112e4ca3d25e3d7735ab598",
+  "sheet": "pass3_program_card",
+  "row_number": 750,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "2900 4th Ave N, Billings MT 59101"
+ },
+ {
+  "bundle_entity_id": "eea78895-23a2-0356-11fc-5d302633c920",
+  "row_uid": "corpus:5845d570db3b42d69e0180929caeec390eed477e6d5b7873bd092b38a2f287c2",
+  "sheet": "pass3_program_card",
+  "row_number": 747,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "1400 Broadway, Helena MT 59601 (DPHHS main) \u00b7 56 county DPHHS offices statewide"
+ },
+ {
+  "bundle_entity_id": "eea78895-23a2-0356-11fc-5d302633c920",
+  "row_uid": "corpus:6272fd545fa0c914d636b4c83387983281530602b5af4c1ccc6fc6f91fdc3377",
+  "sheet": "pass3_program_card",
+  "row_number": 764,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "1400 Broadway, Helena MT 59601 \u00b7 56 county DPHHS offices"
+ },
+ {
+  "bundle_entity_id": "eea78895-23a2-0356-11fc-5d302633c920",
+  "row_uid": "corpus:6738c4f67381af6f28054b15440b5578b17f3bff0c075aa9d43c418501ee995d",
+  "sheet": "pass3_program_card",
+  "row_number": 777,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "2900 4th Ave N, Billings MT 59101"
+ },
+ {
+  "bundle_entity_id": "eea78895-23a2-0356-11fc-5d302633c920",
+  "row_uid": "corpus:724827ea1db3ca5af17b41793a13ba97f09114e45332c7dfc254bb4c4d45434f",
+  "sheet": "pass3_program_card",
+  "row_number": 763,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Contact via MCADSV"
+ },
+ {
+  "bundle_entity_id": "eea78895-23a2-0356-11fc-5d302633c920",
+  "row_uid": "corpus:734bdff0e178c4207099a61c161151444b0e7d399345858013753bcac76c42bf",
+  "sheet": "pass3_program_card",
+  "row_number": 755,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "124 7th Ave, Havre MT 59501 (Hill County)"
+ },
+ {
+  "bundle_entity_id": "eea78895-23a2-0356-11fc-5d302633c920",
+  "row_uid": "corpus:ad46e63ff6bb93bee72cc29781338d2c6f5cacd9abfbb5f40f930fcb71337356",
+  "sheet": "pass3_program_card",
+  "row_number": 753,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "1400 Broadway, Helena MT 59601 \u00b7 56 county DPHHS offices"
+ },
+ {
+  "bundle_entity_id": "eea78895-23a2-0356-11fc-5d302633c920",
+  "row_uid": "corpus:e30a3cfc72b1ee25887ef5eb74683730f0bf213327562b3a0dba8f84a5f46c63",
+  "sheet": "pass3_program_card",
+  "row_number": 748,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "2800 10th Ave N, Billings MT 59101"
+ },
+ {
+  "bundle_entity_id": "eea78895-23a2-0356-11fc-5d302633c920",
+  "row_uid": "corpus:e33372a27c76a3d3e2c4554f93c72a51f6f346e92e7de2c1e28b638ffc3459a6",
+  "sheet": "pass3_program_card",
+  "row_number": 766,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "1400 Broadway, Helena MT 59601 \u00b7 Local Community Action Agencies"
+ },
+ {
+  "bundle_entity_id": "eea78895-23a2-0356-11fc-5d302633c920",
+  "row_uid": "corpus:e4da8499553564be3e8f2473702d5b015f735ea908a88aa95bfd0717ef7dadb9",
+  "sheet": "pass3_program_card",
+  "row_number": 768,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "MLSA (phone only for Hi-Line): 800-666-6899 \u00b7 High Plains Food Bank: 124 7th Ave, Havre MT 59501"
+ },
+ {
+  "bundle_entity_id": "eea78895-23a2-0356-11fc-5d302633c920",
+  "row_uid": "corpus:f2d44167149b1a40edbb6051e8e3691a974f51727b2a4e2bcc30fcf3f34ff782",
+  "sheet": "pass3_program_card",
+  "row_number": 767,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Contact tribal social services directly"
+ },
+ {
+  "bundle_entity_id": "efcb6cd0-194c-1f9b-07e1-5985b89efaff",
+  "row_uid": "corpus:298191f0e95a546f4816ae92dc8c4149b6d4a5299bf2c5c4a82590a1324fead6",
+  "sheet": "pass3_program_card",
+  "row_number": 811,
+  "evidence_tier": "zip_consistent",
+  "address_fragment": "1625 E Sahara Ave, Las Vegas NV 89104 (Clark Co) \u00b7 4600 Kietzke Ln Bldg O, Reno NV 89502 (Washoe Co) \u00b7 dwss.nv.gov"
+ },
+ {
+  "bundle_entity_id": "f5791de4-e811-efb3-470d-26eadad78910",
+  "row_uid": "corpus:0ee3dc2928635522e6f4c80f62c47c0576d09044cfa583e47050a1e19da6ea53",
+  "sheet": "pass3_program_card",
+  "row_number": 901,
+  "evidence_tier": "no_zip_on_row",
+  "address_fragment": "Contact each tribal nation directly"
+ }
+]
