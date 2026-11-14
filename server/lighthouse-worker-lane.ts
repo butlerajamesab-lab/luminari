@@ -47,3 +47,13 @@ export function assertArchiveOnlyWorkerConfiguration(env: Configuration): void {
     }
   }
 }
+
+/**
+ * Release hold from production P1 #813: source-only cache INSERT currently
+ * creates unsupported amendment derivatives through the installed trigger.
+ * No runtime flag can waive this. Replace only after a separately reviewed
+ * forward-only amendment release with a pinned production readback.
+ */
+export function assertArchiveAmendmentIntegrityReleased(): never {
+  throw new Error("docket_archive_amendment_integrity_release_not_certified");
+}
