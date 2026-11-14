@@ -345,11 +345,13 @@ APPROVED_REPOSITORY_ONLY = {
         "20261104090500_docket_legiscan_receipt_append_only_acl.sql",
         "ebc539dfb4b3ce35b81c10460c27d0c00141bb77",
     ),
-    # Forward class-first Legal Library read model pending production apply.
-    "20260920221500": (
-        "20260920221500_legal_authority_class_first_current_v1.sql",
-        "e815a138c8495b6b5d0ffbba15a417fc3e1e7d11",
-    ),
+    # 20260920221500 (forward class-first Legal Library read model) was
+    # quarantined to supabase/migration_archive/unapplied_20260930/ on
+    # 2026-11-14: it was never applied to production (superseded by the
+    # 20261020 materialization) and applying it onto production fails
+    # (SQLSTATE 42809, the catalog is a materialized view). The model is
+    # preserved in the archive; production application would require a
+    # rewritten migration, not this file.
     # Catalog site projection v1 (PR #791): registers the
     # catalog_site_projection document family and creates the
     # projection link table. Repository-only pending the separately
