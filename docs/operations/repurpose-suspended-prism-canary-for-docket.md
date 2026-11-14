@@ -76,6 +76,35 @@ Until that is done, do not work around the blocker with a feature flag or
 by bypassing canonical Docket acceptance. This release hold supersedes the
 preconditions below.
 
+## Exact one-bill path witness (read-only production observation)
+
+Montana SB26, LegiScan bill `1895898`, archive member
+`MT/2025-2025_Regular_Session/bill/SB26.json`, archive
+SHA-256 `a82fce3e12d5e71b45b7917f5fc5a561e07e77e2ceca27590475e9a9733359fd`,
+member SHA-256
+`a6f9009ecb60cff6f6cc86172da3b882c61ac1a4107a85f8d884cd1699bee437`.
+
+The source member is preserved with `disposition=inserted` and cache
+`source=legiscan_bulk_json`. Archive-origin activation queue ID
+`7f76ecdd-190d-4fc3-80af-591f2d327751` is `eligible`, attempts `0`
+at observation; the earlier API master-list queue row for the same bill
+is `permanent_failure` from September and must not be touched.
+The bill maps to Civic Genome bill
+`35c6f68e-f773-4b57-b727-54ddea798508`, with four **text**
+source-document keys, all registered in Civic Genome, none an
+`amendment`-family derivative. Stages were Introduced, Amended
+(text version), Enrolled, Amended (text version), with each version
+`processing_state=registered` and `rosetta_source_document_id=NULL`
+at the read-only snapshot.
+
+**This is an observed partial path, not a completed runtime trace.**
+After PR #813's independent repair/certification, require exact
+identity/readiness recheck and choose **only** this witness queue ID.
+The worker's claim SQL and its superseded-update CTE are both scoped
+to the same ID; no other archive-origin queue job may be modified.
+Any stale/wrong identity must fail before activation. The source
+ZIP and master-list queue records must not be overwritten.
+
 ## Release preconditions
 
 1. Run focused unit tests for `server/lighthouse-worker-lane.test.ts`,
@@ -97,6 +126,7 @@ preconditions below.
    DOCKET_BILL_ACTIVATION_CONCURRENCY=1
    DOCKET_BILL_ACTIVATION_QUEUE_POLL_MS=5000
    DOCKET_ARCHIVE_PILOT_MODE=one_cycle
+   DOCKET_ARCHIVE_WITNESS_QUEUE_ID=7f76ecdd-190d-4fc3-80af-591f2d327751
 
    PRISM_ROSETTA_QUEUE_ENABLED=false
    LEGISLATIVE_VERSION_QUEUE_ENABLED=false
