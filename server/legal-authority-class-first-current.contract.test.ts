@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const migration = readFileSync(
-  new URL("../supabase/migrations/20260920221500_legal_authority_class_first_current_v1.sql", import.meta.url),
+  new URL("../supabase/migration_archive/unapplied_20260930/20260920221500_legal_authority_class_first_current_v1.sql", import.meta.url),
   "utf8",
 );
 const reader = readFileSync(new URL("./services/current-legal-authority-reader.ts", import.meta.url), "utf8");
