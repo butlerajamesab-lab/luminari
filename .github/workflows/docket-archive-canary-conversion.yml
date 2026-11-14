@@ -1,0 +1,81 @@
+name: Docket archive canary conversion (offline)
+
+on:
+  push:
+    branches:
+      - prepare/docket-only-prism-canary-reuse-20261113
+    paths:
+      - ".github/workflows/docket-archive-canary-conversion.yml"
+      - "server/lighthouse-worker-lane.ts"
+      - "server/lighthouse-worker-lane.test.ts"
+      - "server/lighthouse-worker-host.ts"
+      - "server/docket-archive-activation-worker.ts"
+      - "package.json"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/docket-archive-canary-conversion.yml"
+      - "server/lighthouse-worker-lane.ts"
+      - "server/lighthouse-worker-lane.test.ts"
+      - "server/lighthouse-worker-host.ts"
+      - "server/docket-archive-activation-worker.ts"
+      - "package.json"
+
+permissions:
+  contents: read
+
+jobs:
+  offline-gates:
+    name: Guarded startup, Docket compatibility and both worker builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NODE_ENV: test
+      LEGISCAN_API_KEY: ""
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v7
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node 20
+        uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+          cache: pnpm
+      - name: Install locked packages
+        run: pnpm install --frozen-lockfile
+      - name: Verify fail-closed worker lane and canonical Docket queue
+        run: >-
+          pnpm exec vitest run
+          server/lighthouse-worker-lane.test.ts
+          server/docket-jurisdiction-activation-queue-worker.test.ts
+          server/docket-bill-detail-acceptance.test.ts
+          server/runtime-role.test.ts
+      - name: Check TypeScript
+        run: pnpm exec tsc --noEmit
+      - name: Build repurposed canary entrypoint at historical Render output path
+        run: pnpm run build:prism-worker
+      - name: Confirm absent worker lane fails before starting any background worker
+        shell: bash
+        run: |
+          set +e
+          output="$(env -u LIGHTHOUSE_WORKER_LANE -u DATABASE_URL -u LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY -u LEGISCAN_API_KEY node dist/prism-rosetta-worker.js 2>&1)"
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            echo "FAIL: missing worker lane unexpectedly started"
+            exit 1
+          fi
+          if [[ "$output" != *"lighthouse_worker_lane_explicit_selection_required"* ]]; then
+            echo "FAIL: wrong startup failure; no provider credentials were set"
+            exit 1
+          fi
+          if [[ "$output" == *"[DocketArchiveWorker] started"* || "$output" == *"[PrismRosettaWorker] starting"* ]]; then
+            echo "FAIL: a worker started without a lane grant"
+            exit 1
+          fi
+          echo "PASS: no lane fails closed without starting provider or Prism workers"
+      - name: Build preserved independent legacy Prism canary executable
+        run: pnpm run build:prism-worker-legacy
+      - name: Build dedicated Docket worker executable
+        run: pnpm run build:docket-archive-worker
