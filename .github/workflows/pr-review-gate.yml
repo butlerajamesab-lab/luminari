@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: read
+  issues: read
   pull-requests: read
 
 jobs:
@@ -35,6 +36,54 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const number = context.payload.pull_request.number;
+            const CODEX_LOGIN = "chatgpt-codex-connector[bot]";
+            // GraphQL returns bot logins WITHOUT the "[bot]" suffix
+            // that the REST API uses, so the same account arrives as
+            // "chatgpt-codex-connector" from GraphQL queries and as
+            // CODEX_LOGIN from REST. Every author comparison goes
+            // through this normalizer so both forms match the one
+            // trusted reviewer — and nobody else.
+            const isCodexAuthor = (login) =>
+              (login ?? "").replace(/\[bot\]$/, "") ===
+              CODEX_LOGIN.replace(/\[bot\]$/, "");
+
+            // Codex never resolves its own review threads — not even
+            // after a finding is fixed and its re-review of the new
+            // head comes back clean — so a fixed finding deadlocks
+            // this gate until a human clicks "resolve" in the UI.
+            // The reviewer's own per-head verdict, carried in its
+            // summary comment's state marker, is the authority for
+            // Codex threads: a completed review of THIS head sha
+            // reporting no unresolved findings settles them. Threads
+            // from anyone else are never settled this way, and a
+            // verdict recorded for any other sha settles nothing.
+            // Only markers in the reviewer's own comments count —
+            // the marker text in anyone else's comment is ignored.
+            async function codexCleanForHead(issueNumber, headSha) {
+              const comments = await github.paginate(
+                github.rest.issues.listComments,
+                { owner, repo, issue_number: issueNumber, per_page: 100 },
+              );
+              let state = null;
+              for (const comment of comments) {
+                // Only the reviewer's own comments carry its verdict.
+                // A marker in anyone else's comment is not Codex
+                // speaking and settles nothing.
+                if (!isCodexAuthor(comment.user?.login)) continue;
+                const match = /codex-review-state:v1 (\{.*?\}) -->/.exec(comment.body ?? "");
+                if (match) {
+                  try { state = JSON.parse(match[1]); } catch { state = null; }
+                }
+              }
+              const review = state?.code_review;
+              return Boolean(
+                review &&
+                review.commit_sha === headSha &&
+                review.status === "completed" &&
+                review.has_unresolved_findings === false,
+              );
+            }
+
             const unresolved = [];
             let cursor = null;
 
@@ -49,7 +98,7 @@ jobs:
                           isResolved
                           isOutdated
                           comments(first: 1) {
-                            nodes { url path body }
+                            nodes { url path body author { login } }
                           }
                         }
                       }
@@ -67,13 +116,25 @@ jobs:
               cursor = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null;
             } while (cursor);
 
-            if (unresolved.length > 0) {
-              for (const finding of unresolved) {
-                core.error(`${finding.path ?? "review"}: ${finding.url ?? "unresolved thread"}`);
-              }
-              core.setFailed(`${unresolved.length} unresolved current review thread(s)`);
-            } else {
+            if (unresolved.length === 0) {
               core.info("No unresolved current review threads");
+            } else {
+              const human = unresolved.filter(
+                (t) => !isCodexAuthor(t.author?.login),
+              );
+              if (
+                human.length === 0 &&
+                (await codexCleanForHead(number, context.payload.pull_request.head.sha))
+              ) {
+                core.info(
+                  "Only Codex threads remain unresolved, and Codex's completed review of the current head reports no unresolved findings — settled by the reviewer's own verdict.",
+                );
+              } else {
+                for (const finding of unresolved) {
+                  core.error(`${finding.path ?? "review"}: ${finding.url ?? "unresolved thread"}`);
+                }
+                core.setFailed(`${unresolved.length} unresolved current review thread(s)`);
+              }
             }
 
   recheck-resolved-review-threads:
@@ -84,6 +145,7 @@ jobs:
     permissions:
       actions: write
       contents: read
+      issues: read
       pull-requests: read
     steps:
       - name: Rerun stale failed gates after resolution
@@ -106,8 +168,49 @@ jobs:
               "timed_out",
             ]);
 
-            async function countUnresolved(number) {
-              let count = 0;
+            const CODEX_LOGIN = "chatgpt-codex-connector[bot]";
+            // GraphQL returns bot logins WITHOUT the "[bot]" suffix
+            // that the REST API uses, so the same account arrives as
+            // "chatgpt-codex-connector" from GraphQL queries and as
+            // CODEX_LOGIN from REST. Every author comparison goes
+            // through this normalizer so both forms match the one
+            // trusted reviewer — and nobody else.
+            const isCodexAuthor = (login) =>
+              (login ?? "").replace(/\[bot\]$/, "") ===
+              CODEX_LOGIN.replace(/\[bot\]$/, "");
+
+            // Same clearance rule as the gate job: Codex threads are
+            // settled by Codex's own clean verdict for the current
+            // head (see codexCleanForHead there); anyone else's
+            // unresolved thread always blocks.
+            async function codexCleanForHead(issueNumber, headSha) {
+              const comments = await github.paginate(
+                github.rest.issues.listComments,
+                { owner, repo, issue_number: issueNumber, per_page: 100 },
+              );
+              let state = null;
+              for (const comment of comments) {
+                // Only the reviewer's own comments carry its verdict.
+                // A marker in anyone else's comment is not Codex
+                // speaking and settles nothing.
+                if (!isCodexAuthor(comment.user?.login)) continue;
+                const match = /codex-review-state:v1 (\{.*?\}) -->/.exec(comment.body ?? "");
+                if (match) {
+                  try { state = JSON.parse(match[1]); } catch { state = null; }
+                }
+              }
+              const review = state?.code_review;
+              return Boolean(
+                review &&
+                review.commit_sha === headSha &&
+                review.status === "completed" &&
+                review.has_unresolved_findings === false,
+              );
+            }
+
+            async function isClear(pull) {
+              let human = 0;
+              let codex = 0;
               let cursor = null;
 
               do {
@@ -117,21 +220,32 @@ jobs:
                       pullRequest(number: $number) {
                         reviewThreads(first: 100, after: $cursor) {
                           pageInfo { hasNextPage endCursor }
-                          nodes { isResolved isOutdated }
+                          nodes {
+                            isResolved
+                            isOutdated
+                            comments(first: 1) {
+                              nodes { author { login } }
+                            }
+                          }
                         }
                       }
                     }
                   }
-                `, { owner, repo, number, cursor });
+                `, { owner, repo, number: pull.number, cursor });
 
                 const page = result.repository.pullRequest.reviewThreads;
-                count += page.nodes.filter(
-                  (thread) => !thread.isResolved && !thread.isOutdated,
-                ).length;
+                for (const thread of page.nodes) {
+                  if (thread.isResolved || thread.isOutdated) continue;
+                  const login = thread.comments.nodes[0]?.author?.login ?? "";
+                  if (isCodexAuthor(login)) codex += 1;
+                  else human += 1;
+                }
                 cursor = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null;
               } while (cursor);
 
-              return count;
+              if (human > 0) return false;
+              if (codex === 0) return true;
+              return codexCleanForHead(pull.number, pull.head.sha);
             }
 
             const pulls = await github.paginate(github.rest.pulls.list, {
@@ -143,7 +257,7 @@ jobs:
             });
 
             for (const pull of pulls) {
-              if (pull.draft || await countUnresolved(pull.number) > 0) {
+              if (pull.draft || !(await isClear(pull))) {
                 continue;
               }
 
