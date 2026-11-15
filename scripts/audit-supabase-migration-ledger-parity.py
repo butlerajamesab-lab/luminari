@@ -455,6 +455,16 @@ APPROVED_REPOSITORY_ONLY = {
         "20261110280000_unattributable_row_retirements_v1.sql",
         "4361de8b83e7bc113578e822e60850411d0fce37",
     ),
+    # Bundle decomposition judged-shape admission (widens the
+    # luminari_bundle_decompositions shape check to include
+    # 'needs_judgment' for decomposition waves 2+3). Repository-only
+    # pending the separately approved production installation that
+    # follows the merge. Exact Git blob pinned; no production
+    # installation or ledger rewrite is implied by this entry.
+    "20261110290000": (
+        "20261110290000_bundle_decomposition_shape_needs_judgment_v1.sql",
+        "97cb44457cbc3e3dc1e3aa19419663fdda3be237",
+    ),
     # Restored production migration (legal authority catalog
     # materialized view). Applied in the live production ledger on
     # 2026-10-20 and verified there first-hand 2026-11-11, but absent
