@@ -141,6 +141,12 @@ describe("genome version admission driver contract", () => {
     expect(entry).toContain("stop_genome_version_admission_driver()");
   });
 
+  it("reads the live target through the public service-role door, never the unexposed runtime schema", () => {
+    expect(driver).toContain("rest/v1/rpc/rosetta_current_target_v1");
+    expect(driver).not.toContain("accept-profile");
+    expect(driver).toContain("last_live_target_error");
+  });
+
   it("is declared opt-in in the worker contract, default off", () => {
     expect(worker_yaml).toContain("GENOME_VERSION_ADMISSION_ENABLED");
     const flag_index = worker_yaml.indexOf("GENOME_VERSION_ADMISSION_ENABLED");
