@@ -61,14 +61,14 @@ describe('buildClusters', () => {
   });
 });
 
-function makeCtx(entities, points, locations) {
+function makeCtx(entities, points, locations, resolutionsByPoint = new Map(), resolutionsById = new Map()) {
   const entityById = new Map(entities.map((e) => [e.resource_entity_id, e]));
   const pointsByEntity = new Map(), locationsByEntity = new Map();
   for (const p of points) { if (!pointsByEntity.has(p.resource_entity_id)) pointsByEntity.set(p.resource_entity_id, []); pointsByEntity.get(p.resource_entity_id).push(p); }
   for (const l of locations) { if (!locationsByEntity.has(l.resource_entity_id)) locationsByEntity.set(l.resource_entity_id, []); locationsByEntity.get(l.resource_entity_id).push(l); }
   const contacts = buildEffectiveContacts({ points, links: [], govById: new Map() });
   const geoEntityIds = new Set(locations.filter((l) => l.latitude != null).map((l) => l.resource_entity_id));
-  return { entityById, pointsByEntity, locationsByEntity, anchorsByEntity: new Map(), contacts, geoEntityIds, inactiveIds: new Set() };
+  return { entityById, pointsByEntity, locationsByEntity, anchorsByEntity: new Map(), contacts, geoEntityIds, inactiveIds: new Set(), resolutionsByPoint, resolutionsById };
 }
 const ent = (id, over = {}) => ({ resource_entity_id: id, resource_name: id, source_table: 'catalog_site_projection_v1', resource_category: null, service_categories: [], description: null, eligibility_summary: null, apply_notes: null, ...over });
 
@@ -110,6 +110,43 @@ describe('pickSurvivor + planCluster', () => {
     const plan = planCluster({ memberIds: ['A', 'B'], edges: [] }, ctx);
     expect(plan.absorbed[0].move_locations).toEqual(['loc_B']);
     expect(plan.absorbed[0].delete_locations.map((l) => l.location_id)).toEqual(['loc_A']);
+  });
+});
+
+describe('reviewed contact values (Codex P1)', () => {
+  it('does not delete an absorbed point whose replace resolution makes it distinct', () => {
+    const points = [pt('p1', 'A', 'phone', '509-555-0100'), pt('p2', 'B', 'phone', '509-555-0100')];
+    const res = new Map([['p2', { contact_point_id: 'p2', resource_entity_id: 'B', resolution_action: 'replace', replacement_contact_type: 'phone', replacement_contact_value: '509-555-7777' }]]);
+    const ctx = makeCtx([ent('A', { description: 'A real description that is longer than forty characters for sure.' }), ent('B')], points, [loc('A'), loc('B')], res);
+    const plan = planCluster({ memberIds: ['A', 'B'], edges: [{ a: 'A', b: 'B', via: ['phone'] }] }, ctx);
+    expect(plan.absorbed[0].delete_points).toHaveLength(0);
+    expect(plan.absorbed[0].move_points).toEqual(['p2']);
+  });
+  it('moves a usable absorbed point when the survivor twin is suppressed', () => {
+    const points = [pt('p1', 'A', 'phone', '509-555-0100'), pt('p2', 'B', 'phone', '509-555-0100')];
+    const res = new Map([['p1', { contact_point_id: 'p1', resource_entity_id: 'A', resolution_action: 'suppress', replacement_contact_type: null, replacement_contact_value: null }]]);
+    const ctx = makeCtx([ent('A', { description: 'A real description that is longer than forty characters for sure.' }), ent('B')], points, [loc('A'), loc('B')], res);
+    const plan = planCluster({ memberIds: ['A', 'B'], edges: [{ a: 'A', b: 'B', via: ['phone'] }] }, ctx);
+    expect(plan.absorbed[0].delete_points).toHaveLength(0);
+    expect(plan.absorbed[0].move_points).toEqual(['p2']);
+  });
+});
+
+describe('category membership union (Codex P2)', () => {
+  it('carries the absorbed primary category into survivor memberships', () => {
+    const ctx = makeCtx([
+      ent('A', { description: 'A real description that is longer than forty characters for sure.', resource_category: 'housing' }),
+      ent('B', { resource_category: 'food_nutrition' }),
+    ], [], [loc('A'), loc('B')]);
+    const plan = planCluster({ memberIds: ['A', 'B'], edges: [] }, ctx);
+    expect(plan.fills.service_categories).toEqual(['food_nutrition']);
+    expect(plan.fills.resource_category).toBeUndefined();
+  });
+  it('snapshots the absorbed record prior publication resolution into the plan', () => {
+    const priorRes = new Map([['B', { resource_entity_id: 'B', publication_status: 'active', source_reference: 'review_2026', review_note: 'keep', review_version: 'v9', reviewed_at: '2026-01-01', updated_at: '2026-01-01' }]]);
+    const ctx = makeCtx([ent('A', { description: 'A real description that is longer than forty characters for sure.' }), ent('B')], [], [loc('A'), loc('B')], new Map(), priorRes);
+    const plan = planCluster({ memberIds: ['A', 'B'], edges: [] }, ctx);
+    expect(plan.absorbed[0].prior_resolution.source_reference).toBe('review_2026');
   });
 });
 

@@ -50,18 +50,40 @@ export const addressKeyOf = (loc) => {
   return a + '|' + (loc.city || '').toLowerCase().trim() + '|' + (loc.state || '');
 };
 
+// The REVIEWED value of a contact point: a 'suppress' resolution removes
+// it from the serving view; a 'replace' resolution substitutes its
+// type/value. Planning on raw values would delete distinct reviewed
+// contacts and strand usable ones (Codex P1, PR #823).
+export function effectivePoint(p, resolution) {
+  if (resolution && resolution.resolution_action === 'suppress') return null;
+  if (resolution && resolution.resolution_action === 'replace') {
+    return { type: resolution.replacement_contact_type || p.contact_type, value: resolution.replacement_contact_value };
+  }
+  return { type: p.contact_type, value: p.contact_value };
+}
+export function effectiveKeyOf(p, resolution) {
+  const eff = effectivePoint(p, resolution);
+  if (!eff) return null;
+  const k = contactKey(eff.type, eff.value);
+  return k ? eff.type + '|' + k : null;
+}
+
 // Build the effective contact map: entityId -> {phone:Set, email:Set, website:Set}
-export function buildEffectiveContacts({ points, links, govById }) {
+export function buildEffectiveContacts({ points, links, govById, resolutionsByPoint }) {
   const contacts = new Map();
   const add = (id, type, key) => {
     if (!key) return;
     if (!contacts.has(id)) contacts.set(id, { phone: new Set(), email: new Set(), website: new Set() });
     contacts.get(id)[type].add(key);
   };
+  const addTyped = (id, type, value) => {
+    if (type === 'phone') add(id, 'phone', normPhone(value));
+    else if (type === 'email') add(id, 'email', normEmail(value));
+    else if (type === 'website') add(id, 'website', normDomain(value));
+  };
   for (const p of points || []) {
-    if (p.contact_type === 'phone') add(p.resource_entity_id, 'phone', normPhone(p.contact_value));
-    else if (p.contact_type === 'email') add(p.resource_entity_id, 'email', normEmail(p.contact_value));
-    else if (p.contact_type === 'website') add(p.resource_entity_id, 'website', normDomain(p.contact_value));
+    const eff = effectivePoint(p, resolutionsByPoint ? resolutionsByPoint.get(p.contact_point_id) : null);
+    if (eff) addTyped(p.resource_entity_id, eff.type, eff.value);
   }
   for (const l of links || []) {
     const g = govById.get(l.office_id);
@@ -164,11 +186,14 @@ export function planCluster(cluster, ctx) {
   const absorbedIds = cluster.memberIds.filter((id) => id !== survivor);
   // order absorbed by score desc for field-fill priority
   absorbedIds.sort((a, b) => survivorScore(ctx.entityById.get(b), ctx) - survivorScore(ctx.entityById.get(a), ctx));
-  // survivor contact keys by type
+  // survivor contact keys by type — REVIEWED (effective) values only:
+  // a suppressed survivor point contributes no key, so a usable absorbed
+  // twin moves instead of being discarded; a replaced absorbed point is
+  // a duplicate only if its replacement value already serves.
   const survKeys = new Map();
   for (const p of ctx.pointsByEntity.get(survivor) || []) {
-    const k = contactKey(p.contact_type, p.contact_value);
-    if (k) survKeys.set(p.contact_type + '|' + k, p.contact_point_id);
+    const k = effectiveKeyOf(p, ctx.resolutionsByPoint ? ctx.resolutionsByPoint.get(p.contact_point_id) : null);
+    if (k) survKeys.set(k, p.contact_point_id);
   }
   const survLocKeys = new Map();
   for (const l of ctx.locationsByEntity.get(survivor) || []) {
@@ -179,10 +204,9 @@ export function planCluster(cluster, ctx) {
   for (const id of absorbedIds) {
     const move_points = [], delete_points = [];
     for (const p of ctx.pointsByEntity.get(id) || []) {
-      const k = contactKey(p.contact_type, p.contact_value);
-      const key = p.contact_type + '|' + k;
-      if (k && survKeys.has(key)) delete_points.push(p);
-      else { move_points.push(p.contact_point_id); if (k) survKeys.set(key, p.contact_point_id); }
+      const key = effectiveKeyOf(p, ctx.resolutionsByPoint ? ctx.resolutionsByPoint.get(p.contact_point_id) : null);
+      if (key && survKeys.has(key)) delete_points.push(p);
+      else { move_points.push(p.contact_point_id); if (key) survKeys.set(key, p.contact_point_id); }
     }
     const move_locations = [], delete_locations = [];
     for (const l of ctx.locationsByEntity.get(id) || []) {
@@ -199,6 +223,7 @@ export function planCluster(cluster, ctx) {
       move_points, delete_points,
       move_locations, delete_locations,
       move_anchors: ctx.anchorsByEntity.get(id) || [],
+      prior_resolution: ctx.resolutionsById && ctx.resolutionsById.has(id) ? ctx.resolutionsById.get(id) : null,
     });
   }
   // field fills on the survivor
@@ -216,8 +241,18 @@ export function planCluster(cluster, ctx) {
     const donor = canonical || donors[0];
     if (donor) { fills.resource_category = donor.resource_category; prior.resource_category = null; }
   }
+  // Membership union: secondary arrays PLUS every absorbed record's
+  // primary category (except the survivor's final primary) — retiring
+  // an absorbed record must not remove its category membership from
+  // the directory (Codex P2, PR #823).
+  const finalPrimary = fills.resource_category || surv.resource_category || null;
   const serviceUnion = new Set(surv.service_categories || []);
-  for (const id of absorbedIds) for (const c of ctx.entityById.get(id).service_categories || []) serviceUnion.add(c);
+  for (const id of absorbedIds) {
+    const e = ctx.entityById.get(id);
+    for (const c of e.service_categories || []) serviceUnion.add(c);
+    if (e.resource_category && e.resource_category !== finalPrimary) serviceUnion.add(e.resource_category);
+  }
+  serviceUnion.delete(finalPrimary);
   if (serviceUnion.size !== (surv.service_categories || []).length) {
     fills.service_categories = [...serviceUnion].sort();
     prior.service_categories = surv.service_categories || [];

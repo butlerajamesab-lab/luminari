@@ -16,6 +16,7 @@ const rehearseArg = process.argv.find((a) => a.startsWith('--rehearse-entities='
 const migrationPath = (process.argv.find((a) => a.startsWith('--migration-path=')) || '').split('=')[1] || null;
 
 async function loadState(client) {
+  const state0 = {};
   const q = async (sql) => (await client.query(sql)).rows;
   const entities = await q(`select resource_entity_id, resource_name, source_table, resource_category,
     service_categories, description, eligibility_summary, apply_notes from public.luminari_resource_entities`);
@@ -23,24 +24,30 @@ async function loadState(client) {
   const points = await q(`select * from public.luminari_resource_contact_points`);
   const links = await q(`select resource_entity_id, office_id from public.luminari_anchor_office_source_rows`);
   const govs = await q(`select office_id, phone_raw, email, url from public.gov_offices where superseded_by is null`);
-  const resolutions = await q(`select resource_entity_id, publication_status from public.luminari_resource_publication_resolutions`);
+  const resolutions = await q(`select * from public.luminari_resource_publication_resolutions`);
+  const contactResolutions = await q(`select * from public.luminari_resource_contact_resolutions`);
+  state0.resolutionsByPoint = new Map(contactResolutions.map((r) => [r.contact_point_id, r]));
+  state0.resolutionsById = new Map(resolutions.map((r) => [r.resource_entity_id, r]));
   const ledger = await client.query(
     `select absorbed_entity_id from public.luminari_dedupe_merges where batch_id = $1`, [BATCH_ID],
   ).then((r) => r.rows).catch(() => []);
-  return { entities, locations, points, links, govs, resolutions, ledger };
+  return { entities, locations, points, links, govs, resolutions, ledger, resolutionsByPoint: state0.resolutionsByPoint, resolutionsById: state0.resolutionsById };
 }
 
 export function buildContext(state) {
+  state.resolutionsByPoint = state.resolutionsByPoint || new Map();
+  state.resolutionsById = state.resolutionsById || new Map();
   const entityById = new Map(state.entities.map((e) => [e.resource_entity_id, e]));
   const pointsByEntity = new Map(), locationsByEntity = new Map(), anchorsByEntity = new Map();
   for (const p of state.points) { if (!pointsByEntity.has(p.resource_entity_id)) pointsByEntity.set(p.resource_entity_id, []); pointsByEntity.get(p.resource_entity_id).push(p); }
   for (const l of state.locations) { if (!locationsByEntity.has(l.resource_entity_id)) locationsByEntity.set(l.resource_entity_id, []); locationsByEntity.get(l.resource_entity_id).push(l); }
   for (const l of state.links) { if (!anchorsByEntity.has(l.resource_entity_id)) anchorsByEntity.set(l.resource_entity_id, []); anchorsByEntity.get(l.resource_entity_id).push(l.office_id); }
   const govById = new Map(state.govs.map((g) => [g.office_id, g]));
-  const contacts = buildEffectiveContacts({ points: state.points, links: state.links, govById });
+  const contacts = buildEffectiveContacts({ points: state.points, links: state.links, govById, resolutionsByPoint: state.resolutionsByPoint });
+  const resolutionsById = state.resolutionsById;
   const geoEntityIds = new Set(state.locations.filter((l) => l.latitude != null && l.longitude != null).map((l) => l.resource_entity_id));
   const inactiveIds = new Set(state.resolutions.filter((r) => r.publication_status === 'inactive').map((r) => r.resource_entity_id));
-  return { entityById, pointsByEntity, locationsByEntity, anchorsByEntity, contacts, geoEntityIds, inactiveIds };
+  return { entityById, pointsByEntity, locationsByEntity, anchorsByEntity, contacts, geoEntityIds, inactiveIds, resolutionsByPoint: state.resolutionsByPoint, resolutionsById };
 }
 
 export function buildPlan(state) {
@@ -77,6 +84,7 @@ async function applyPlans(client, plans) {
         locations_deleted: ab.delete_locations,
         anchors_moved: ab.move_anchors,
         survivor_prior: plan.survivor_prior,
+        prior_publication_resolution: ab.prior_resolution ?? null,
       };
       await client.query(
         `insert into public.luminari_dedupe_merges (batch_id, cluster_id, survivor_entity_id, absorbed_entity_id, evidence, moved)
