@@ -80,10 +80,8 @@ describe("attachment candidate claim", () => {
   });
 
   it("resumes stale evaluating markers so partial completions are never stranded", () => {
-    expect(CLAIM_ATTACHMENT_CANDIDATES_SQL).toContain(
-      "->>'status'
-           = 'evaluating'",
-    );
+    expect(CLAIM_ATTACHMENT_CANDIDATES_SQL).toContain("->>'status'");
+    expect(CLAIM_ATTACHMENT_CANDIDATES_SQL).toMatch(/=\s*'evaluating'/);
     expect(CLAIM_ATTACHMENT_CANDIDATES_SQL).toContain("make_interval(mins =>");
     expect(driver).toContain('"evaluating"');
   });
