@@ -20,6 +20,7 @@ import {
   domainOf,
   filterWave1Bundles,
   filterWave2Bundles,
+  filterWave3Bundles,
   manifestFor,
   mintedCanonicalFor,
   mintedEntityIdFor,
@@ -904,5 +905,78 @@ describe("wave-2: held rows must stand retired (planDecomposition)", () => {
     const live = liveBase();
     live.linksByBundle.get(bundle.bundle_entity_id).delete("uid:9");
     expect(plan(live).drift[0].reason).toBe("link_set_changed");
+  });
+});
+
+describe("wave-3: generalized filter", () => {
+  const base = {
+    bundle_entity_id: "00000000-0000-4000-8000-000000000081",
+    bundle_canonical_id: "crp_ar_3988710a7749b4306852",
+    family: "catalog_remainder_projection_v1",
+    state: "AR",
+    city: null,
+    jurisdiction: "AR",
+    layer: "backbone_workbook",
+    current_name: "luminari-arkansas-ENRICHED-PASS3-2026",
+    shape: "needs_judgment",
+    n_rows_total: 2,
+    n_attributed: 2,
+    names: [
+      { program_name: "Solo Program One", rows: [{ uid: "u1" }] },
+      { program_name: "Different Program Two", rows: [{ uid: "u2" }] },
+    ],
+    held_rows: [],
+    pair_decisions: [],
+    location_descriptors: [],
+  };
+  it("approves a no-pairs, no-held-rows bundle (the 31+43 case)", () => {
+    const { approved, excluded } = filterWave3Bundles([base]);
+    expect(excluded).toEqual([]);
+    expect(approved).toHaveLength(1);
+  });
+  it("approves a pair bundle whose decisions cover exactly its pairs", () => {
+    const b = {
+      ...base,
+      names: [
+        { program_name: "Hopelink (Eastside)", rows: [{ uid: "u1" }] },
+        { program_name: "Hopelink Energy Assistance (Eastside)", rows: [{ uid: "u2" }] },
+      ],
+      pair_decisions: [{ a_norm: "hopelink (eastside)", b_norm: "hopelink energy assistance (eastside)", decision: "split" }],
+    };
+    expect(filterWave3Bundles([b]).approved).toHaveLength(1);
+  });
+  it("rejects a pair bundle missing a decision for one of its pairs", () => {
+    const b = {
+      ...base,
+      names: [
+        { program_name: "Hopelink (Eastside)", rows: [{ uid: "u1" }] },
+        { program_name: "Hopelink Energy Assistance (Eastside)", rows: [{ uid: "u2" }] },
+      ],
+      pair_decisions: [],
+    };
+    expect(filterWave3Bundles([b]).excluded[0].reason).toBe("pair_decisions_incomplete");
+  });
+  it("rejects broken accounting and malformed held rows", () => {
+    expect(filterWave3Bundles([{ ...base, n_rows_total: 3 }]).excluded[0].reason).toBe("row_accounting_incomplete");
+    expect(filterWave3Bundles([{ ...base, n_attributed: 5 }]).excluded[0].reason).toBe("attributed_count_mismatch");
+    expect(filterWave3Bundles([{ ...base, held_rows: [{ uid: "u9" }] }]).excluded[0].reason).toBe("held_rows_malformed");
+  });
+});
+
+describe("wave-3: embedded-set contract (the 81 remaining bundles)", () => {
+  const proposals = JSON.parse(
+    readFileSync(new URL("./bundle-decomposition-proposals-v3.json", import.meta.url), "utf-8"),
+  );
+  it("the filter approves all 81 bundles with no exclusions", () => {
+    const { approved, excluded } = filterWave3Bundles(proposals);
+    expect(excluded).toEqual([]);
+    expect(approved).toHaveLength(81);
+  });
+  it("totals reconcile: 329 names, 281 mints, 513 attributed rows, 147 held rows", () => {
+    const names = proposals.reduce((n, b) => n + b.names.length, 0);
+    const mints = proposals.reduce((n, b) => n + b.names.filter((x) => x.pair_decision === "split").length, 0);
+    const rows = proposals.reduce((n, b) => n + b.n_attributed, 0);
+    const held = proposals.reduce((n, b) => n + b.held_rows.length, 0);
+    expect([names, mints, rows, held]).toEqual([329, 281, 513, 147]);
   });
 });
