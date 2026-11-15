@@ -1178,7 +1178,7 @@
      "dol.gov"
     ],
     "site_keys": [
-     "owcp black lung program 1835 assembly st"
+     "1835 assembly st"
     ],
     "own_address_text": "OWCP Black Lung Program · 1835 Assembly St Ste 1316, Columbia SC (nearest office)"
    },
@@ -2788,7 +2788,7 @@
      "azheatrelief.org · az211.gov"
     ],
     "site_keys": [
-     "statewide 100 cooling stations coordinated by united way"
+     "100 cooling stations coordinated by united way"
     ],
     "own_address_text": "Statewide — 100+ cooling stations coordinated by United Way + AZ State"
    },
@@ -2824,7 +2824,7 @@
      "irs.gov"
     ],
     "site_keys": [
-     "community food bank tucson 3003 s country club rd"
+     "3003 s country club rd"
     ],
     "own_address_text": "Community Food Bank Tucson: 3003 S Country Club Rd · Phoenix VITA sites: call 211"
    },
@@ -3839,7 +3839,7 @@
      "kyjustice.org · louisvilleky.gov"
     ],
     "site_keys": [
-     "kentucky legal aid 325 w broadway ste 202 lmhrc 410 w chestnut st"
+     "325 w broadway ste 202 lmhrc 410 w chestnut st"
     ],
     "own_address_text": "Kentucky Legal Aid: 325 W Broadway Ste 202 · LMHRC: 410 W Chestnut St Ste 300A"
    },
@@ -4292,7 +4292,7 @@
      "bals.org · tgh.org · feedingtampabay.org"
     ],
     "site_keys": [
-     "bay area legal services 1302 n 19th st"
+     "1302 n 19th st"
     ],
     "own_address_text": "Bay Area Legal Services: 1302 N 19th St Ste 400, Tampa FL 33605"
    }
@@ -4311,13 +4311,10 @@
     "fresh": null
    },
    "tampa / hillsborough key resources": {
-    "clones": [],
-    "fresh": {
-     "street": "Bay Area Legal Services: 1302 N 19th St Ste 400",
-     "city": "Tampa",
-     "state": "FL",
-     "zip5": "33605"
-    }
+    "clones": [
+     0
+    ],
+    "fresh": null
    }
   },
   "location_descriptors": [
@@ -4824,7 +4821,7 @@
      "nwjustice.org · tenantlawcenter.org · 211.org · seattle.gov"
     ],
     "site_keys": [
-     "njp 401 2nd ave"
+     "401 2nd ave"
     ],
     "own_address_text": "NJP: 401 2nd Ave S Ste 407, Seattle WA 98104 · Harborview: 325 9th Ave, Seattle WA 98104"
    },
@@ -5023,13 +5020,10 @@
     "fresh": null
    },
    "seattle / king county wrap-around resources": {
-    "clones": [],
-    "fresh": {
-     "street": "NJP: 401 2nd Ave S Ste 407",
-     "city": "Seattle",
-     "state": "WA",
-     "zip5": "98104"
-    }
+    "clones": [
+     5
+    ],
+    "fresh": null
    },
    "seattle indian health board (sihb — urban tribal fqhc)": {
     "clones": [
@@ -5747,7 +5741,7 @@
      "nwica.org · indianalegalservices.org · secondharvestnwi.org"
     ],
     "site_keys": [
-     "nwica 5240 fountain dr"
+     "5240 fountain dr"
     ],
     "own_address_text": "NWICA: 5240 Fountain Dr, Crown Point IN 46307 · Indiana Legal Services Gary: 219-886-3161"
    },
@@ -5865,13 +5859,10 @@
     }
    },
    "northwest indiana / lake county key resources": {
-    "clones": [],
-    "fresh": {
-     "street": "NWICA: 5240 Fountain Dr",
-     "city": "Crown Point",
-     "state": "IN",
-     "zip5": "46307"
-    }
+    "clones": [
+     0
+    ],
+    "fresh": null
    },
    "northwest indiana community action (nwica — lake county / gary)": {
     "clones": [
@@ -6536,7 +6527,7 @@
      "aidsalabama.org · adph.org"
     ],
     "site_keys": [
-     "aids alabama 3521 7th ave"
+     "3521 7th ave"
     ],
     "own_address_text": "AIDS Alabama: 3521 7th Ave S, Birmingham, AL 35222"
    },
@@ -6572,7 +6563,7 @@
      "ssa.gov"
     ],
     "site_keys": [
-     "ssa birmingham 1700 5th ave"
+     "1700 5th ave"
     ],
     "own_address_text": "SSA Birmingham: 1700 5th Ave N, Birmingham, AL 35203"
    },
@@ -6678,11 +6669,15 @@
     "fresh": null
    },
    "ryan white hiv/aids program — alabama": {
-    "clones": [],
+    "clones": [
+     4
+    ],
     "fresh": null
    },
    "ssi / ssdi — social security (alabama)": {
-    "clones": [],
+    "clones": [
+     0
+    ],
     "fresh": null
    },
    "uab medicine — primary safety net (birmingham)": {
@@ -8273,7 +8268,7 @@
      "mauifoodbank.org foodbaskethi.org"
     ],
     "site_keys": [
-     "maui food bank 760 kolu st"
+     "760 kolu st"
     ],
     "own_address_text": "Maui Food Bank: 760 Kolu St, Wailuku HI 96793 The Foodbasket Hilo: 1145 Middle Rd, Hilo HI 96720 Kauai: 808-335-0019"
    }
@@ -8948,7 +8943,7 @@
      "clsmf.org · feedhopenow.org · ocfl.net"
     ],
     "site_keys": [
-     "clsmf 122 e colonial dr"
+     "122 e colonial dr"
     ],
     "own_address_text": "CLSMF: 122 E Colonial Dr Ste 200, Orlando FL 32801"
    }
@@ -8961,13 +8956,10 @@
     "fresh": null
    },
    "orlando / orange county key resources": {
-    "clones": [],
-    "fresh": {
-     "street": "CLSMF: 122 E Colonial Dr Ste 200",
-     "city": "Orlando",
-     "state": "FL",
-     "zip5": "32801"
-    }
+    "clones": [
+     0
+    ],
+    "fresh": null
    }
   },
   "location_descriptors": [
@@ -9196,7 +9188,7 @@
      "trls.org · ufhealthjax.org · hud.gov"
     ],
     "site_keys": [
-     "three rivers legal services 1 w adams st"
+     "1 w adams st"
     ],
     "own_address_text": "Three Rivers Legal Services: 1 W Adams St Ste 600, Jacksonville FL 32202"
    },
@@ -9239,13 +9231,10 @@
   ],
   "assignment": {
    "jacksonville / duval key resources": {
-    "clones": [],
-    "fresh": {
-     "street": "Three Rivers Legal Services: 1 W Adams St Ste 600",
-     "city": "Jacksonville",
-     "state": "FL",
-     "zip5": "32202"
-    }
+    "clones": [
+     0
+    ],
+    "fresh": null
    },
    "three rivers legal services (north/central fl — jacksonville/gainesville)": {
     "clones": [],
@@ -9311,7 +9300,7 @@
      "chicago.gov · chicago.gov"
     ],
     "site_keys": [
-     "chicago city hall 121 n lasalle st"
+     "121 n lasalle st"
     ],
     "own_address_text": "Chicago City Hall: 121 N LaSalle St, Chicago IL 60602 · Chicago RLTO: Metropolitan Tenants Organization: 1 N Dearborn Ste 1250"
    },
@@ -10506,7 +10495,7 @@
      "legalaiddc.org unityhealth.care dcchc.org marthastable.org dcoa.dc.gov"
     ],
     "site_keys": [
-     "legal aid society dc se 1331 h st"
+     "1331 h st"
     ],
     "own_address_text": "Legal Aid Society DC SE: 1331 H St NE, Washington DC 20002 Unity Health Care Ward 7: various sites"
    }
@@ -11107,7 +11096,7 @@
      "calindian.org"
     ],
     "site_keys": [
-     "escondido 609 s escondido blvd"
+     "609 s escondido blvd"
     ],
     "own_address_text": "Escondido: 609 S Escondido Blvd · Eureka: 510 16th St · Bishop: 785 N Main St"
    },
@@ -13973,7 +13962,7 @@
      "iowalegalaid.org · proteusiowa.org · dol.gov"
     ],
     "site_keys": [
-     "iowa legal aid waterloo 1900 independence ave"
+     "1900 independence ave"
     ],
     "own_address_text": "Iowa Legal Aid Waterloo: 1900 Independence Ave Ste 400, Waterloo IA 50703 · Iowa Legal Aid Storm Lake: 712-279-9300 (NW Iowa office Sioux City)"
    }
@@ -14002,13 +13991,10 @@
     "fresh": null
    },
    "meatpacking corridor key resources": {
-    "clones": [],
-    "fresh": {
-     "street": "Iowa Legal Aid Waterloo: 1900 Independence Ave Ste 400",
-     "city": "Waterloo",
-     "state": "IA",
-     "zip5": "50703"
-    }
+    "clones": [
+     1
+    ],
+    "fresh": null
    }
   },
   "location_descriptors": [
@@ -14555,7 +14541,7 @@
      "legalservicesmiami.org · jacksonhealth.org · miamidade.gov"
     ],
     "site_keys": [
-     "legal services of greater miami 3000 biscayne blvd"
+     "3000 biscayne blvd"
     ],
     "own_address_text": "Legal Services of Greater Miami: 3000 Biscayne Blvd Ste 500, Miami FL 33137"
    }
@@ -14568,13 +14554,10 @@
     "fresh": null
    },
    "miami-dade key resources": {
-    "clones": [],
-    "fresh": {
-     "street": "Legal Services of Greater Miami: 3000 Biscayne Blvd Ste 500",
-     "city": "Miami",
-     "state": "FL",
-     "zip5": "33137"
-    }
+    "clones": [
+     0
+    ],
+    "fresh": null
    }
   },
   "location_descriptors": [
@@ -14755,7 +14738,7 @@
      "montanalegal.org · billingsclinic.com · muih.org · dvcenterbillings.org · mt211.org"
     ],
     "site_keys": [
-     "mlsa billings 3001 2nd ave"
+     "3001 2nd ave"
     ],
     "own_address_text": "MLSA Billings: 3001 2nd Ave N Ste 103, Billings MT 59101 · Billings Clinic: 2800 10th Ave N, Billings MT 59101"
    },
@@ -14809,7 +14792,7 @@
      "montanalegal.org · highplainsfoodbank.org · mt211.org"
     ],
     "site_keys": [
-     "mlsa phone only for hi line 800 666 6899 high plains food bank 124 7th ave"
+     "800 666 6899 high plains food bank 124 7th ave"
     ],
     "own_address_text": "MLSA (phone only for Hi-Line): 800-666-6899 · High Plains Food Bank: 124 7th Ave, Havre MT 59501"
    },

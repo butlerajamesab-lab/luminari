@@ -979,4 +979,53 @@ describe("wave-3: embedded-set contract (the 81 remaining bundles)", () => {
     const held = proposals.reduce((n, b) => n + b.held_rows.length, 0);
     expect([names, mints, rows, held]).toEqual([329, 281, 513, 147]);
   });
+  // Regression for the PR #820 Codex P2: site keys derived from row
+  // address text can carry the provider's label ('ssa birmingham
+  // 1700 5th ave') while descriptors key on the street address
+  // alone. assignLocations matches exactly, so a labelled key
+  // strands the shell's geocoded pin. The derivation normalizes
+  // keys to the street form; this test holds the embedded set to
+  // that rule — no stored key may differ from one of its bundle's
+  // descriptor keys only by a label prefix.
+  const stripLabelPrefix = (key) => {
+    const toks = key.split(" ");
+    const di = toks.findIndex((t) => /^\d+$/.test(t));
+    if (di <= 0 || toks.slice(0, di + 1).includes("box")) return key;
+    return siteKey(toks.slice(di).join(" ")) ?? key;
+  };
+  it("no site key strands a pin behind a provider-label prefix", () => {
+    const stranded = [];
+    for (const b of proposals) {
+      const dkeys = new Set((b.location_descriptors ?? []).map((d) => d.site_key).filter(Boolean));
+      for (const n of b.names) {
+        for (const k of n.site_keys ?? []) {
+          if (!dkeys.has(k) && dkeys.has(stripLabelPrefix(k))) {
+            stranded.push(`${n.program_name}: ${k}`);
+          }
+        }
+      }
+    }
+    expect(stranded).toEqual([]);
+  });
+  it("the nine label-prefixed records clone their geocoded descriptors", () => {
+    const cases = [
+      ["Ryan White HIV/AIDS", "3521 7th ave"],
+      ["SSI / SSDI", "1700 5th ave"],
+      ["Tampa / Hillsborough Key Resources", "1302 n 19th st"],
+      ["Seattle / King County Wrap-Around Resources", "401 2nd ave"],
+      ["Northwest Indiana / Lake County Key Resources", "5240 fountain dr"],
+      ["Orlando / Orange County Key Resources", "122 e colonial dr"],
+      ["Jacksonville / Duval Key Resources", "1 w adams st"],
+      ["Meatpacking Corridor Key Resources", "1900 independence ave"],
+      ["Miami-Dade Key Resources", "3000 biscayne blvd"],
+    ];
+    for (const [fragment, streetKey] of cases) {
+      const bundle = proposals.find((b) => b.names.some((n) => n.program_name.includes(fragment)));
+      const mint = bundle.names.find((n) => n.program_name.includes(fragment));
+      const di = bundle.location_descriptors.findIndex((d) => d.site_key === streetKey);
+      expect(di, fragment).toBeGreaterThanOrEqual(0);
+      expect(bundle.location_descriptors[di].has_coords, fragment).toBe(true);
+      expect(assignLocations(bundle, mint).clone_indices, fragment).toContain(di);
+    }
+  });
 });
