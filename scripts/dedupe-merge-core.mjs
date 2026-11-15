@@ -138,7 +138,11 @@ export function buildGovContacts({ links, govById }) {
   const map = new Map();
   const add = (id, type, value, office_id) => {
     if (value == null || String(value).trim() === '') return;
-    const key = type === 'phone' ? normPhone(value) : type === 'email' ? normEmail(value) : normDomain(value);
+    // Website keys are full URL keys (normUrl), NOT domains: a gov
+    // link to county.gov/housing is a distinct served contact from
+    // the survivor's county.gov/food point. Domain-level matching
+    // stays confined to entity correlation (Codex P2, round 5).
+    const key = type === 'phone' ? normPhone(value) : type === 'email' ? normEmail(value) : (normDomain(value) ? normUrl(value) : null);
     if (!key) return;
     if (!map.has(id)) map.set(id, []);
     const list = map.get(id);
@@ -264,6 +268,10 @@ export function planCluster(cluster, ctx) {
     const k = effectiveKeyOf(p, ctx.resolutionsByPoint ? ctx.resolutionsByPoint.get(p.contact_point_id) : null);
     if (k) survKeys.set(k, p.contact_point_id);
   }
+  // The survivor's OWN served-point count before absorbing: if it was
+  // zero, the survivor's gov contacts were being synthesized pre-merge
+  // and must be preserved too (Codex P2, round 5).
+  const survOwnKeyCount = survKeys.size;
   const survLocKeys = new Map();
   for (const l of ctx.locationsByEntity.get(survivor) || []) {
     const k = strictAddressKeyOf(l);
@@ -316,25 +324,23 @@ export function planCluster(cluster, ctx) {
   // nothing is materialized.
   const materialize_points = [];
   if (survKeys.size > 0 && ctx.govContacts) {
-    const survWebDomains = new Set();
-    const collectWeb = (p) => {
-      const eff = effectivePoint(p, ctx.resolutionsByPoint ? ctx.resolutionsByPoint.get(p.contact_point_id) : null);
-      if (eff && eff.type === 'website') { const d = normDomain(eff.value); if (d) survWebDomains.add(d); }
-    };
-    for (const p of ctx.pointsByEntity.get(survivor) || []) collectWeb(p);
-    for (const ab of absorbed) {
-      const movedIds = new Set(ab.move_points);
-      for (const p of ctx.pointsByEntity.get(ab.entity_id) || []) if (movedIds.has(p.contact_point_id)) collectWeb(p);
-    }
+    // Coverage compares FULL keys for every type — website included
+    // (contactKey URL semantics): a different path on the same domain
+    // is a distinct served contact (Codex P2, round 5).
     const planned = new Set();
-    for (const ab of absorbed) {
-      for (const c of ctx.govContacts.get(ab.entity_id) || []) {
-        const covered = c.type === 'website' ? survWebDomains.has(c.key) : survKeys.has(c.type + '|' + c.key);
+    const sweep = absorbed.map((ab) => ab.entity_id);
+    // A gov-only survivor's own synthesized contacts were serving
+    // pre-merge; once it receives reviewed points, synthesis stops
+    // for it too — preserve them in the same sweep. (A survivor that
+    // already served reviewed points never had its gov contacts
+    // served, so nothing changes for it.)
+    if (survOwnKeyCount === 0) sweep.push(survivor);
+    for (const entityId of sweep) {
+      for (const c of ctx.govContacts.get(entityId) || []) {
         const planKey = c.type + '|' + c.key;
-        if (covered || planned.has(planKey)) continue;
+        if (survKeys.has(planKey) || planned.has(planKey)) continue;
         planned.add(planKey);
-        materialize_points.push({ contact_type: c.type, contact_value: c.value, office_id: c.office_id, from_entity_id: ab.entity_id });
-        if (c.type === 'website') survWebDomains.add(c.key);
+        materialize_points.push({ contact_type: c.type, contact_value: c.value, office_id: c.office_id, from_entity_id: entityId });
       }
     }
   }

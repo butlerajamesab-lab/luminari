@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   normAddr, normPhone, normDomain, normUrl, contactKey,
-  buildEffectiveContacts, buildClusters, clusterIdFor,
+  buildEffectiveContacts, buildGovContacts, buildClusters, clusterIdFor,
   pickSurvivor, planCluster, planManifest, strictAddressKeyOf, unitKeyOf,
 } from './dedupe-merge-core.mjs';
 
@@ -257,6 +257,46 @@ describe('round 4: combined units, category membership, gov contact materializat
     const ctx = makeCtx([ent('A', { description: 'A real description that is longer than forty characters for sure.' }), ent('B')], [], [loc('A'), loc('B')], new Map(), new Map(), new Map(), gov);
     const plan = planCluster({ memberIds: ['A', 'B'], edges: [] }, ctx);
     expect(plan.materialize_points).toEqual([]);
+  });
+});
+
+describe('round 5: survivor gov contacts + URL-level website preservation', () => {
+  it('keys gov websites by full URL, not domain', () => {
+    const govById = new Map([['off1', { office_id: 'off1', phone_raw: null, email: null, url: 'https://county.gov/housing' }]]);
+    const gov = buildGovContacts({ links: [{ resource_entity_id: 'B', office_id: 'off1' }], govById });
+    expect(gov.get('B')).toEqual([{ type: 'website', value: 'https://county.gov/housing', key: 'county.gov/housing', office_id: 'off1' }]);
+  });
+  it('materializes a gov-only survivor own synthesized contacts once it receives reviewed points', () => {
+    const points = [pt('p9', 'B', 'phone', '(509) 555-0100')];
+    const gov = new Map([['A', [
+      { type: 'phone', value: '509-555-0100', key: '5095550100', office_id: 'offA' },
+      { type: 'email', value: 'help@county.gov', key: 'help@county.gov', office_id: 'offA' },
+    ]]]);
+    const ctx = makeCtx([ent('A', { description: 'A real description that is longer than forty characters for sure.' }), ent('B')], points, [loc('A'), loc('B')], new Map(), new Map(), new Map(), gov);
+    const plan = planCluster({ memberIds: ['A', 'B'], edges: [{ a: 'A', b: 'B', via: ['phone'] }] }, ctx);
+    expect(plan.survivor).toBe('A');
+    expect(plan.materialize_points).toEqual([
+      { contact_type: 'email', contact_value: 'help@county.gov', office_id: 'offA', from_entity_id: 'A' },
+    ]);
+  });
+  it('does not materialize the survivor own gov contacts when it already served reviewed points', () => {
+    const points = [pt('p1', 'A', 'phone', '509-555-0100')];
+    const gov = new Map([['A', [{ type: 'email', value: 'help@county.gov', key: 'help@county.gov', office_id: 'offA' }]]]);
+    const ctx = makeCtx([ent('A', { description: 'A real description that is longer than forty characters for sure.' }), ent('B')], points, [loc('A'), loc('B')], new Map(), new Map(), new Map(), gov);
+    const plan = planCluster({ memberIds: ['A', 'B'], edges: [] }, ctx);
+    expect(plan.materialize_points).toEqual([]);
+  });
+  it('preserves a distinct gov URL path on a domain the survivor already serves', () => {
+    const points = [pt('p1', 'A', 'website', 'https://county.gov/food')];
+    const gov = new Map([['B', [
+      { type: 'website', value: 'https://county.gov/housing', key: 'county.gov/housing', office_id: 'off1' },
+      { type: 'website', value: 'county.gov/food/', key: 'county.gov/food', office_id: 'off1' },
+    ]]]);
+    const ctx = makeCtx([ent('A', { description: 'A real description that is longer than forty characters for sure.' }), ent('B')], points, [loc('A'), loc('B')], new Map(), new Map(), new Map(), gov);
+    const plan = planCluster({ memberIds: ['A', 'B'], edges: [] }, ctx);
+    expect(plan.materialize_points).toEqual([
+      { contact_type: 'website', contact_value: 'https://county.gov/housing', office_id: 'off1', from_entity_id: 'B' },
+    ]);
   });
 });
 
