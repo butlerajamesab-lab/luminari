@@ -2,11 +2,11 @@ import { describe, it, expect } from 'vitest';
 import {
   normAddr, normPhone, normDomain, normUrl, contactKey,
   buildEffectiveContacts, buildClusters, clusterIdFor,
-  pickSurvivor, planCluster, planManifest,
+  pickSurvivor, planCluster, planManifest, strictAddressKeyOf, unitKeyOf,
 } from './dedupe-merge-core.mjs';
 
-const loc = (id, line1 = '100 Main St', city = 'Yakima', state = 'WA', lat = null, lng = null) =>
-  ({ location_id: 'loc_' + id, resource_entity_id: id, address_line1: line1, city, state, latitude: lat, longitude: lng });
+const loc = (id, line1 = '100 Main St', city = 'Yakima', state = 'WA', lat = null, lng = null, line2 = null) =>
+  ({ location_id: 'loc_' + id, resource_entity_id: id, address_line1: line1, address_line2: line2, city, state, latitude: lat, longitude: lng });
 const pt = (id, eid, type, value) => ({ contact_point_id: id, resource_entity_id: eid, contact_type: type, contact_value: value });
 
 describe('normalization', () => {
@@ -61,14 +61,14 @@ describe('buildClusters', () => {
   });
 });
 
-function makeCtx(entities, points, locations, resolutionsByPoint = new Map(), resolutionsById = new Map()) {
+function makeCtx(entities, points, locations, resolutionsByPoint = new Map(), resolutionsById = new Map(), pinsByLocation = new Map()) {
   const entityById = new Map(entities.map((e) => [e.resource_entity_id, e]));
   const pointsByEntity = new Map(), locationsByEntity = new Map();
   for (const p of points) { if (!pointsByEntity.has(p.resource_entity_id)) pointsByEntity.set(p.resource_entity_id, []); pointsByEntity.get(p.resource_entity_id).push(p); }
   for (const l of locations) { if (!locationsByEntity.has(l.resource_entity_id)) locationsByEntity.set(l.resource_entity_id, []); locationsByEntity.get(l.resource_entity_id).push(l); }
   const contacts = buildEffectiveContacts({ points, links: [], govById: new Map() });
   const geoEntityIds = new Set(locations.filter((l) => l.latitude != null).map((l) => l.resource_entity_id));
-  return { entityById, pointsByEntity, locationsByEntity, anchorsByEntity: new Map(), contacts, geoEntityIds, inactiveIds: new Set(), resolutionsByPoint, resolutionsById };
+  return { entityById, pointsByEntity, locationsByEntity, anchorsByEntity: new Map(), contacts, geoEntityIds, inactiveIds: new Set(), resolutionsByPoint, resolutionsById, pinsByLocation };
 }
 const ent = (id, over = {}) => ({ resource_entity_id: id, resource_name: id, source_table: 'catalog_site_projection_v1', resource_category: null, service_categories: [], description: null, eligibility_summary: null, apply_notes: null, ...over });
 
@@ -168,6 +168,46 @@ describe('survivor visibility guard (Codex P1 round 2)', () => {
     ], [], [loc('A'), loc('B')]);
     ctx.visibleIds = new Set();
     expect(pickSurvivor(['A', 'B'], ctx)).toBe('A');
+  });
+});
+
+describe('location unit strictness + pin snapshots (Codex P2 round 3)', () => {
+  it('extracts the unit from line1 or line2 in any spelling', () => {
+    expect(unitKeyOf(loc('X', '100 Main St, Suite 200'))).toBe('200');
+    expect(unitKeyOf(loc('X', '100 Main St', 'Yakima', 'WA', null, null, 'Ste 200'))).toBe('200');
+    expect(unitKeyOf(loc('X', '100 Main St'))).toBe('');
+    expect(strictAddressKeyOf(loc('X', '100 Main St Suite 100'))).not.toBe(strictAddressKeyOf(loc('X', '100 Main St Suite 200')));
+    expect(strictAddressKeyOf(loc('X', '100 Main St Suite 100'))).toBe(strictAddressKeyOf(loc('X', '100 Main St', 'Yakima', 'WA', null, null, 'Suite 100')));
+  });
+  it('keeps distinct suites at the same street address — both locations survive', () => {
+    const locations = [loc('A', '100 Main St Suite 100'), loc('B', '100 Main St', 'Yakima', 'WA', null, null, 'Suite 200')];
+    const ctx = makeCtx([ent('A', { description: 'A real description that is longer than forty characters for sure.' }), ent('B')], [], locations);
+    const plan = planCluster({ memberIds: ['A', 'B'], edges: [] }, ctx);
+    expect(plan.absorbed[0].move_locations).toEqual(['loc_B']);
+    expect(plan.absorbed[0].delete_locations).toEqual([]);
+  });
+  it('still deletes the same unit expressed in a different spelling', () => {
+    const locations = [loc('A', '100 Main St Suite 100'), loc('B', '100 Main St', 'Yakima', 'WA', null, null, 'Ste 100')];
+    const ctx = makeCtx([ent('A', { description: 'A real description that is longer than forty characters for sure.' }), ent('B')], [], locations);
+    const plan = planCluster({ memberIds: ['A', 'B'], edges: [] }, ctx);
+    expect(plan.absorbed[0].delete_locations.map((l) => l.location_id)).toEqual(['loc_B']);
+    expect(plan.absorbed[0].move_locations).toEqual([]);
+  });
+  it('snapshots Wave A pin rows for every deleted location into the plan', () => {
+    const pin = { location_id: 'loc_B', resource_entity_id: 'B', pin_class: 'exact', latitude: 46.6, longitude: -120.5, manifest_sha256: 'abc' };
+    const pins = new Map([['loc_B', [pin]]]);
+    const ctx = makeCtx([ent('A', { description: 'A real description that is longer than forty characters for sure.' }), ent('B')], [], [loc('A'), loc('B')], new Map(), new Map(), pins);
+    const plan = planCluster({ memberIds: ['A', 'B'], edges: [] }, ctx);
+    expect(plan.absorbed[0].delete_location_pins).toEqual([{ location_id: 'loc_B', pins: [pin] }]);
+  });
+  it('snapshots pins on the survivor location dropped by the geocoded-twin swap', () => {
+    const pin = { location_id: 'loc_A', resource_entity_id: 'A', pin_class: 'exact', latitude: 46.6, longitude: -120.5, manifest_sha256: 'def' };
+    const pins = new Map([['loc_A', [pin]]]);
+    const locations = [loc('A'), loc('B', '100 Main St', 'Yakima', 'WA', 46.6, -120.5)];
+    const ctx = makeCtx([ent('A', { description: 'A real description that is longer than forty characters for sure.' }), ent('B')], [], locations, new Map(), new Map(), pins);
+    const plan = planCluster({ memberIds: ['A', 'B'], edges: [] }, ctx);
+    expect(plan.absorbed[0].delete_locations.map((l) => l.location_id)).toEqual(['loc_A']);
+    expect(plan.absorbed[0].delete_location_pins).toEqual([{ location_id: 'loc_A', pins: [pin] }]);
   });
 });
 

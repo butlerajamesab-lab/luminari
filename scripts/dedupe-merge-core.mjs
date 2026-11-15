@@ -50,6 +50,29 @@ export const addressKeyOf = (loc) => {
   return a + '|' + (loc.city || '').toLowerCase().trim() + '|' + (loc.state || '');
 };
 
+// Unit discriminator: the suite/apt/unit portion of address_line1 (the
+// part normAddr strips for correlation) or address_line2. Location
+// DELETION uses the strict key below, never the building-level key:
+// Suite 100 and Suite 200 at one street address are distinct service
+// locations, and deleting one would remove it from directory detail
+// and maps (Codex P2, PR #823 round 3). Correlation in buildClusters
+// keeps the building-level addressKeyOf, as before.
+const UNIT_KEYWORD = '(?:suite|ste|apt|unit|bldg|building|floor|fl|rm|room)';
+const normLoose = (s) => (s || '').toLowerCase().replace(/[.,#]/g, ' ').replace(/\s+/g, ' ').trim();
+export const unitKeyOf = (loc) => {
+  const m = normLoose(loc.address_line1).match(new RegExp('\\b' + UNIT_KEYWORD + '\\b\\s*(.*)$'));
+  if (m && m[1]) return m[1];
+  const l2 = normLoose(loc.address_line2);
+  if (!l2) return '';
+  const m2 = l2.match(new RegExp('^' + UNIT_KEYWORD + '\\b\\s*(.*)$'));
+  return m2 && m2[1] ? m2[1] : l2;
+};
+export const strictAddressKeyOf = (loc) => {
+  const base = addressKeyOf(loc);
+  if (!base) return null;
+  return base + '|u:' + unitKeyOf(loc);
+};
+
 // The REVIEWED value of a contact point: a 'suppress' resolution removes
 // it from the serving view; a 'replace' resolution substitutes its
 // type/value. Planning on raw values would delete distinct reviewed
@@ -207,7 +230,7 @@ export function planCluster(cluster, ctx) {
   }
   const survLocKeys = new Map();
   for (const l of ctx.locationsByEntity.get(survivor) || []) {
-    const k = addressKeyOf(l);
+    const k = strictAddressKeyOf(l);
     if (k) survLocKeys.set(k, l);
   }
   const absorbed = [];
@@ -220,7 +243,7 @@ export function planCluster(cluster, ctx) {
     }
     const move_locations = [], delete_locations = [];
     for (const l of ctx.locationsByEntity.get(id) || []) {
-      const k = addressKeyOf(l);
+      const k = strictAddressKeyOf(l);
       const existing = k ? survLocKeys.get(k) : null;
       if (existing) {
         // keep the geocoded row; if survivor's twin lacks coords and this one has them, swap
@@ -228,10 +251,21 @@ export function planCluster(cluster, ctx) {
         else delete_locations.push(l);
       } else { move_locations.push(l.location_id); if (k) survLocKeys.set(k, l); }
     }
+    // Wave A pin receipts hang off locations with ON DELETE CASCADE:
+    // deleting a location takes its pin receipt with it. Snapshot the
+    // full pin rows for every location this merge deletes (absorbed
+    // rows AND a survivor row dropped by the geocoded-twin swap), so
+    // the ledger can restore the geocoding evidence on reversal
+    // (Codex P2, PR #823 round 3).
+    const delete_location_pins = [];
+    for (const l of delete_locations) {
+      const pins = ctx.pinsByLocation ? ctx.pinsByLocation.get(l.location_id) : null;
+      if (pins && pins.length) delete_location_pins.push({ location_id: l.location_id, pins });
+    }
     absorbed.push({
       entity_id: id,
       move_points, delete_points,
-      move_locations, delete_locations,
+      move_locations, delete_locations, delete_location_pins,
       move_anchors: ctx.anchorsByEntity.get(id) || [],
       prior_resolution: ctx.resolutionsById && ctx.resolutionsById.has(id) ? ctx.resolutionsById.get(id) : null,
     });

@@ -35,6 +35,26 @@ describe('applyPlans primary-repair snapshot (Codex P2 round 2)', () => {
     expect(snap.params[3]).toBe('B');
     expect(JSON.parse(snap.params[0])).toEqual([{ contact_point_id: 'pM', prior_is_primary: true, new_is_primary: false }]);
   });
+  it('writes deleted-location pin snapshots into the ledger moved payload', async () => {
+    const client = stubClient([]);
+    const pin = { location_id: 'loc_B', resource_entity_id: 'B', pin_class: 'exact', manifest_sha256: 'abc' };
+    const plan = {
+      cluster_id: 'dmc_test3', survivor: 'S', evidence: [], fills: {}, survivor_prior: {},
+      absorbed: [{
+        entity_id: 'B', move_points: [], delete_points: [], move_locations: [],
+        delete_locations: [{ location_id: 'loc_B', resource_entity_id: 'B' }],
+        delete_location_pins: [{ location_id: 'loc_B', pins: [pin] }],
+        move_anchors: [], prior_resolution: null,
+      }],
+    };
+    const result = await applyPlans(client, [plan]);
+    expect(result.locationsDeleted).toBe(1);
+    const insert = client.calls.find((c) => c.sql.includes('insert into public.luminari_dedupe_merges'));
+    expect(insert).toBeTruthy();
+    const moved = JSON.parse(insert.params[5]);
+    expect(moved.location_pins_deleted).toEqual([{ location_id: 'loc_B', pins: [pin] }]);
+    expect(moved.locations_deleted.map((l) => l.location_id)).toEqual(['loc_B']);
+  });
   it('snapshots the promotion branch too (prior false)', async () => {
     const client = stubClient([
       { contact_point_id: 'pS', contact_type: 'email', is_primary: false, created_at: '2026-01-01' },

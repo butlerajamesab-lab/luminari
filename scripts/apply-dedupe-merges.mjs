@@ -50,10 +50,16 @@ async function loadState(client) {
   const contactResolutions = await q(`select * from public.luminari_resource_contact_resolutions`);
   state0.resolutionsByPoint = new Map(contactResolutions.map((r) => [r.contact_point_id, r]));
   state0.resolutionsById = new Map(resolutions.map((r) => [r.resource_entity_id, r]));
+  // Wave A pin receipts: the only FK dependent of locations, and it is
+  // ON DELETE CASCADE — the planner snapshots these rows for every
+  // location a merge deletes (Codex P2, PR #823 round 3).
+  const pins = await q(`select * from public.luminari_step3_wavea_pins`);
+  state0.pinsByLocation = new Map();
+  for (const p of pins) { if (!state0.pinsByLocation.has(p.location_id)) state0.pinsByLocation.set(p.location_id, []); state0.pinsByLocation.get(p.location_id).push(p); }
   const ledger = await client.query(
     `select absorbed_entity_id from public.luminari_dedupe_merges where batch_id = $1`, [BATCH_ID],
   ).then((r) => r.rows).catch(() => []);
-  return { entities, locations, points, links, govs, resolutions, ledger, resolutionsByPoint: state0.resolutionsByPoint, resolutionsById: state0.resolutionsById, visibleIds: state0.visibleIds };
+  return { entities, locations, points, links, govs, resolutions, ledger, resolutionsByPoint: state0.resolutionsByPoint, resolutionsById: state0.resolutionsById, visibleIds: state0.visibleIds, pinsByLocation: state0.pinsByLocation };
 }
 
 export function buildContext(state) {
@@ -69,7 +75,7 @@ export function buildContext(state) {
   const resolutionsById = state.resolutionsById;
   const geoEntityIds = new Set(state.locations.filter((l) => l.latitude != null && l.longitude != null).map((l) => l.resource_entity_id));
   const inactiveIds = new Set(state.resolutions.filter((r) => r.publication_status === 'inactive').map((r) => r.resource_entity_id));
-  return { entityById, pointsByEntity, locationsByEntity, anchorsByEntity, contacts, geoEntityIds, inactiveIds, resolutionsByPoint: state.resolutionsByPoint, resolutionsById, visibleIds: state.visibleIds || new Set() };
+  return { entityById, pointsByEntity, locationsByEntity, anchorsByEntity, contacts, geoEntityIds, inactiveIds, resolutionsByPoint: state.resolutionsByPoint, resolutionsById, visibleIds: state.visibleIds || new Set(), pinsByLocation: state.pinsByLocation || new Map() };
 }
 
 export function buildPlan(state) {
@@ -104,6 +110,7 @@ export async function applyPlans(client, plans) {
         point_resolutions_deleted: deletedResolutions,
         locations_moved: ab.move_locations,
         locations_deleted: ab.delete_locations,
+        location_pins_deleted: ab.delete_location_pins || [],
         anchors_moved: ab.move_anchors,
         survivor_prior: plan.survivor_prior,
         prior_publication_resolution: ab.prior_resolution ?? null,
