@@ -102,6 +102,27 @@ export const CLAIM_INGESTION_JOBS_SQL = `
   )
   select * from claimed`;
 
+/**
+ * Crash-window recovery: if the worker exits after a version's
+ * source-ingested transition commits but before its queue lease is released,
+ * the row can never be claimed again here (its version is no longer
+ * registered) and downstream lanes require a null lock. Release stale leases
+ * on rows whose version already left the registered state. The version's
+ * source is never re-fetched or re-registered by this sweep.
+ */
+export const RECOVER_STRANDED_INGESTED_SQL = `
+  update public.civic_genome_legislative_version_queue queue
+     set locked_at = null,
+         locked_by = null,
+         updated_at = now()
+    from public.civic_genome_bill_version version
+   where version.bill_version_id = queue.bill_version_id
+     and queue.queue_state = 'eligible'
+     and queue.locked_at is not null
+     and queue.locked_at < now() - make_interval(mins => ${LEASE_STALE_AFTER_MINUTES})
+     and version.processing_state <> 'registered'
+  returning queue.queue_id`;
+
 export const COMPLETE_INGESTION_JOB_SQL = `
   update public.civic_genome_legislative_version_queue
      set locked_at = null,
@@ -298,6 +319,19 @@ async function ingest_version_source(
   return "parked";
 }
 
+async function recover_stranded_ingested_jobs(): Promise<number> {
+  const { rows } = await query_with_diagnostics<{ released: number }>(
+    `with stranded as (${RECOVER_STRANDED_INGESTED_SQL}) select count(*)::int as released from stranded`,
+    [],
+    {
+      label: "genome_rosetta_ingestion_recover_stranded",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 10_000,
+    },
+  );
+  return rows[0]?.released ?? 0;
+}
+
 async function run_ingestion_cycle(): Promise<void> {
   if (running || stopped) return;
   running = true;
@@ -322,6 +356,13 @@ async function run_ingestion_cycle(): Promise<void> {
         reason: plan.reason,
       });
       return;
+    }
+
+    const recovered = await recover_stranded_ingested_jobs();
+    if (recovered > 0) {
+      console.log("[GenomeRosettaIngestion] recovered_stranded", {
+        released: recovered,
+      });
     }
 
     const jobs = await claim_ingestion_jobs(bounded_batch_size());

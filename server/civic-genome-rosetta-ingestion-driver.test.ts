@@ -5,6 +5,7 @@ import {
   COMPLETE_INGESTION_JOB_SQL,
   DEFER_INGESTION_JOB_SQL,
   PARK_INGESTION_JOB_SQL,
+  RECOVER_STRANDED_INGESTED_SQL,
   is_deterministic_ingestion_failure,
   plan_ingestion_cycle,
 } from "./civic-genome-rosetta-ingestion-driver";
@@ -127,6 +128,18 @@ describe("genome rosetta ingestion driver contract", () => {
     ]) {
       expect(sql).not.toContain("attempt_count");
     }
+  });
+
+  it("recovers stale leases stranded after the source-ingested transition", () => {
+    expect(RECOVER_STRANDED_INGESTED_SQL).toContain("queue.locked_at is not null");
+    expect(RECOVER_STRANDED_INGESTED_SQL).toContain(
+      "version.processing_state <> 'registered'",
+    );
+    expect(RECOVER_STRANDED_INGESTED_SQL).toContain("locked_at = null");
+    expect(RECOVER_STRANDED_INGESTED_SQL).not.toContain("attempt_count");
+    expect(driver.indexOf("recover_stranded_ingested_jobs()")).toBeLessThan(
+      driver.indexOf("claim_ingestion_jobs(bounded_batch_size())"),
+    );
   });
 
   it("parks deterministic failures as degraded evidence with the exact reason", () => {
