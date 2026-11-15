@@ -52,6 +52,10 @@ import {
   stop_genome_rosetta_ingestion_driver,
 } from "./civic-genome-rosetta-ingestion-driver";
 import {
+  start_genome_amendment_attachment_driver,
+  stop_genome_amendment_attachment_driver,
+} from "./civic-genome-amendment-attachment-driver";
+import {
   start_rosetta_generation_upgrade_worker,
   stop_rosetta_generation_upgrade_worker,
 } from "./civic-genome-rosetta-generation-upgrade-worker";
@@ -256,6 +260,7 @@ start_rosetta_generation_activation_queue_worker();
 start_rosetta_generation_target_sync();
 start_genome_version_admission_driver();
 start_genome_rosetta_ingestion_driver();
+start_genome_amendment_attachment_driver();
 start_rosetta_generation_upgrade_worker();
 start_civic_genome_final_source_reconciliation_worker();
 if (!legislative_version_queue_recovery_scope) {
@@ -294,6 +299,7 @@ async function shutdown(signal: string): Promise<void> {
     stop_rosetta_generation_target_sync(),
     stop_genome_version_admission_driver(),
     stop_genome_rosetta_ingestion_driver(),
+    stop_genome_amendment_attachment_driver(),
     stop_rosetta_generation_upgrade_worker(),
     stop_civic_genome_final_source_reconciliation_worker(),
     current_result_observation_enabled
