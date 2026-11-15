@@ -150,6 +150,27 @@ describe('category membership union (Codex P2)', () => {
   });
 });
 
+describe('survivor visibility guard (Codex P1 round 2)', () => {
+  it('keeps a directory-visible record as survivor over a higher-scored malformed name', () => {
+    const ctx = makeCtx([
+      ent('A', { resource_name: '100 Main Street', description: 'A real description that is longer than forty characters for sure.' }),
+      ent('B', { resource_name: 'Community Food Bank' }),
+    ], [], [loc('A'), loc('B')]);
+    ctx.visibleIds = new Set(['B']);
+    expect(pickSurvivor(['A', 'B'], ctx)).toBe('B');
+    const plan = planCluster({ memberIds: ['A', 'B'], edges: [] }, ctx);
+    expect(plan.survivor).toBe('B');
+  });
+  it('falls back to scoring when no member is directory-visible', () => {
+    const ctx = makeCtx([
+      ent('A', { resource_name: '100 Main Street', description: 'A real description that is longer than forty characters for sure.' }),
+      ent('B', { resource_name: '200 Oak Avenue' }),
+    ], [], [loc('A'), loc('B')]);
+    ctx.visibleIds = new Set();
+    expect(pickSurvivor(['A', 'B'], ctx)).toBe('A');
+  });
+});
+
 describe('planManifest', () => {
   it('is stable and membership-sensitive', () => {
     const p1 = [{ cluster_id: 'dmc_x', survivor: 'A', absorbed: [{ entity_id: 'B' }] }];

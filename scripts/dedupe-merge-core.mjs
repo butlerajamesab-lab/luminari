@@ -164,7 +164,17 @@ export function survivorScore(entity, ctx) {
 }
 
 export function pickSurvivor(memberIds, ctx) {
-  const scored = memberIds.map((id) => ({
+  // Directory-visibility guard (Codex P1, PR #823 round 2): the unified
+  // corpus excludes records whose names fail the person-facing name
+  // predicate. If any member is directory-visible, the survivor MUST be
+  // one of them — otherwise the merged resource vanishes from search,
+  // detail, counts, and maps even though a visible twin existed.
+  let pool = memberIds;
+  if (ctx.visibleIds) {
+    const visible = memberIds.filter((id) => ctx.visibleIds.has(id));
+    if (visible.length) pool = visible;
+  }
+  const scored = pool.map((id) => ({
     id,
     score: survivorScore(ctx.entityById.get(id), ctx),
     fam: FAMILY_PRECEDENCE[ctx.entityById.get(id).source_table] ?? 9,

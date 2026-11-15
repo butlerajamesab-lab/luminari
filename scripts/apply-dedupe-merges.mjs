@@ -25,13 +25,35 @@ async function loadState(client) {
   const links = await q(`select resource_entity_id, office_id from public.luminari_anchor_office_source_rows`);
   const govs = await q(`select office_id, phone_raw, email, url from public.gov_offices where superseded_by is null`);
   const resolutions = await q(`select * from public.luminari_resource_publication_resolutions`);
+  // Directory-visible entity set, computed with the service's own name
+  // predicate (person_facing_name_sql in
+  // server/services/resource-directory-unified.ts, verified against
+  // main 2026-11-15). The planner must never retire the only visible
+  // member of a cluster (Codex P1, PR #823 round 2).
+  const NAME_PREDICATE = `(
+    resource_name is not null
+    and btrim(resource_name) <> ''
+    and resource_name !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    and resource_name !~* '^[0-9a-f]{24,}$'
+    and resource_name !~* '^luminari[-_]'
+    and resource_name !~* '(^|[-_])enriched([-_]|$)'
+    and resource_name !~ '^[[:space:]]*[0-9]{5}(-[0-9]{4})?[[:space:]]*(\u2014|\u2013|\\||-|[A-Z])'
+    and resource_name !~ '^[[:space:]]*\\{'
+    and resource_name !~ '\\[[A-Za-z0-9][A-Za-z0-9.-]*\\]'
+    and resource_name !~* '(verify remaining fields|\u2014[[:space:]]*verify|\\(verify\\)|not confirmed from|not published for|no dedicated hotline|shortest in|critical:|warning:)'
+    and not ( (resource_name ~ '^[0-9]{1,6}[[:space:]]' and resource_name ~* '(^|[^a-z])(street|avenue|road|boulevard|drive|lane|court|plaza|highway|parkway|circle|terrace|place|trail|square|way)([^a-z]|$)')
+              or resource_name ~ ',[[:space:]][A-Za-z][A-Za-z ]+[[:space:]][A-Z]{2}[[:space:]][0-9]{5}' )
+    and resource_name !~ '^[[:space:]]*(1-[0-9]{3}-[A-Z0-9-]+|\\(?[0-9]{3}\\)?[-. ][0-9]{3}[-. ][0-9]{4})'
+  )`;
+  const visible = await q(`select resource_entity_id from public.luminari_resource_entities where ${NAME_PREDICATE}`);
+  state0.visibleIds = new Set(visible.map((r) => r.resource_entity_id));
   const contactResolutions = await q(`select * from public.luminari_resource_contact_resolutions`);
   state0.resolutionsByPoint = new Map(contactResolutions.map((r) => [r.contact_point_id, r]));
   state0.resolutionsById = new Map(resolutions.map((r) => [r.resource_entity_id, r]));
   const ledger = await client.query(
     `select absorbed_entity_id from public.luminari_dedupe_merges where batch_id = $1`, [BATCH_ID],
   ).then((r) => r.rows).catch(() => []);
-  return { entities, locations, points, links, govs, resolutions, ledger, resolutionsByPoint: state0.resolutionsByPoint, resolutionsById: state0.resolutionsById };
+  return { entities, locations, points, links, govs, resolutions, ledger, resolutionsByPoint: state0.resolutionsByPoint, resolutionsById: state0.resolutionsById, visibleIds: state0.visibleIds };
 }
 
 export function buildContext(state) {
@@ -47,7 +69,7 @@ export function buildContext(state) {
   const resolutionsById = state.resolutionsById;
   const geoEntityIds = new Set(state.locations.filter((l) => l.latitude != null && l.longitude != null).map((l) => l.resource_entity_id));
   const inactiveIds = new Set(state.resolutions.filter((r) => r.publication_status === 'inactive').map((r) => r.resource_entity_id));
-  return { entityById, pointsByEntity, locationsByEntity, anchorsByEntity, contacts, geoEntityIds, inactiveIds, resolutionsByPoint: state.resolutionsByPoint, resolutionsById };
+  return { entityById, pointsByEntity, locationsByEntity, anchorsByEntity, contacts, geoEntityIds, inactiveIds, resolutionsByPoint: state.resolutionsByPoint, resolutionsById, visibleIds: state.visibleIds || new Set() };
 }
 
 export function buildPlan(state) {
@@ -67,7 +89,7 @@ export function buildPlan(state) {
   return { plans, holds, already, manifest: planManifest(plans), ctx };
 }
 
-async function applyPlans(client, plans) {
+export async function applyPlans(client, plans) {
   let absorbedCount = 0, pointsDeleted = 0, locationsDeleted = 0;
   for (const plan of plans) {
     const surv = plan.survivor;
@@ -133,15 +155,26 @@ async function applyPlans(client, plans) {
         where resource_entity_id = $1 order by created_at, contact_point_id`, [surv])).rows;
     const byType = new Map();
     for (const p of survPoints) { if (!byType.has(p.contact_type)) byType.set(p.contact_type, []); byType.get(p.contact_type).push(p); }
+    const primaryRepairs = [];
     for (const [, rows] of byType) {
       const primaries = rows.filter((r) => r.is_primary);
       if (primaries.length === 0 && rows.length) {
+        primaryRepairs.push({ contact_point_id: rows[0].contact_point_id, prior_is_primary: false, new_is_primary: true });
         await client.query(`update public.luminari_resource_contact_points set is_primary = true where contact_point_id = $1`, [rows[0].contact_point_id]);
       } else if (primaries.length > 1) {
         for (const extra of primaries.slice(1)) {
+          primaryRepairs.push({ contact_point_id: extra.contact_point_id, prior_is_primary: true, new_is_primary: false });
           await client.query(`update public.luminari_resource_contact_points set is_primary = false where contact_point_id = $1`, [extra.contact_point_id]);
         }
       }
+    }
+    // Snapshot every primary-flag change into the cluster's first ledger
+    // row, so reversal restores the original flags (Codex P2, round 2).
+    if (primaryRepairs.length && plan.absorbed.length) {
+      await client.query(
+        `update public.luminari_dedupe_merges set moved = moved || jsonb_build_object('survivor_primary_repairs', $1::jsonb)
+          where batch_id = $2 and cluster_id = $3 and absorbed_entity_id = $4`,
+        [JSON.stringify(primaryRepairs), BATCH_ID, plan.cluster_id, plan.absorbed[0].entity_id]);
     }
   }
   return { absorbedCount, pointsDeleted, locationsDeleted };
