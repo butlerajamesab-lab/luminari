@@ -13,7 +13,6 @@ import {
   extract_version_source,
   load_version,
   record_amendment_attachment,
-  record_source_ingested,
   register_rosetta_amendment_attachment,
   register_rosetta_source_content,
   resolve_current_amendment_attachment,
@@ -156,6 +155,65 @@ export const DEFER_INGESTION_JOB_SQL = `
    where queue_id = $1::uuid
      and locked_by = $2::text`;
 
+/**
+ * The Genome-side ingestion record. The bill-version receipt quarantine
+ * (zz_civic_genome_block_bill_version_rosetta_receipt_v1) deliberately
+ * rejects newly introduced receipt keys in the rosetta_/assembly_/prism_
+ * namespaces: those are derivative receipts, and this lane records raw
+ * evidence only. The record therefore carries the source document id, the
+ * exact source hashes, and the durable-content registration facts — the
+ * fields the quarantine's own text says to preserve — and no derivative
+ * receipt keys. The Rosetta content row itself remains reachable through
+ * the recorded source document id and source content hash.
+ */
+export const RECORD_INGESTION_SQL = `
+  update public.civic_genome_bill_version
+     set rosetta_source_document_id = $2::bigint,
+         processing_state = 'source_ingested',
+         failure_code = null,
+         receipt_json = receipt_json || jsonb_build_object(
+           'source_document_id', $2::bigint,
+           'source_version', $3::text,
+           'source_url', $4::text,
+           'source_content_hash', $5::text,
+           'source_byte_hash', $6::text,
+           'text_extractor_version', $7::text,
+           'durable_source_content_contract', $8::text,
+           'durable_source_content_replayed', $9::boolean,
+           'durable_source_content_registered_at', $10::timestamptz
+         ),
+         updated_at = now()
+   where bill_version_id = $1::uuid`;
+
+type extracted_source = Awaited<ReturnType<typeof extract_version_source>>;
+type registered_content = Awaited<
+  ReturnType<typeof register_rosetta_source_content>
+>;
+
+async function record_ingestion(
+  job: ingestion_job,
+  source_document_id: number,
+  source: extracted_source,
+  content: registered_content,
+): Promise<void> {
+  await query_with_diagnostics(RECORD_INGESTION_SQL, [
+    job.bill_version_id,
+    source_document_id,
+    source.source_version,
+    source.source_url,
+    source.source_content_hash,
+    source.source_byte_hash,
+    source.extractor_version,
+    content.contract,
+    content.replayed,
+    content.registered_at,
+  ], {
+    label: "genome_rosetta_ingestion_record",
+    pool_acquire_timeout_ms: 1_000,
+    query_timeout_ms: 10_000,
+  });
+}
+
 function enabled(): boolean {
   return background_feature_enabled("GENOME_ROSETTA_INGESTION_ENABLED");
 }
@@ -284,13 +342,7 @@ async function ingest_version_source(
     source_document_id,
     source,
   );
-  await record_source_ingested(
-    job.bill_version_id,
-    source_document_id,
-    source,
-    content,
-    null,
-  );
+  await record_ingestion(job, source_document_id, source, content);
 
   if (version.document_family !== "amendment") return "ingested";
 
