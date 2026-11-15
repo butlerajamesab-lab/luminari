@@ -59,13 +59,22 @@ export const addressKeyOf = (loc) => {
 // keeps the building-level addressKeyOf, as before.
 const UNIT_KEYWORD = '(?:suite|ste|apt|unit|bldg|building|floor|fl|rm|room)';
 const normLoose = (s) => (s || '').toLowerCase().replace(/[.,#]/g, ' ').replace(/\s+/g, ' ').trim();
+const unitTokens = (text) => text.replace(new RegExp('\\b' + UNIT_KEYWORD + '\\b', 'g'), ' ').split(/\s+/).filter(Boolean);
+// The unit key COMBINES discriminators from both lines (Codex P2,
+// PR #823 round 4): a building or floor token on line 1 must not
+// shadow the suite on line 2. Tokens are unioned and sorted, so
+// 'Building B' + line2 'Suite 200' equals line1 'Bldg B Ste 200',
+// while Suite 100 vs Suite 200 at the same building stay distinct.
 export const unitKeyOf = (loc) => {
+  const tokens = new Set();
   const m = normLoose(loc.address_line1).match(new RegExp('\\b' + UNIT_KEYWORD + '\\b\\s*(.*)$'));
-  if (m && m[1]) return m[1];
+  if (m && m[1]) for (const t of unitTokens(m[1])) tokens.add(t);
   const l2 = normLoose(loc.address_line2);
-  if (!l2) return '';
-  const m2 = l2.match(new RegExp('^' + UNIT_KEYWORD + '\\b\\s*(.*)$'));
-  return m2 && m2[1] ? m2[1] : l2;
+  if (l2) {
+    const m2 = l2.match(new RegExp('^' + UNIT_KEYWORD + '\\b\\s*(.*)$'));
+    for (const t of unitTokens(m2 ? (m2[1] || '') : l2)) tokens.add(t);
+  }
+  return [...tokens].sort().join(' ');
 };
 export const strictAddressKeyOf = (loc) => {
   const base = addressKeyOf(loc);
@@ -116,6 +125,33 @@ export function buildEffectiveContacts({ points, links, govById, resolutionsByPo
     add(l.resource_entity_id, 'website', normDomain(g.url));
   }
   return contacts;
+}
+
+// Government-synthesized contacts per entity, WITH their raw values:
+// entityId -> [{ type, value, key, office_id }], deduped by type+key.
+// The serving path synthesizes these from gov_offices ONLY for
+// entities with no reviewed contact points — so when a gov member is
+// absorbed into a survivor that serves reviewed points, its distinct
+// synthesized contacts must be materialized as real points during
+// the merge or they become inaccessible (Codex P2, PR #823 round 4).
+export function buildGovContacts({ links, govById }) {
+  const map = new Map();
+  const add = (id, type, value, office_id) => {
+    if (value == null || String(value).trim() === '') return;
+    const key = type === 'phone' ? normPhone(value) : type === 'email' ? normEmail(value) : normDomain(value);
+    if (!key) return;
+    if (!map.has(id)) map.set(id, []);
+    const list = map.get(id);
+    if (!list.some((c) => c.type === type && c.key === key)) list.push({ type, value: String(value), key, office_id });
+  };
+  for (const l of links || []) {
+    const g = govById.get(l.office_id);
+    if (!g) continue;
+    add(l.resource_entity_id, 'phone', g.phone_raw, l.office_id);
+    add(l.resource_entity_id, 'email', g.email, l.office_id);
+    add(l.resource_entity_id, 'website', g.url, l.office_id);
+  }
+  return map;
 }
 
 // Union-find clustering over address groups. Returns { clusters, heldPairs }
@@ -270,6 +306,38 @@ export function planCluster(cluster, ctx) {
       prior_resolution: ctx.resolutionsById && ctx.resolutionsById.has(id) ? ctx.resolutionsById.get(id) : null,
     });
   }
+  // Materialize distinct gov-synthesized contacts of absorbed members
+  // when the survivor serves reviewed points (Codex P2, round 4): the
+  // serving path synthesizes gov contacts only for entities with NO
+  // reviewed points, so once an absorbed gov member retires, its
+  // unique synthesized phone/email/website would become inaccessible
+  // behind the survivor's points. When the survivor serves no
+  // reviewed points, the moved anchors keep synthesis working and
+  // nothing is materialized.
+  const materialize_points = [];
+  if (survKeys.size > 0 && ctx.govContacts) {
+    const survWebDomains = new Set();
+    const collectWeb = (p) => {
+      const eff = effectivePoint(p, ctx.resolutionsByPoint ? ctx.resolutionsByPoint.get(p.contact_point_id) : null);
+      if (eff && eff.type === 'website') { const d = normDomain(eff.value); if (d) survWebDomains.add(d); }
+    };
+    for (const p of ctx.pointsByEntity.get(survivor) || []) collectWeb(p);
+    for (const ab of absorbed) {
+      const movedIds = new Set(ab.move_points);
+      for (const p of ctx.pointsByEntity.get(ab.entity_id) || []) if (movedIds.has(p.contact_point_id)) collectWeb(p);
+    }
+    const planned = new Set();
+    for (const ab of absorbed) {
+      for (const c of ctx.govContacts.get(ab.entity_id) || []) {
+        const covered = c.type === 'website' ? survWebDomains.has(c.key) : survKeys.has(c.type + '|' + c.key);
+        const planKey = c.type + '|' + c.key;
+        if (covered || planned.has(planKey)) continue;
+        planned.add(planKey);
+        materialize_points.push({ contact_type: c.type, contact_value: c.value, office_id: c.office_id, from_entity_id: ab.entity_id });
+        if (c.type === 'website') survWebDomains.add(c.key);
+      }
+    }
+  }
   // field fills on the survivor
   const fills = {};
   const prior = {};
@@ -297,8 +365,15 @@ export function planCluster(cluster, ctx) {
     if (e.resource_category && e.resource_category !== finalPrimary) serviceUnion.add(e.resource_category);
   }
   serviceUnion.delete(finalPrimary);
-  if (serviceUnion.size !== (surv.service_categories || []).length) {
-    fills.service_categories = [...serviceUnion].sort();
+  // Compare MEMBERSHIP, not array length (Codex P2, round 4): when the
+  // survivor's array holds its own primary (['housing']) and the union
+  // swaps it for an absorbed category (['food_nutrition']), the sizes
+  // match while the membership changes — a length test would skip the
+  // write and lose the absorbed category on retirement.
+  const currentCats = [...(surv.service_categories || [])].sort();
+  const nextCats = [...serviceUnion].sort();
+  if (JSON.stringify(nextCats) !== JSON.stringify(currentCats)) {
+    fills.service_categories = nextCats;
     prior.service_categories = surv.service_categories || [];
   }
   return {
@@ -307,6 +382,7 @@ export function planCluster(cluster, ctx) {
     absorbed,
     fills,
     survivor_prior: prior,
+    materialize_points,
     evidence: cluster.edges,
     member_count: cluster.memberIds.length,
   };

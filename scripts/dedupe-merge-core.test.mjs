@@ -61,14 +61,14 @@ describe('buildClusters', () => {
   });
 });
 
-function makeCtx(entities, points, locations, resolutionsByPoint = new Map(), resolutionsById = new Map(), pinsByLocation = new Map()) {
+function makeCtx(entities, points, locations, resolutionsByPoint = new Map(), resolutionsById = new Map(), pinsByLocation = new Map(), govContacts = new Map()) {
   const entityById = new Map(entities.map((e) => [e.resource_entity_id, e]));
   const pointsByEntity = new Map(), locationsByEntity = new Map();
   for (const p of points) { if (!pointsByEntity.has(p.resource_entity_id)) pointsByEntity.set(p.resource_entity_id, []); pointsByEntity.get(p.resource_entity_id).push(p); }
   for (const l of locations) { if (!locationsByEntity.has(l.resource_entity_id)) locationsByEntity.set(l.resource_entity_id, []); locationsByEntity.get(l.resource_entity_id).push(l); }
   const contacts = buildEffectiveContacts({ points, links: [], govById: new Map() });
   const geoEntityIds = new Set(locations.filter((l) => l.latitude != null).map((l) => l.resource_entity_id));
-  return { entityById, pointsByEntity, locationsByEntity, anchorsByEntity: new Map(), contacts, geoEntityIds, inactiveIds: new Set(), resolutionsByPoint, resolutionsById, pinsByLocation };
+  return { entityById, pointsByEntity, locationsByEntity, anchorsByEntity: new Map(), contacts, geoEntityIds, inactiveIds: new Set(), resolutionsByPoint, resolutionsById, pinsByLocation, govContacts };
 }
 const ent = (id, over = {}) => ({ resource_entity_id: id, resource_name: id, source_table: 'catalog_site_projection_v1', resource_category: null, service_categories: [], description: null, eligibility_summary: null, apply_notes: null, ...over });
 
@@ -208,6 +208,55 @@ describe('location unit strictness + pin snapshots (Codex P2 round 3)', () => {
     const plan = planCluster({ memberIds: ['A', 'B'], edges: [] }, ctx);
     expect(plan.absorbed[0].delete_locations.map((l) => l.location_id)).toEqual(['loc_A']);
     expect(plan.absorbed[0].delete_location_pins).toEqual([{ location_id: 'loc_A', pins: [pin] }]);
+  });
+});
+
+describe('round 4: combined units, category membership, gov contact materialization', () => {
+  it('combines line-1 building tokens with line-2 suite tokens', () => {
+    const a100 = loc('X', '100 Main St Building A', 'Yakima', 'WA', null, null, 'Suite 100');
+    const a200 = loc('X', '100 Main St Building A', 'Yakima', 'WA', null, null, 'Suite 200');
+    const combined = loc('X', '100 Main St Bldg A Ste 100');
+    expect(unitKeyOf(a100)).toBe('100 a');
+    expect(unitKeyOf(a200)).toBe('200 a');
+    expect(strictAddressKeyOf(a100)).toBe(strictAddressKeyOf(combined));
+    expect(strictAddressKeyOf(a100)).not.toBe(strictAddressKeyOf(a200));
+  });
+  it('keeps both suites when line 1 carries only the building', () => {
+    const locations = [
+      loc('A', '100 Main St Building A', 'Yakima', 'WA', null, null, 'Suite 100'),
+      loc('B', '100 Main St Building A', 'Yakima', 'WA', null, null, 'Suite 200'),
+    ];
+    const ctx = makeCtx([ent('A', { description: 'A real description that is longer than forty characters for sure.' }), ent('B')], [], locations);
+    const plan = planCluster({ memberIds: ['A', 'B'], edges: [] }, ctx);
+    expect(plan.absorbed[0].move_locations).toEqual(['loc_B']);
+    expect(plan.absorbed[0].delete_locations).toEqual([]);
+  });
+  it('writes the category fill when membership changes at equal array length', () => {
+    const ctx = makeCtx([
+      ent('A', { description: 'A real description that is longer than forty characters for sure.', resource_category: 'housing', service_categories: ['housing'] }),
+      ent('B', { resource_category: 'food_nutrition' }),
+    ], [], [loc('A'), loc('B')]);
+    const plan = planCluster({ memberIds: ['A', 'B'], edges: [] }, ctx);
+    expect(plan.fills.service_categories).toEqual(['food_nutrition']);
+    expect(plan.survivor_prior.service_categories).toEqual(['housing']);
+  });
+  it('materializes distinct gov contacts when the survivor serves reviewed points', () => {
+    const points = [pt('p1', 'A', 'phone', '509-555-0100')];
+    const gov = new Map([['B', [
+      { type: 'phone', value: '(509) 555-0100', key: '5095550100', office_id: 'off1' },
+      { type: 'email', value: 'help@county.gov', key: 'help@county.gov', office_id: 'off1' },
+    ]]]);
+    const ctx = makeCtx([ent('A', { description: 'A real description that is longer than forty characters for sure.' }), ent('B')], points, [loc('A'), loc('B')], new Map(), new Map(), new Map(), gov);
+    const plan = planCluster({ memberIds: ['A', 'B'], edges: [{ a: 'A', b: 'B', via: ['phone'] }] }, ctx);
+    expect(plan.materialize_points).toEqual([
+      { contact_type: 'email', contact_value: 'help@county.gov', office_id: 'off1', from_entity_id: 'B' },
+    ]);
+  });
+  it('materializes nothing when the survivor serves no reviewed points (anchors keep synthesis working)', () => {
+    const gov = new Map([['B', [{ type: 'email', value: 'help@county.gov', key: 'help@county.gov', office_id: 'off1' }]]]);
+    const ctx = makeCtx([ent('A', { description: 'A real description that is longer than forty characters for sure.' }), ent('B')], [], [loc('A'), loc('B')], new Map(), new Map(), new Map(), gov);
+    const plan = planCluster({ memberIds: ['A', 'B'], edges: [] }, ctx);
+    expect(plan.materialize_points).toEqual([]);
   });
 });
 

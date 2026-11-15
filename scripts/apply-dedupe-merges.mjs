@@ -5,7 +5,7 @@
 import pg from 'pg';
 import { readFileSync } from 'node:fs';
 import {
-  buildEffectiveContacts, buildClusters, planCluster, planManifest, contactKey, clusterIdFor,
+  buildEffectiveContacts, buildGovContacts, buildClusters, planCluster, planManifest, contactKey, clusterIdFor,
 } from './dedupe-merge-core.mjs';
 
 export const BATCH_ID = 'dedupe_merge_v1';
@@ -72,10 +72,11 @@ export function buildContext(state) {
   for (const l of state.links) { if (!anchorsByEntity.has(l.resource_entity_id)) anchorsByEntity.set(l.resource_entity_id, []); anchorsByEntity.get(l.resource_entity_id).push(l.office_id); }
   const govById = new Map(state.govs.map((g) => [g.office_id, g]));
   const contacts = buildEffectiveContacts({ points: state.points, links: state.links, govById, resolutionsByPoint: state.resolutionsByPoint });
+  const govContacts = buildGovContacts({ links: state.links, govById });
   const resolutionsById = state.resolutionsById;
   const geoEntityIds = new Set(state.locations.filter((l) => l.latitude != null && l.longitude != null).map((l) => l.resource_entity_id));
   const inactiveIds = new Set(state.resolutions.filter((r) => r.publication_status === 'inactive').map((r) => r.resource_entity_id));
-  return { entityById, pointsByEntity, locationsByEntity, anchorsByEntity, contacts, geoEntityIds, inactiveIds, resolutionsByPoint: state.resolutionsByPoint, resolutionsById, visibleIds: state.visibleIds || new Set(), pinsByLocation: state.pinsByLocation || new Map() };
+  return { entityById, pointsByEntity, locationsByEntity, anchorsByEntity, contacts, govContacts, geoEntityIds, inactiveIds, resolutionsByPoint: state.resolutionsByPoint, resolutionsById, visibleIds: state.visibleIds || new Set(), pinsByLocation: state.pinsByLocation || new Map() };
 }
 
 export function buildPlan(state) {
@@ -96,7 +97,7 @@ export function buildPlan(state) {
 }
 
 export async function applyPlans(client, plans) {
-  let absorbedCount = 0, pointsDeleted = 0, locationsDeleted = 0;
+  let absorbedCount = 0, pointsDeleted = 0, locationsDeleted = 0, pointsMaterialized = 0;
   for (const plan of plans) {
     const surv = plan.survivor;
     for (const ab of plan.absorbed) {
@@ -156,6 +157,29 @@ export async function applyPlans(client, plans) {
       await client.query(`update public.luminari_resource_entities set ${sets} where resource_entity_id = $${fillKeys.length + 1}`,
         [...fillKeys.map((k) => plan.fills[k]), surv]);
     }
+    // Materialize absorbed gov members' distinct synthesized contacts
+    // as real points on the survivor (Codex P2, round 4) — BEFORE the
+    // primary repair, so a lone materialized contact of its type is
+    // promoted and snapshotted like any other repair. The new rows
+    // are recorded in the cluster's first ledger row so reversal can
+    // delete exactly what the merge created.
+    const materialized = [];
+    for (const mp of plan.materialize_points || []) {
+      const row = (await client.query(
+        `insert into public.luminari_resource_contact_points
+           (resource_entity_id, contact_type, contact_value, is_primary, contact_quality, source_table, source_pk)
+         values ($1, $2, $3, false, 'official_source_feed', 'gov_offices', $4)
+         returning contact_point_id`,
+        [surv, mp.contact_type, mp.contact_value, mp.office_id])).rows[0];
+      materialized.push({ contact_point_id: row.contact_point_id, contact_type: mp.contact_type, contact_value: mp.contact_value, from_entity_id: mp.from_entity_id });
+      pointsMaterialized++;
+    }
+    if (materialized.length && plan.absorbed.length) {
+      await client.query(
+        `update public.luminari_dedupe_merges set moved = moved || jsonb_build_object('survivor_materialized_points', $1::jsonb)
+          where batch_id = $2 and cluster_id = $3 and absorbed_entity_id = $4`,
+        [JSON.stringify(materialized), BATCH_ID, plan.cluster_id, plan.absorbed[0].entity_id]);
+    }
     // primary repair: exactly one primary per contact type on the survivor
     const survPoints = (await client.query(
       `select contact_point_id, contact_type, is_primary, created_at from public.luminari_resource_contact_points
@@ -184,7 +208,7 @@ export async function applyPlans(client, plans) {
         [JSON.stringify(primaryRepairs), BATCH_ID, plan.cluster_id, plan.absorbed[0].entity_id]);
     }
   }
-  return { absorbedCount, pointsDeleted, locationsDeleted };
+  return { absorbedCount, pointsDeleted, locationsDeleted, pointsMaterialized };
 }
 
 // Rehearsal: install the migration + apply ONE named cluster inside a

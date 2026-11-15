@@ -9,6 +9,7 @@ function stubClient(survivorPoints) {
     async query(sql, params) {
       calls.push({ sql, params });
       if (sql.includes('select contact_point_id, contact_type, is_primary, created_at')) return { rows: survivorPoints };
+      if (sql.includes('insert into public.luminari_resource_contact_points')) return { rows: [{ contact_point_id: 'pNew' }] };
       return { rows: [] };
     },
   };
@@ -54,6 +55,26 @@ describe('applyPlans primary-repair snapshot (Codex P2 round 2)', () => {
     const moved = JSON.parse(insert.params[5]);
     expect(moved.location_pins_deleted).toEqual([{ location_id: 'loc_B', pins: [pin] }]);
     expect(moved.locations_deleted.map((l) => l.location_id)).toEqual(['loc_B']);
+  });
+  it('materializes planned gov contacts and records them for reversal (Codex P2 round 4)', async () => {
+    const client = stubClient([
+      { contact_point_id: 'pS', contact_type: 'phone', is_primary: true, created_at: '2026-01-01' },
+    ]);
+    const plan = {
+      cluster_id: 'dmc_test4', survivor: 'S', evidence: [], fills: {}, survivor_prior: {},
+      materialize_points: [{ contact_type: 'email', contact_value: 'help@county.gov', office_id: 'off1', from_entity_id: 'B' }],
+      absorbed: [{ entity_id: 'B', move_points: [], delete_points: [], move_locations: [], delete_locations: [], move_anchors: [], prior_resolution: null }],
+    };
+    const result = await applyPlans(client, [plan]);
+    expect(result.pointsMaterialized).toBe(1);
+    const insert = client.calls.find((c) => c.sql.includes('insert into public.luminari_resource_contact_points'));
+    expect(insert.params).toEqual(['S', 'email', 'help@county.gov', 'off1']);
+    const snap = client.calls.find((c) => c.sql.includes('survivor_materialized_points'));
+    expect(snap).toBeTruthy();
+    expect(snap.params[2]).toBe('dmc_test4');
+    expect(JSON.parse(snap.params[0])).toEqual([
+      { contact_point_id: 'pNew', contact_type: 'email', contact_value: 'help@county.gov', from_entity_id: 'B' },
+    ]);
   });
   it('snapshots the promotion branch too (prior false)', async () => {
     const client = stubClient([
