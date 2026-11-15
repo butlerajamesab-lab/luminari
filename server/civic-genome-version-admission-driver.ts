@@ -208,7 +208,7 @@ function is_prerequisite_skip(error: unknown): boolean {
   );
 }
 
-async function read_admitted_target(): Promise<admitted_generation_target | null> {
+export async function read_admitted_target(): Promise<admitted_generation_target | null> {
   const { rows } = await query_with_diagnostics<{
     rule_set_version: string;
     rule_manifest_hash: string;
@@ -237,7 +237,7 @@ async function read_admitted_target(): Promise<admitted_generation_target | null
 
 let last_live_target_error: string | null = null;
 
-async function read_live_target(): Promise<live_generation_target | null> {
+export async function read_live_target(): Promise<live_generation_target | null> {
   const base_url = required_environment("ROSETTA_SUPABASE_URL").replace(/\/$/, "");
   const service_role_key = required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
   const headers = create_rosetta_supabase_headers(service_role_key);

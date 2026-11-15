@@ -521,7 +521,7 @@ function source_is_html(bytes: Buffer, content_type: string | null): boolean {
   return prefix.includes("<!doctype html") || prefix.includes("<html") || prefix.includes("<body");
 }
 
-async function load_version(bill_version_id: string): Promise<legislative_version_row> {
+export async function load_version(bill_version_id: string): Promise<legislative_version_row> {
   const result = await getPool().query<legislative_version_row>(
     `select version.bill_version_id::text,
             version.genome_bill_id::text,
@@ -719,7 +719,7 @@ type amendment_source_basis = Pick<
   "source_text" | "source_content_hash" | "source_url"
 >;
 
-async function resolve_current_amendment_attachment(
+export async function resolve_current_amendment_attachment(
   version: legislative_version_row,
   source: amendment_source_basis,
 ): Promise<amendment_attachment_context | null> {
@@ -823,7 +823,7 @@ async function ensure_rosetta_corpus(): Promise<number> {
   return Number(created[0].id);
 }
 
-async function ensure_rosetta_source_document(
+export async function ensure_rosetta_source_document(
   version: legislative_version_row,
 ): Promise<number> {
   const corpus_id = await ensure_rosetta_corpus();
@@ -1047,7 +1047,7 @@ export async function extract_version_source(
 }
 
 
-async function register_rosetta_source_content(
+export async function register_rosetta_source_content(
   source_document_id: number,
   source: extracted_legislative_source,
 ): Promise<rosetta_source_content_receipt> {
@@ -1183,7 +1183,7 @@ async function register_rosetta_docket_operational_authority(
   return receipt as unknown as rosetta_docket_operational_authority_receipt;
 }
 
-async function register_rosetta_amendment_attachment(
+export async function register_rosetta_amendment_attachment(
   source_content_id: string,
   source_content_hash: string,
   context: amendment_attachment_context,
@@ -1281,7 +1281,7 @@ async function register_rosetta_amendment_attachment(
   }
 }
 
-async function record_amendment_attachment(
+export async function record_amendment_attachment(
   bill_version_id: string,
   context: amendment_attachment_context,
   receipt: rosetta_amendment_attachment_receipt,
@@ -1451,7 +1451,7 @@ export async function reconcile_preserved_amendment_source_basis(
   };
 }
 
-async function record_source_ingested(
+export async function record_source_ingested(
   bill_version_id: string,
   source_document_id: number,
   source: extracted_legislative_source,
