@@ -5,6 +5,8 @@ import {
   RECORD_ATTACHMENT_EVALUATION_SQL,
   content_hash_matches,
   plan_attachment_cycle,
+  select_content_by_hash,
+  type preserved_content,
 } from "./civic-genome-amendment-attachment-driver";
 import type {
   admitted_generation_target,
@@ -77,6 +79,15 @@ describe("attachment candidate claim", () => {
     );
   });
 
+  it("resumes stale evaluating markers so partial completions are never stranded", () => {
+    expect(CLAIM_ATTACHMENT_CANDIDATES_SQL).toContain(
+      "->>'status'
+           = 'evaluating'",
+    );
+    expect(CLAIM_ATTACHMENT_CANDIDATES_SQL).toContain("make_interval(mins =>");
+    expect(driver).toContain('"evaluating"');
+  });
+
   it("never touches queue rows", () => {
     expect(CLAIM_ATTACHMENT_CANDIDATES_SQL).not.toContain("legislative_version_queue");
     expect(driver).not.toContain("civic_genome_legislative_version_queue");
@@ -99,6 +110,32 @@ describe("content hash verification", () => {
     expect(content_hash_matches("ab".repeat(32), "cd".repeat(32))).toBe(false);
     expect(content_hash_matches(null, "ab".repeat(32))).toBe(false);
     expect(content_hash_matches("ab".repeat(32), undefined)).toBe(false);
+  });
+});
+
+describe("preserved content selection", () => {
+  const rows: preserved_content[] = [
+    {
+      source_content_id: "11",
+      source_text: "older registration",
+      source_content_hash: "cd".repeat(32),
+      source_url: "https://example.test/a",
+    },
+    {
+      source_content_id: "12",
+      source_text: "the recorded registration",
+      source_content_hash: "AB".repeat(32),
+      source_url: "https://example.test/b",
+    },
+  ];
+
+  it("selects the row whose hash matches the recorded hash, not the first row", () => {
+    expect(select_content_by_hash(rows, "ab".repeat(32))?.source_content_id).toBe("12");
+  });
+
+  it("returns null when no preserved row matches", () => {
+    expect(select_content_by_hash(rows, "ef".repeat(32))).toBeNull();
+    expect(select_content_by_hash([], "ab".repeat(32))).toBeNull();
   });
 });
 

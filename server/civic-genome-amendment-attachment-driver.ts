@@ -36,11 +36,21 @@ import {
  * verifies its hash against the version's recorded source content hash, and
  * only then runs the governed evaluation — never against unverified text.
  * Resolved attachments are registered and recorded through the pipeline's
- * own functions, exactly as the ingestion driver does. Every evaluated
- * version records an evaluation receipt so it is never claimed twice and so
- * the unresolved stock carries a reason-coded census for later evidence
- * methods. This leg reads and writes no queue rows, invokes no
- * decomposition, binds nothing, assembles nothing, and deletes nothing.
+ * own functions, exactly as the ingestion driver does.
+ *
+ * Evaluation is marker-first and resumable: a claim writes an
+ * amendment_attachment_evaluation_v1 receipt in the 'evaluating' state
+ * before any governed write, and every governed step that follows is
+ * idempotent (the persist is conflict-checked and null-guarded; the Rosetta
+ * registration is replay-safe). A failure anywhere leaves the marker in
+ * 'evaluating', and claims resume stale 'evaluating' markers, so a
+ * partially completed attachment — base persisted, registration not yet
+ * recorded — is always eligible for completion instead of being stranded
+ * by its own base link. Final outcomes replace the marker with their
+ * terminal state, which makes the evaluated stock a reason-coded census
+ * for later evidence methods and keeps finished versions out of claims.
+ * This leg reads and writes no queue rows, invokes no decomposition,
+ * binds nothing, assembles nothing, and deletes nothing.
  */
 
 const DEFAULT_POLL_INTERVAL_MS = 60_000;
@@ -50,6 +60,7 @@ const DEFAULT_BATCH_SIZE = 5;
 const MIN_BATCH_SIZE = 1;
 const MAX_BATCH_SIZE = 25;
 const ROSETTA_CONTENT_TIMEOUT_MS = 15_000;
+const RESUME_STALE_AFTER_MINUTES = 15;
 
 let timer: NodeJS.Timeout | null = null;
 let running = false;
@@ -76,11 +87,21 @@ export const CLAIM_ATTACHMENT_CANDIDATES_SQL = `
          lower(version.receipt_json->>'source_content_hash') as source_content_hash
     from public.civic_genome_bill_version version
    where version.document_family = 'amendment'
-     and version.base_bill_version_id is null
      and version.processing_state = 'source_ingested'
      and version.rosetta_source_document_id is not null
      and version.receipt_json->>'source_content_hash' ~ '^[0-9a-fA-F]{64}$'
-     and not (version.receipt_json ? 'amendment_attachment_evaluation_v1')
+     and (
+       (
+         version.base_bill_version_id is null
+         and not (version.receipt_json ? 'amendment_attachment_evaluation_v1')
+       )
+       or (
+         version.receipt_json->'amendment_attachment_evaluation_v1'->>'status'
+           = 'evaluating'
+         and (version.receipt_json->'amendment_attachment_evaluation_v1'->>'evaluated_at')::timestamptz
+           < now() - make_interval(mins => ${RESUME_STALE_AFTER_MINUTES})
+       )
+     )
    order by version.updated_at, version.bill_version_id
    limit $1::int`;
 
@@ -114,17 +135,32 @@ export function content_hash_matches(
   return recorded_hash.toLowerCase() === fetched_hash.toLowerCase();
 }
 
-type attachment_candidate = {
-  bill_version_id: string;
-  rosetta_source_document_id: number;
-  source_content_hash: string;
-};
-
-type preserved_content = {
+export type preserved_content = {
   source_content_id: string;
   source_text: string;
   source_content_hash: string;
   source_url: string;
+};
+
+/**
+ * A source document can hold several preserved content rows (one per
+ * registration). The amendment's recorded hash names the exact one its
+ * evaluation must run against: select by hash, never by position.
+ */
+export function select_content_by_hash(
+  rows: preserved_content[],
+  recorded_hash: string,
+): preserved_content | null {
+  return (
+    rows.find((row) => content_hash_matches(recorded_hash, row.source_content_hash))
+    ?? null
+  );
+}
+
+type attachment_candidate = {
+  bill_version_id: string;
+  rosetta_source_document_id: number;
+  source_content_hash: string;
 };
 
 function required_environment(name: string): string {
@@ -194,7 +230,7 @@ async function record_attachment_evaluation(
 
 async function fetch_preserved_content(
   rosetta_source_document_id: number,
-): Promise<preserved_content | null> {
+): Promise<preserved_content[]> {
   const base_url = required_environment("ROSETTA_SUPABASE_URL").replace(/\/$/, "");
   const service_role_key = required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
   const headers = create_rosetta_supabase_headers(service_role_key);
@@ -216,14 +252,16 @@ async function fetch_preserved_content(
       );
     }
     const payload: unknown = await response.json();
-    if (!Array.isArray(payload) || payload.length === 0) return null;
-    const row = payload[0] as Record<string, unknown>;
-    return {
-      source_content_id: String(row.source_content_id),
-      source_text: String(row.source_text ?? ""),
-      source_content_hash: String(row.source_content_hash ?? ""),
-      source_url: String(row.source_url ?? ""),
-    };
+    if (!Array.isArray(payload)) return [];
+    return payload.map((entry) => {
+      const row = entry as Record<string, unknown>;
+      return {
+        source_content_id: String(row.source_content_id),
+        source_text: String(row.source_text ?? ""),
+        source_content_hash: String(row.source_content_hash ?? ""),
+        source_url: String(row.source_url ?? ""),
+      };
+    });
   } finally {
     clearTimeout(timeout);
   }
@@ -240,13 +278,33 @@ async function evaluate_attachment(
   candidate: attachment_candidate,
 ): Promise<evaluation_outcome> {
   const version = await load_version(candidate.bill_version_id);
-  if (version.document_family !== "amendment" || version.base_bill_version_id) {
-    return "skipped";
+  if (version.document_family !== "amendment") return "skipped";
+  if (
+    version.base_bill_version_id
+    && version.receipt_json?.amendment_attachment_v1
+  ) {
+    // A previous pass completed registration and recording but did not
+    // finalize the marker. Heal the bookkeeping; nothing else to do.
+    await record_attachment_evaluation(
+      candidate.bill_version_id,
+      "resolved",
+      null,
+    );
+    return "linked";
   }
-  const content = await fetch_preserved_content(
+
+  // Marker first: from here on, any failure leaves a resumable
+  // 'evaluating' state instead of an untracked partial completion.
+  await record_attachment_evaluation(
+    candidate.bill_version_id,
+    "evaluating",
+    null,
+  );
+
+  const rows = await fetch_preserved_content(
     candidate.rosetta_source_document_id,
   );
-  if (!content) {
+  if (rows.length === 0) {
     await record_attachment_evaluation(
       candidate.bill_version_id,
       "content_missing",
@@ -254,11 +312,12 @@ async function evaluate_attachment(
     );
     return "skipped";
   }
-  if (!content_hash_matches(candidate.source_content_hash, content.source_content_hash)) {
+  const content = select_content_by_hash(rows, candidate.source_content_hash);
+  if (!content) {
     await record_attachment_evaluation(
       candidate.bill_version_id,
       "content_hash_mismatch",
-      "preserved_content_hash_differs_from_recorded_hash",
+      "no_preserved_content_row_matches_recorded_hash",
     );
     return "skipped";
   }
