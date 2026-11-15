@@ -96,6 +96,16 @@ export const CLAIM_ATTACHMENT_CANDIDATES_SQL = `
          and not (version.receipt_json ? 'amendment_attachment_evaluation_v1')
        )
        or (
+         -- Verification population: an amendment whose base was linked at
+         -- registration time (the restored door's stem inference) still owes
+         -- its evidence evaluation and its Rosetta attachment receipt. The
+         -- evaluation confirms the inferred base against source-stated
+         -- evidence, registers the attachment, or finalizes a conflict.
+         version.base_bill_version_id is not null
+         and not (version.receipt_json ? 'amendment_attachment_v1')
+         and not (version.receipt_json ? 'amendment_attachment_evaluation_v1')
+       )
+       or (
          version.receipt_json->'amendment_attachment_evaluation_v1'->>'status'
            = 'evaluating'
          and (version.receipt_json->'amendment_attachment_evaluation_v1'->>'evaluated_at')::timestamptz
