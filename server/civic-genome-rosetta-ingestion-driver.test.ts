@@ -5,6 +5,7 @@ import {
   COMPLETE_INGESTION_JOB_SQL,
   DEFER_INGESTION_JOB_SQL,
   PARK_INGESTION_JOB_SQL,
+  RECORD_INGESTION_SQL,
   RECOVER_STRANDED_INGESTED_SQL,
   is_deterministic_ingestion_failure,
   plan_ingestion_cycle,
@@ -140,6 +141,18 @@ describe("genome rosetta ingestion driver contract", () => {
     expect(driver.indexOf("recover_stranded_ingested_jobs()")).toBeLessThan(
       driver.indexOf("claim_ingestion_jobs(bounded_batch_size())"),
     );
+  });
+
+  it("records ingestion as raw evidence the receipt quarantine accepts", () => {
+    expect(RECORD_INGESTION_SQL).toContain("processing_state = 'source_ingested'");
+    expect(RECORD_INGESTION_SQL).toContain("rosetta_source_document_id = $2::bigint");
+    expect(RECORD_INGESTION_SQL).toContain("'source_content_hash'");
+    expect(RECORD_INGESTION_SQL).toContain("'source_byte_hash'");
+    expect(RECORD_INGESTION_SQL).not.toContain("rosetta_source_content_id");
+    expect(RECORD_INGESTION_SQL).not.toContain("rosetta_source_identity_hash");
+    expect(RECORD_INGESTION_SQL).not.toContain("current_rosetta_status");
+    expect(RECORD_INGESTION_SQL).not.toContain("family_resolution_status");
+    expect(driver).not.toContain("record_source_ingested(");
   });
 
   it("parks deterministic failures as degraded evidence with the exact reason", () => {
