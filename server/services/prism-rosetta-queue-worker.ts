@@ -1,6 +1,10 @@
 import { randomUUID } from "crypto";
 import { query_with_diagnostics } from "../db";
 import {
+  circuit_open_log_gate,
+  queue_circuit_open_remaining_ms,
+} from "../queue-circuit-log";
+import {
   PrismRosettaPartialActivationError,
   activate_prism_for_rosetta_assembly,
 } from "./prism-rosetta-activation";
@@ -306,6 +310,8 @@ async function reconcile_completed_jobs_if_due(): Promise<void> {
   );
 }
 
+const circuit_open_log = new circuit_open_log_gate();
+
 async function claim_next_job(): Promise<prism_rosetta_queue_job | null> {
   if (!prism_rosetta_circuit_allows_request()) return null;
   const result = await query_with_diagnostics<prism_rosetta_queue_job>(
@@ -602,6 +608,7 @@ async function run_queue_cycle(): Promise<void> {
       last_half_open_failure_count = 0;
     }
     const job = await claim_next_job();
+    circuit_open_log.reset();
     if (job) {
       console.log("[PrismRosettaQueue] claimed", {
         worker_id: queue_worker_id,
@@ -616,10 +623,20 @@ async function run_queue_cycle(): Promise<void> {
       await process_job(job);
     }
   } catch (error) {
-    console.error("[PrismRosettaQueue] cycle_failed", {
-      error_class: error instanceof Error ? error.name : "unknown",
-      error_code: safe_error_code(error),
-    });
+    const circuit_remaining_ms = queue_circuit_open_remaining_ms(error);
+    if (circuit_remaining_ms !== null) {
+      if (circuit_open_log.should_log(Date.now(), circuit_remaining_ms)) {
+        console.log("[PrismRosettaQueue] cycle_waiting", {
+          reason: "queue_circuit_open",
+          remaining_ms: circuit_remaining_ms,
+        });
+      }
+    } else {
+      console.error("[PrismRosettaQueue] cycle_failed", {
+        error_class: error instanceof Error ? error.name : "unknown",
+        error_code: safe_error_code(error),
+      });
+    }
   } finally {
     queue_cycle_running = false;
   }

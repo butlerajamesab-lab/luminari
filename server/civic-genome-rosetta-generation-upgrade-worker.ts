@@ -2,6 +2,10 @@ import { load_queued_docket_binding } from "./civic-genome-docket-binding";
 import { randomUUID } from "node:crypto";
 
 import { query_with_diagnostics } from "./db";
+import {
+  circuit_open_log_gate,
+  queue_circuit_open_remaining_ms,
+} from "./queue-circuit-log";
 import { assemble_rosetta_and_resolve_family } from "./civic-genome-rosetta-family-orchestration";
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 import { background_feature_enabled } from "./runtime-role";
@@ -389,6 +393,8 @@ async function claim_next_job(): Promise<upgrade_job | null> {
   return result.rows[0] ?? null;
 }
 
+const circuit_open_log = new circuit_open_log_gate();
+
 async function claim_job_batch(): Promise<upgrade_job[]> {
   const jobs: upgrade_job[] = [];
   for (let index = 0; index < MAX_JOBS_PER_CYCLE; index += 1) {
@@ -595,13 +601,24 @@ export async function run_rosetta_generation_upgrade_cycle(): Promise<void> {
   try {
     await discover_rosetta_generation_upgrades();
     const jobs = await claim_job_batch();
+    circuit_open_log.reset();
     if (jobs.length) {
       await Promise.all(jobs.map(job => process_rosetta_generation_upgrade_job(job)));
     }
   } catch (error) {
-    console.error("[RosettaGenerationUpgrade] cycle_failed", {
-      error_code: safe_error_code(error),
-    });
+    const circuit_remaining_ms = queue_circuit_open_remaining_ms(error);
+    if (circuit_remaining_ms !== null) {
+      if (circuit_open_log.should_log(Date.now(), circuit_remaining_ms)) {
+        console.log("[RosettaGenerationUpgrade] cycle_waiting", {
+          reason: "queue_circuit_open",
+          remaining_ms: circuit_remaining_ms,
+        });
+      }
+    } else {
+      console.error("[RosettaGenerationUpgrade] cycle_failed", {
+        error_code: safe_error_code(error),
+      });
+    }
   } finally {
     cycle_running = false;
   }

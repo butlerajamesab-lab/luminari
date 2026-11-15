@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 
+import { QUEUE_CIRCUIT_OPEN_DETAIL } from "./queue-circuit-log";
+
 import {
   DbTimeoutDiagnosticError,
   classify_db_error,
@@ -71,7 +73,7 @@ function assert_circuit_closed(label: string): void {
     "query_timeout",
     `${label} queue circuit open for ${remaining_ms}ms`,
     remaining_ms,
-    "queue_query_circuit_open",
+    QUEUE_CIRCUIT_OPEN_DETAIL,
   );
 }
 
