@@ -125,6 +125,10 @@ export function setWave(wave) {
     BATCH_ID = "bundle_decomposition_v1:wave2-wa217";
     PAIR_DECIDER = "luminar_pairs_review_2026_11_14";
   }
+  if (wave === 3) {
+    BATCH_ID = "bundle_decomposition_v1:wave3";
+    PAIR_DECIDER = "luminar_pairs_review_2026_11_14";
+  }
 }
 
 /** Shapes the wave-1 filter approves. */
@@ -696,6 +700,100 @@ export function verifyEmbeddedMints(bundle, mints) {
     }
   }
   return true;
+}
+
+/**
+ * Wave-3 approval filter (the remaining judged bundles). Same
+ * fail-closed posture as wave 2, generalized on the two points where
+ * wave 2 was WA-217-shaped:
+ *  - held_rows may be EMPTY when the bundle's rows are fully
+ *    attributed (43 of the 81 bundles carry no unattributable rows);
+ *  - pair_decisions may be empty when the bundle HAS no variant
+ *    pairs (31 of the 81) — but every variant pair the census
+ *    classifier finds in the bundle's names must carry a recorded
+ *    decision, by exact norm-name set equality. The decisions
+ *    planner independently fail-closes on an undecided pair and
+ *    throws on a phantom decision; this filter is the plan-time
+ *    mirror of that contract.
+ */
+export function filterWave3Bundles(proposals) {
+  const approved = [];
+  const excluded = [];
+  for (const bundle of proposals ?? []) {
+    const id = bundle?.bundle_entity_id ?? null;
+    const reject = (reason) => excluded.push({ bundle_entity_id: id, reason });
+    if (bundle?.shape !== "needs_judgment") {
+      reject("shape_not_judged");
+      continue;
+    }
+    const decisions = bundle.pair_decisions ?? [];
+    const wellFormedDecisions = decisions.every(
+      (d) =>
+        typeof d?.a_norm === "string" &&
+        d.a_norm.length > 0 &&
+        typeof d?.b_norm === "string" &&
+        d.b_norm.length > 0 &&
+        (d.decision === "merge" || d.decision === "split"),
+    );
+    if (!wellFormedDecisions) {
+      reject("pair_decision_malformed");
+      continue;
+    }
+    const names = bundle.names ?? [];
+    const pairKeys = new Set();
+    for (let i = 0; i < names.length; i++) {
+      for (let j = i + 1; j < names.length; j++) {
+        if (isVariantPair(names[i].program_name, names[j].program_name)) {
+          pairKeys.add(
+            [normName(names[i].program_name), normName(names[j].program_name)]
+              .sort()
+              .join("|"),
+          );
+        }
+      }
+    }
+    const decisionKeys = new Set(
+      decisions.map((d) => [d.a_norm, d.b_norm].sort().join("|")),
+    );
+    if (
+      pairKeys.size !== decisionKeys.size ||
+      [...pairKeys].some((k) => !decisionKeys.has(k))
+    ) {
+      reject("pair_decisions_incomplete");
+      continue;
+    }
+    const heldRows = bundle.held_rows ?? null;
+    if (
+      !Array.isArray(heldRows) ||
+      heldRows.some(
+        (r) =>
+          typeof r?.uid !== "string" ||
+          r.uid.length === 0 ||
+          typeof r?.sheet !== "string" ||
+          !Number.isInteger(r?.row) ||
+          r?.gen !== "(9)",
+      )
+    ) {
+      reject("held_rows_malformed");
+      continue;
+    }
+    const attributed = names.reduce((n, x) => n + (x.rows?.length ?? 0), 0);
+    const nameless = names.some((x) => (x.rows?.length ?? 0) === 0);
+    if (nameless) {
+      reject("name_without_rows");
+      continue;
+    }
+    if (attributed !== bundle.n_attributed) {
+      reject("attributed_count_mismatch");
+      continue;
+    }
+    if (attributed + heldRows.length !== bundle.n_rows_total) {
+      reject("row_accounting_incomplete");
+      continue;
+    }
+    approved.push(bundle);
+  }
+  return { approved, excluded };
 }
 
 /**
@@ -1464,13 +1562,22 @@ export function loadEmbeddedProposalsV2() {
   return JSON.parse(readFileSync(url, "utf-8"));
 }
 
+export function loadEmbeddedProposalsV3() {
+  const url = new URL("./bundle-decomposition-proposals-v3.json", import.meta.url);
+  return JSON.parse(readFileSync(url, "utf-8"));
+}
+
 async function main() {
   const apply = process.argv.includes("--apply");
   const wave2 = process.argv.includes("--plan-v2");
+  const wave3 = process.argv.includes("--plan-v3");
   if (wave2) setWave(2);
-  const { approved, excluded } = wave2
-    ? filterWave2Bundles(loadEmbeddedProposalsV2())
-    : filterWave1Bundles(loadEmbeddedProposals());
+  if (wave3) setWave(3);
+  const { approved, excluded } = wave3
+    ? filterWave3Bundles(loadEmbeddedProposalsV3())
+    : wave2
+      ? filterWave2Bundles(loadEmbeddedProposalsV2())
+      : filterWave1Bundles(loadEmbeddedProposals());
   const mintsByBundle = new Map();
   const allMintRecords = [];
   for (const bundle of approved) {
@@ -1485,7 +1592,7 @@ async function main() {
         website: r.website ?? "",
       })),
     }));
-    const plan = wave2
+    const plan = wave2 || wave3
       ? planVariantPairsWithDecisions(nameRecords, bundle.pair_decisions)
       : planVariantPairs(nameRecords);
     verifyEmbeddedMints(bundle, plan.mints);
