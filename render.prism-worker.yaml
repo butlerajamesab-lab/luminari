@@ -78,3 +78,5 @@ services:
         sync: false
       - key: PRISM_BASE_URL
         value: https://prism-14wm.onrender.com
+      - key: GENOME_VERSION_ADMISSION_ENABLED
+        value: "false"
