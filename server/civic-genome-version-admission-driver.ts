@@ -235,26 +235,40 @@ async function read_admitted_target(): Promise<admitted_generation_target | null
   };
 }
 
+let last_live_target_error: string | null = null;
+
 async function read_live_target(): Promise<live_generation_target | null> {
   const base_url = required_environment("ROSETTA_SUPABASE_URL").replace(/\/$/, "");
   const service_role_key = required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
   const headers = create_rosetta_supabase_headers(service_role_key);
   headers.set("accept", "application/json");
-  headers.set("accept-profile", "rosetta_rule_runtime");
+  // The runtime schema is not exposed through PostgREST. The live target is
+  // read through the public service-role-only door
+  // public.rosetta_current_target_v1(), which delegates to the runtime
+  // registry's current-target read.
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), ROSETTA_TARGET_TIMEOUT_MS);
   try {
-    const response = await fetch(`${base_url}/rest/v1/rpc/current_target_v1`, {
+    const response = await fetch(`${base_url}/rest/v1/rpc/rosetta_current_target_v1`, {
       method: "GET",
       headers,
       signal: controller.signal,
     });
-    if (!response.ok) return null;
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      last_live_target_error = `http_${response.status}:${body.slice(0, 200)}`;
+      return null;
+    }
     const payload: unknown = await response.json();
     const row = Array.isArray(payload) ? payload[0] : payload;
-    if (row === null || typeof row !== "object" || Array.isArray(row)) return null;
+    if (row === null || typeof row !== "object" || Array.isArray(row)) {
+      last_live_target_error = "unexpected_payload_shape";
+      return null;
+    }
+    last_live_target_error = null;
     return row as live_generation_target;
-  } catch {
+  } catch (error) {
+    last_live_target_error = `fetch_error:${error instanceof Error ? error.message : String(error)}`;
     return null;
   } finally {
     clearTimeout(timeout);
@@ -269,7 +283,12 @@ async function run_admission_cycle(): Promise<void> {
     const live = admitted ? await read_live_target().catch(() => null) : null;
     const plan = plan_admission_cycle(admitted, live);
     if (plan.action === "stand_down") {
-      console.log("[GenomeVersionAdmission] stood_down", { reason: plan.reason });
+      console.log("[GenomeVersionAdmission] stood_down", {
+        reason: plan.reason,
+        ...(plan.reason === "live_target_unreadable"
+          ? { detail: last_live_target_error }
+          : {}),
+      });
       return;
     }
     const { rows } = await query_with_diagnostics<{
