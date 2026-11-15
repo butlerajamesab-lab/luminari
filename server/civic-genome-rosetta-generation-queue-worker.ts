@@ -1,6 +1,10 @@
 import { load_queued_docket_binding } from "./civic-genome-docket-binding";
 import { randomUUID } from "node:crypto";
 import { query_with_diagnostics } from "./db";
+import {
+  circuit_open_log_gate,
+  queue_circuit_open_remaining_ms,
+} from "./queue-circuit-log";
 import { assemble_rosetta_and_resolve_family } from "./civic-genome-rosetta-family-orchestration";
 import { background_feature_enabled } from "./runtime-role";
 import { assert_genome_rosetta_publication_admitted, is_genome_rosetta_publication_quarantined } from "./civic-genome-rosetta-publication-quarantine";
@@ -54,6 +58,8 @@ export function rosetta_generation_activation_retry_delay_seconds(
   const exponent = Math.max(0, Math.min(7, prior_attempt_count));
   return Math.min(3_600, 30 * (2 ** exponent));
 }
+
+const circuit_open_log = new circuit_open_log_gate();
 
 async function claim_next_job(): Promise<rosetta_generation_activation_queue_job | null> {
   const result = await query_with_diagnostics<rosetta_generation_activation_queue_job>(
@@ -198,12 +204,23 @@ export async function run_rosetta_generation_activation_queue_cycle(): Promise<v
   queue_cycle_running = true;
   try {
     const job = await claim_next_job();
+    circuit_open_log.reset();
     if (job) await process_rosetta_generation_activation_job(job);
   } catch (error) {
-    console.error("[RosettaGenerationQueue] cycle_failed", {
-      error_class: error instanceof Error ? error.name : "unknown",
-      error_code: safe_error_code(error),
-    });
+    const circuit_remaining_ms = queue_circuit_open_remaining_ms(error);
+    if (circuit_remaining_ms !== null) {
+      if (circuit_open_log.should_log(Date.now(), circuit_remaining_ms)) {
+        console.log("[RosettaGenerationQueue] cycle_waiting", {
+          reason: "queue_circuit_open",
+          remaining_ms: circuit_remaining_ms,
+        });
+      }
+    } else {
+      console.error("[RosettaGenerationQueue] cycle_failed", {
+        error_class: error instanceof Error ? error.name : "unknown",
+        error_code: safe_error_code(error),
+      });
+    }
   } finally {
     queue_cycle_running = false;
   }

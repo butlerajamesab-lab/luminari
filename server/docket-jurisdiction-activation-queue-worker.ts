@@ -2,6 +2,10 @@ import { randomUUID } from "node:crypto";
 
 import { project_docket_bulk_bill_to_civic_genome, project_docket_state_cache_to_civic_genome_serialized } from "./civic-genome-projection";
 import { query_with_diagnostics } from "./db";
+import {
+  circuit_open_log_gate,
+  queue_circuit_open_remaining_ms,
+} from "./queue-circuit-log";
 import { accept_docket_bill_detail } from "./docket-bill-detail-acceptance";
 import { get_bill, type legiscan_bill_detail } from "./services/legiscan";
 import { background_feature_enabled } from "./runtime-role";
@@ -194,6 +198,8 @@ export function classify_docket_bill_activation_failure(input: {
     consume_attempt: true,
   };
 }
+
+const circuit_open_log = new circuit_open_log_gate();
 
 async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> {
   const source_scope = resolve_docket_activation_source_scope();
@@ -624,12 +630,23 @@ export function run_docket_bill_activation_queue_cycle(): Promise<void> {
   const cycle = (async () => {
     try {
       const jobs = await claim_jobs(bounded_concurrency());
+      circuit_open_log.reset();
       await Promise.all(jobs.map(job => process_docket_bill_activation_job(job)));
     } catch (error) {
-      console.error("[DocketJurisdictionActivation] cycle_failed", {
-        error_class: error instanceof Error ? error.name : "unknown",
-        error_code: safe_error_code(error),
-      });
+      const circuit_remaining_ms = queue_circuit_open_remaining_ms(error);
+      if (circuit_remaining_ms !== null) {
+        if (circuit_open_log.should_log(Date.now(), circuit_remaining_ms)) {
+          console.log("[DocketJurisdictionActivation] cycle_waiting", {
+            reason: "queue_circuit_open",
+            remaining_ms: circuit_remaining_ms,
+          });
+        }
+      } else {
+        console.error("[DocketJurisdictionActivation] cycle_failed", {
+          error_class: error instanceof Error ? error.name : "unknown",
+          error_code: safe_error_code(error),
+        });
+      }
     }
   })();
   active_queue_cycle = cycle;
