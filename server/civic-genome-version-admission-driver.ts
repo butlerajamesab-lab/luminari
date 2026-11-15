@@ -25,6 +25,14 @@ import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
  * the driver never alters existing queue state; the governed door creates
  * registrations and queue rows, idempotently, and never resurrects
  * completed or permanently failed queue rows.
+ *
+ * Selection also requires the bill's latest landed detail to hold at least
+ * one usable document (the same usability test the registration door
+ * applies), so a bill that can produce no versions never monopolizes the
+ * batch window; it re-enters selection if a fresher detail lands. The
+ * promotion instant is converted with floor() on the database side to
+ * match the truncation the runtime applies when parsing the live side, so
+ * identical instants agree at microsecond resolution.
  */
 
 const DEFAULT_POLL_INTERVAL_MS = 45_000;
@@ -68,11 +76,27 @@ export const SELECT_UNREGISTERED_BILLS_SQL = `
   select bill.genome_bill_id,
          (bill.structural_dna_json ->> 'source_bill_id')::int as source_bill_id
     from public.civic_genome_bill bill
+    join lateral (
+      select cache.bill as detail
+        from public.docket_bill_detail_cache cache
+       where cache.bill_id = (bill.structural_dna_json ->> 'source_bill_id')::int
+       order by cache.fetched_at desc
+       limit 1
+    ) latest on true
    where bill.structural_dna_json ->> 'source_bill_id' ~ '^[0-9]+$'
-     and exists (
-       select 1
-         from public.docket_bill_detail_cache cache
-        where cache.bill_id = (bill.structural_dna_json ->> 'source_bill_id')::int
+     and (
+       exists (
+         select 1
+           from jsonb_array_elements(coalesce(latest.detail -> 'texts', '[]'::jsonb)) doc
+          where nullif(doc ->> 'doc_id', '') is not null
+            and coalesce(nullif(doc ->> 'state_link', ''), nullif(doc ->> 'url', '')) is not null
+       )
+       or exists (
+         select 1
+           from jsonb_array_elements(coalesce(latest.detail -> 'amendments', '[]'::jsonb)) doc
+          where nullif(doc ->> 'amendment_id', '') is not null
+            and coalesce(nullif(doc ->> 'state_link', ''), nullif(doc ->> 'url', '')) is not null
+       )
      )
      and not exists (
        select 1
@@ -192,7 +216,7 @@ async function read_admitted_target(): Promise<admitted_generation_target | null
   }>(
     `select rule_set_version,
             rule_manifest_hash,
-            (extract(epoch from promoted_at) * 1000)::bigint as promoted_epoch_ms
+            floor(extract(epoch from promoted_at) * 1000)::bigint as promoted_epoch_ms
        from public.civic_genome_rosetta_generation_target
       where target_name = 'current'`,
     [],

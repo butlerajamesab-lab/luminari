@@ -43,6 +43,20 @@ describe("genome version admission target agreement", () => {
     expect(plan_admission_cycle(admitted, live)).toEqual({ action: "register" });
   });
 
+  it("admits a microsecond-resolution promotion instant converted identically on both sides", () => {
+    const admitted_micro: admitted_generation_target = {
+      rule_set_version: "rosetta-rule-ref-v99",
+      rule_manifest_hash: "a".repeat(64),
+      promoted_epoch_ms: 1791786024697,
+    };
+    const live_micro: live_generation_target = {
+      ...live,
+      selected_at: "2026-10-12T06:20:24.697643+00:00",
+    };
+    expect(validate_target_agreement(admitted_micro, live_micro)).toEqual({ ok: true });
+    expect(plan_admission_cycle(admitted_micro, live_micro)).toEqual({ action: "register" });
+  });
+
   it("stands down when no target has been admitted", () => {
     expect(plan_admission_cycle(null, live)).toEqual({
       action: "stand_down",
@@ -116,6 +130,9 @@ describe("genome version admission driver contract", () => {
     expect(SELECT_UNREGISTERED_BILLS_SQL).toContain(
       "not exists (\n       select 1\n         from public.civic_genome_legislative_version_queue queue",
     );
+    expect(SELECT_UNREGISTERED_BILLS_SQL).toContain("jsonb_array_elements");
+    expect(SELECT_UNREGISTERED_BILLS_SQL).toContain("amendment_id");
+    expect(driver).toContain("floor(extract(epoch from promoted_at) * 1000)::bigint");
     expect(SELECT_UNREGISTERED_BILLS_SQL).not.toContain("legiscan");
   });
 
