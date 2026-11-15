@@ -465,6 +465,16 @@ APPROVED_REPOSITORY_ONLY = {
         "20261110290000_bundle_decomposition_shape_needs_judgment_v1.sql",
         "97cb44457cbc3e3dc1e3aa19419663fdda3be237",
     ),
+    # Dedupe merge ledger (duplicate catalog record merges:
+    # one row per absorbed entity, full row snapshots for
+    # mechanical reversal). Repository-only pending the
+    # separately approved production installation that follows
+    # the merge. Exact Git blob pinned; no production
+    # installation or ledger rewrite is implied by this entry.
+    "20261110300000": (
+        "20261110300000_dedupe_merge_ledger_v1.sql",
+        "89facd0cfe2a73e138a128166eb30342fdfd2407",
+    ),
     # Restored production migration (legal authority catalog
     # materialized view). Applied in the live production ledger on
     # 2026-10-20 and verified there first-hand 2026-11-11, but absent
