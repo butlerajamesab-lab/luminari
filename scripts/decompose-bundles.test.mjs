@@ -21,6 +21,7 @@ import {
   filterWave1Bundles,
   filterWave2Bundles,
   filterWave3Bundles,
+  fetchLiveState,
   manifestFor,
   mintedCanonicalFor,
   mintedEntityIdFor,
@@ -1027,5 +1028,55 @@ describe("wave-3: embedded-set contract (the 81 remaining bundles)", () => {
       expect(bundle.location_descriptors[di].has_coords, fragment).toBe(true);
       expect(assignLocations(bundle, mint).clone_indices, fragment).toContain(di);
     }
+  });
+});
+
+describe("fetchLiveState: link tables are unioned per bundle", () => {
+  // The 2026-11-15 wave-3 dry run drifted exactly 18 bundles with
+  // link_set_changed: their source rows span BOTH catalog link
+  // tables (step-1 site rows + step-4 remainder rows), and the old
+  // fetch read only the bundle's declared family table. A census of
+  // the live tables proved the union reconciles all 81 bundles
+  // exactly. These tests pin the union read.
+  const BUNDLE_ID = "07fdb476-cbc2-3382-5b8f-c6277c5add0f";
+  const linkRow = (uid, ref) => ({
+    bundle_entity_id: BUNDLE_ID,
+    civic_object_uid: uid,
+    object_ref: ref,
+    artifact_key: "k",
+    source_content_sha256: "s",
+  });
+  const stubClient = ({ site = [], remainder = [] } = {}) => ({
+    async query(sql) {
+      if (sql.includes("where canonical_id = any")) return { rows: [] };
+      if (sql.includes("luminari_resource_entities")) {
+        return {
+          rows: [{
+            resource_entity_id: BUNDLE_ID, canonical_id: "b_canonical",
+            resource_name: "Bundle", source_table: "t", state: "UT",
+            city: null, jurisdiction: "UT", layer: "backbone_workbook",
+          }],
+        };
+      }
+      if (sql.includes("luminari_catalog_site_source_rows")) return { rows: site };
+      if (sql.includes("luminari_catalog_remainder_source_rows")) return { rows: remainder };
+      return { rows: [] };
+    },
+  });
+  const approved = [{ bundle_entity_id: BUNDLE_ID, family: "catalog_site_projection_v1" }];
+  it("a bundle whose rows span both tables gets the union, whatever its declared family", async () => {
+    const live = await fetchLiveState(
+      stubClient({ site: [linkRow("corpus:a", "site-ref")], remainder: [linkRow("corpus:b", "rem-ref")] }),
+      approved, [],
+    );
+    expect([...live.linksByBundle.get(BUNDLE_ID).keys()].sort()).toEqual(["corpus:a", "corpus:b"]);
+    expect(live.linksByBundle.get(BUNDLE_ID).get("corpus:b").object_ref).toBe("rem-ref");
+  });
+  it("a uid present in both tables keeps the first (site) table's row", async () => {
+    const live = await fetchLiveState(
+      stubClient({ site: [linkRow("corpus:a", "site-ref")], remainder: [linkRow("corpus:a", "rem-ref")] }),
+      approved, [],
+    );
+    expect(live.linksByBundle.get(BUNDLE_ID).get("corpus:a").object_ref).toBe("site-ref");
   });
 });

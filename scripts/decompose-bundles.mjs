@@ -1162,8 +1162,10 @@ export const LINK_INSERT_COLUMNS = [
 /**
  * Build the re-pointed link rows for one bundle (pure). The
  * original link row (object_ref / artifact_key / source hash)
- * comes from the bundle's own family link table, fetched live;
- * the attribution comes from the embedded census record.
+ * comes from the bundle's live link rows, fetched from both
+ * catalog link tables (a bundle's rows may span them; the fetch
+ * unions them by uid); the attribution comes from the embedded
+ * census record.
  */
 export function buildLinkInsert(bundle, mintRecords, liveLinksByUid) {
   const rows = [];
@@ -1363,7 +1365,7 @@ const LINK_TABLE_BY_FAMILY = {
   },
 };
 
-async function fetchLiveState(client, approved, allCanonicals) {
+export async function fetchLiveState(client, approved, allCanonicals) {
   const bundleIds = approved.map((b) => b.bundle_entity_id);
   const entitiesById = new Map();
   for (const batch of chunk(bundleIds, 200)) {
@@ -1404,12 +1406,20 @@ async function fetchLiveState(client, approved, allCanonicals) {
       locationsByBundle.get(row.resource_entity_id).push(row);
     }
   }
+  // A bundle's source rows may span BOTH catalog link tables: the
+  // step-1 and step-4 projections each linked the rows they minted,
+  // and a conflict-identity bundle can hold rows from both (18 of
+  // the 81 wave-3 bundles do; the 2026-11-15 wave-3 dry run drifted
+  // exactly those 18 under a family-exclusive read). Read every
+  // table for every bundle and union by civic_object_uid. On a uid
+  // collision across tables the first table's row wins (site before
+  // remainder, the historical precedence); the drift check compares
+  // uid sets, and the 2026-11-15 census of the wave-3 population
+  // proved the union reconciles all 81 bundles exactly, with no
+  // collisions.
   for (const family of Object.keys(LINK_TABLE_BY_FAMILY)) {
-    const ids = approved
-      .filter((b) => b.family === family)
-      .map((b) => b.bundle_entity_id);
     const { table, entityColumn } = LINK_TABLE_BY_FAMILY[family];
-    for (const batch of chunk(ids, 200)) {
+    for (const batch of chunk(bundleIds, 200)) {
       if (batch.length === 0) continue;
       const res = await client.query(
         `select ${entityColumn} as bundle_entity_id, civic_object_uid,
@@ -1422,7 +1432,10 @@ async function fetchLiveState(client, approved, allCanonicals) {
         if (!linksByBundle.has(row.bundle_entity_id)) {
           linksByBundle.set(row.bundle_entity_id, new Map());
         }
-        linksByBundle.get(row.bundle_entity_id).set(row.civic_object_uid, row);
+        const byUid = linksByBundle.get(row.bundle_entity_id);
+        if (!byUid.has(row.civic_object_uid)) {
+          byUid.set(row.civic_object_uid, row);
+        }
       }
     }
   }
