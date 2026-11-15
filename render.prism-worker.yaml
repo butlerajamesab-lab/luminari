@@ -80,3 +80,5 @@ services:
         value: https://prism-14wm.onrender.com
       - key: GENOME_VERSION_ADMISSION_ENABLED
         value: "false"
+      - key: GENOME_ROSETTA_INGESTION_ENABLED
+        value: "false"
