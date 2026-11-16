@@ -21,6 +21,7 @@ vi.mock("./civic-genome-projection", () => ({
 }));
 
 import {
+  DOCKET_ARCHIVE_ONLY_CLAIM_SQL,
   classify_docket_bill_activation_failure,
   docket_bill_activation_retry_delay_seconds,
   process_docket_bill_activation_job,
@@ -107,14 +108,15 @@ describe("Docket jurisdiction activation queue", () => {
       const claim = query.mock.calls.find(call =>
         call[2]?.label === "docket_bill_activation_queue_claim");
       const sql = String(claim?.[0] ?? "");
-      expect(sql).toContain("with superseded as (");
+      expect(sql).toContain("with candidate as materialized (");
+      expect(sql).toContain("superseded as (");
       expect(sql).toContain("activation.source = 'legiscan_bulk_json'");
       expect(sql).toContain("receipt.disposition = 'inserted'");
       expect(sql).toContain("detail.source like 'legiscan_get_bill%'");
       expect(sql).toContain("superseded_by_live_api");
       expect(sql).toContain("queue.queue_state = 'submitted'");
       expect(sql).toContain("queue.locked_at < now() - make_interval(mins => $2::integer)");
-      expect(sql).toContain("not exists (select 1 from superseded");
+      expect(sql).toMatch(/not exists \(\s*select 1 from superseded/);
       expect(get_bill).not.toHaveBeenCalled();
     } finally {
       if (original === undefined) delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
@@ -130,13 +132,38 @@ describe("Docket jurisdiction activation queue", () => {
       const claim = query.mock.calls.find(call =>
         call[2]?.label === "docket_bill_activation_queue_claim");
       expect(claim).toBeDefined();
-      expect(String(claim?.[0])).toContain("activation.source = $4::text");
-      expect(claim?.[1]?.[3]).toBe("legiscan_bulk_json");
+      expect(String(claim?.[0])).toContain("activation.source = 'legiscan_bulk_json'");
+      expect(claim?.[1]).toHaveLength(3);
+      expect(String(claim?.[0])).not.toContain("jsonb_array_elements(cache.bills)");
+      expect(String(claim?.[0])).not.toContain("docket_bill_state_cache");
       expect(get_bill).not.toHaveBeenCalled();
     } finally {
       if (original === undefined) delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
       else process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = original;
     }
+  });
+
+  it("settles only the locked bounded archive cohort before claiming its unsuperseded members", () => {
+    const sql=DOCKET_ARCHIVE_ONLY_CLAIM_SQL;
+    expect(sql).toContain("with candidate as materialized (");
+    expect(sql).toContain("for update of queue skip locked");
+    expect(sql).toContain("limit $3::integer");
+    expect(sql.indexOf("candidate as materialized")).toBeLessThan(sql.indexOf("superseded as ("));
+    expect(sql.indexOf("superseded as (")).toBeLessThan(sql.indexOf("claimed as ("));
+    expect(sql).toContain("receipt.member_kind='bill'");
+    expect(sql).toContain("receipt.disposition='inserted'");
+    expect(sql).toContain("detail.fetched_at = activation.cache_fetched_at");
+    expect(sql).toContain("detail.fetched_at > activation.cache_fetched_at");
+    expect(sql).toContain("detail.bill ->> 'state' = activation.state");
+    expect(sql).toContain("detail.bill ->> 'session_id' = activation.session_id::text");
+    expect(sql).toContain("candidate.detail_source='legiscan_bulk_json'");
+    expect(sql).toMatch(/not exists \(\s*select 1 from superseded/);
+    expect(sql).not.toContain("jsonb_array_elements(");
+    expect(sql).not.toContain("docket_bill_state_cache");
+    expect(sql).not.toContain("get_bill(");
+    expect(sql).toContain("locked_by=$1::text");
+    expect(sql).toContain("queue.next_attempt_at <= now()");
+    expect(sql).toContain("queue.locked_at < now() - make_interval(mins => $2::integer)");
   });
 
   it("rejects a non-archive job without spending LegiScan credits in archive-only mode", async () => {
