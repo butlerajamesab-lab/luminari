@@ -155,10 +155,10 @@ describe("Docket jurisdiction activation queue", () => {
     expect(sql.indexOf("superseded as (")).toBeLessThan(sql.indexOf("claimed as ("));
     expect(sql).toContain("receipt.member_kind='bill'");
     expect(sql).toContain("receipt.disposition='inserted'");
-    expect(sql).toContain("detail.fetched_at = activation.cache_fetched_at");
-    expect(sql).toContain("detail.fetched_at > activation.cache_fetched_at");
-    expect(sql).toContain("detail.bill ->> 'state' = activation.state");
-    expect(sql).toContain("detail.bill ->> 'session_id' = activation.session_id::text");
+    expect(sql).toContain("candidate.detail_fetched_at > candidate.cache_fetched_at");
+    expect(sql).toContain("activation.cache_fetched_at");
+    expect(sql).toContain("candidate.detail_state = candidate.state");
+    expect(sql).toContain("candidate.detail_session_id = candidate.session_id::text");
     expect(sql).toContain("from next_archive");
     expect(sql).toContain("left join public.docket_bill_detail_cache detail");
     expect(sql.indexOf("limit $3::integer")).toBeLessThan(sql.indexOf("left join public.docket_bill_detail_cache detail"));
