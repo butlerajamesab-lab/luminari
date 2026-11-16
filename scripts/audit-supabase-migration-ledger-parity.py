@@ -19,6 +19,7 @@ PRODUCTION_RECEIPTS = (
     # Exact Supabase-assigned identity for the installed October 8 Viewfinder SQL.
     Path("supabase/verification/production_migration_receipts_20261018_addendum.tsv"),
     Path("supabase/verification/production_migration_receipts_20261028_addendum.tsv"),
+    Path("supabase/verification/production_migration_receipts_20261115_addendum.tsv"),
 )
 # executable_md5 is exported from each ordered production statement array by
 # trimming trailing whitespace, restoring a missing top-level terminator,
