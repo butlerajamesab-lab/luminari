@@ -252,11 +252,18 @@ describe('round 4: combined units, category membership, gov contact materializat
       { contact_type: 'email', contact_value: 'help@county.gov', office_id: 'off1', from_entity_id: 'B' },
     ]);
   });
-  it('materializes nothing when the survivor serves no reviewed points (anchors keep synthesis working)', () => {
+  it('materializes the union when the survivor serves no reviewed points (round 8: the fallback keeps only one office list)', () => {
+    // This test previously asserted NOTHING is materialized in a
+    // government-only merge, on the round-4 assumption that the
+    // moved anchors keep synthesis serving every member's contacts.
+    // Round 8 disproved that: load_contacts_for overwrites the
+    // entity's list per office row, so only one office would serve.
     const gov = new Map([['B', [{ type: 'email', value: 'help@county.gov', key: 'help@county.gov', office_id: 'off1' }]]]);
     const ctx = makeCtx([ent('A', { description: 'A real description that is longer than forty characters for sure.' }), ent('B')], [], [loc('A'), loc('B')], new Map(), new Map(), new Map(), gov);
     const plan = planCluster({ memberIds: ['A', 'B'], edges: [] }, ctx);
-    expect(plan.materialize_points).toEqual([]);
+    expect(plan.materialize_points).toEqual([
+      { contact_type: 'email', contact_value: 'help@county.gov', office_id: 'off1', from_entity_id: 'B' },
+    ]);
   });
 });
 
@@ -328,6 +335,41 @@ describe('round 6: materialize only contacts that were previously served', () =>
     expect(plan.materialize_points).toEqual([
       { contact_type: 'email', contact_value: 'help@county.gov', office_id: 'off1', from_entity_id: 'B' },
     ]);
+  });
+});
+
+describe('round 8: government-only merges preserve every synthesized contact', () => {
+  it('materializes the union across offices when no member has reviewed points', () => {
+    const gov = new Map([
+      ['A', [
+        { type: 'phone', value: '509-555-0100', key: '5095550100', office_id: 'offA' },
+        { type: 'email', value: 'a@county.gov', key: 'a@county.gov', office_id: 'offA' },
+      ]],
+      ['B', [
+        { type: 'phone', value: '509-555-0100', key: '5095550100', office_id: 'offB' },
+        { type: 'email', value: 'b@county.gov', key: 'b@county.gov', office_id: 'offB' },
+      ]],
+    ]);
+    const ctx = makeCtx([ent('A'), ent('B')], [], [loc('A'), loc('B')], new Map(), new Map(), new Map(), gov);
+    const plan = planCluster({ memberIds: ['A', 'B'], edges: [{ a: 'A', b: 'B', via: ['phone'] }] }, ctx);
+    // The shared phone materializes once; BOTH distinct emails are
+    // preserved — the serving fallback would have kept only one
+    // office's list for the survivor.
+    expect(plan.materialize_points).toEqual([
+      { contact_type: 'phone', contact_value: '509-555-0100', office_id: 'offA', from_entity_id: 'A' },
+      { contact_type: 'email', contact_value: 'a@county.gov', office_id: 'offA', from_entity_id: 'A' },
+      { contact_type: 'email', contact_value: 'b@county.gov', office_id: 'offB', from_entity_id: 'B' },
+    ]);
+  });
+  it('materializes a single shared set once when both offices agree', () => {
+    const office = [
+      { type: 'phone', value: '509-555-0100', key: '5095550100', office_id: 'offA' },
+      { type: 'website', value: 'https://county.gov', key: 'https://county.gov', office_id: 'offA' },
+    ];
+    const gov = new Map([['A', office], ['B', office.map((c) => ({ ...c, office_id: 'offB' }))]]);
+    const ctx = makeCtx([ent('A'), ent('B')], [], [loc('A'), loc('B')], new Map(), new Map(), new Map(), gov);
+    const plan = planCluster({ memberIds: ['A', 'B'], edges: [] }, ctx);
+    expect(plan.materialize_points).toHaveLength(2);
   });
 });
 

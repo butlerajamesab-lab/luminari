@@ -320,8 +320,13 @@ export function planCluster(cluster, ctx) {
   // reviewed points, so once an absorbed gov member retires, its
   // unique synthesized phone/email/website would become inaccessible
   // behind the survivor's points. When the survivor serves no
-  // reviewed points, the moved anchors keep synthesis working and
-  // nothing is materialized.
+  // reviewed points either (a government-only merge), the union of
+  // ALL members' synthesized contacts is materialized instead
+  // (Codex P2, round 8): the serving fallback keeps only ONE linked
+  // office's contact list per entity (by_entity.set overwrites per
+  // office row in load_contacts_for), so relying on the moved
+  // anchors would silently drop every other member's distinct
+  // contacts the moment it retires.
   const materialize_points = [];
   if (survKeys.size > 0 && ctx.govContacts) {
     // Coverage compares FULL keys for every type — website included
@@ -349,6 +354,21 @@ export function planCluster(cluster, ctx) {
       for (const c of ctx.govContacts.get(entityId) || []) {
         const planKey = c.type + '|' + c.key;
         if (survKeys.has(planKey) || planned.has(planKey)) continue;
+        planned.add(planKey);
+        materialize_points.push({ contact_type: c.type, contact_value: c.value, office_id: c.office_id, from_entity_id: entityId });
+      }
+    }
+  } else if (survKeys.size === 0 && ctx.govContacts) {
+    // Government-only merge: materialize the full union of every
+    // member's synthesized contacts (survivor included), deduped by
+    // full key. The survivor then serves exactly the union that
+    // served across the cluster pre-merge, as real points with the
+    // same official_source_feed provenance the fallback reports.
+    const planned = new Set();
+    for (const entityId of [survivor, ...absorbed.map((ab) => ab.entity_id)]) {
+      for (const c of ctx.govContacts.get(entityId) || []) {
+        const planKey = c.type + '|' + c.key;
+        if (planned.has(planKey)) continue;
         planned.add(planKey);
         materialize_points.push({ contact_type: c.type, contact_value: c.value, office_id: c.office_id, from_entity_id: entityId });
       }
