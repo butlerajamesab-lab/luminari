@@ -111,7 +111,7 @@ describe("Docket jurisdiction activation queue", () => {
       expect(sql).toContain("with candidate as materialized (");
       expect(sql).toContain("superseded as (");
       expect(sql).toContain("activation.source = 'legiscan_bulk_json'");
-      expect(sql).toContain("receipt.disposition = 'inserted'");
+      expect(sql).toContain("receipt.disposition='inserted'");
       expect(sql).toContain("detail.source like 'legiscan_get_bill%'");
       expect(sql).toContain("superseded_by_live_api");
       expect(sql).toContain("queue.queue_state = 'submitted'");
