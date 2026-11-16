@@ -254,6 +254,14 @@ export function is_deterministic_ingestion_failure(error: unknown): boolean {
   return (
     code.includes("legislative_version_non_legislative_document")
     || code.includes("legislative_version_source_url_invalid")
+    // These failures are determined by the extracted bytes and source shape.
+    // The retired queue already classifies these as deterministic. Repeating
+    // an identical source fetch cannot produce a certified complete law.
+    // Park with the exact error; new official source evidence must re-enter
+    // through its governed version/source registration path.
+    || code.includes("docket_html_text_incomplete")
+    || code.includes("legislative_version_pdf_text_incomplete")
+    || code.includes("legislative_version_html_text_incomplete")
     || code.includes("legislative_version_reference_date_unavailable")
     || code.includes("legislative_amendment_attachment_unresolved")
     || code.includes("legislative_amendment_base_content_unavailable")
