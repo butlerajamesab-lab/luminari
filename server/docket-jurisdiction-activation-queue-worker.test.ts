@@ -108,7 +108,8 @@ describe("Docket jurisdiction activation queue", () => {
       const claim = query.mock.calls.find(call =>
         call[2]?.label === "docket_bill_activation_queue_claim");
       const sql = String(claim?.[0] ?? "");
-      expect(sql).toContain("with candidate as materialized (");
+      expect(sql).toContain("with next_archive as materialized (");
+      expect(sql).toContain("candidate as materialized (");
       expect(sql).toContain("superseded as (");
       expect(sql).toContain("activation.source = 'legiscan_bulk_json'");
       expect(sql).toContain("receipt.disposition='inserted'");
@@ -148,6 +149,7 @@ describe("Docket jurisdiction activation queue", () => {
     expect(sql).toContain("with candidate as materialized (");
     expect(sql).toContain("for update of queue skip locked");
     expect(sql).toContain("limit $3::integer");
+    expect(sql.indexOf("next_archive as materialized")).toBeLessThan(sql.indexOf("candidate as materialized"));
     expect(sql.indexOf("candidate as materialized")).toBeLessThan(sql.indexOf("superseded as ("));
     expect(sql.indexOf("superseded as (")).toBeLessThan(sql.indexOf("claimed as ("));
     expect(sql).toContain("receipt.member_kind='bill'");
@@ -156,7 +158,9 @@ describe("Docket jurisdiction activation queue", () => {
     expect(sql).toContain("detail.fetched_at > activation.cache_fetched_at");
     expect(sql).toContain("detail.bill ->> 'state' = activation.state");
     expect(sql).toContain("detail.bill ->> 'session_id' = activation.session_id::text");
-    expect(sql).toContain("candidate.detail_source='legiscan_bulk_json'");
+    expect(sql).toContain("from next_archive");
+    expect(sql).toContain("left join public.docket_bill_detail_cache detail");
+    expect(sql.indexOf("limit $3::integer")).toBeLessThan(sql.indexOf("left join public.docket_bill_detail_cache detail"));
     expect(sql).toMatch(/not exists \(\s*select 1 from superseded/);
     expect(sql).not.toContain("jsonb_array_elements(");
     expect(sql).not.toContain("docket_bill_state_cache");
