@@ -210,13 +210,13 @@ export function classify_docket_bill_activation_failure(input: {
  * updated twice. No provider API request is possible from this SQL.
  */
 export const DOCKET_ARCHIVE_ONLY_CLAIM_SQL = `
-  with candidate as materialized (
+  with next_archive as materialized (
+    -- The queue/activation identity determines WHICH bounded jobs are due.
+    -- Never join the 200k-row document cache while picking the first page.
     select queue.queue_id, queue.source_bill_id,
            activation.state, activation.session_id,
            activation.source as activation_source,
-           activation.cache_fetched_at,
-           detail.source as detail_source,
-           detail.fetched_at as detail_fetched_at
+           activation.cache_fetched_at
       from public.docket_bill_processing_queue queue
       join public.docket_jurisdiction_activation_bill binding
         on binding.queue_id=queue.queue_id
@@ -225,27 +225,7 @@ export const DOCKET_ARCHIVE_ONLY_CLAIM_SQL = `
         on activation.activation_id=binding.activation_id
        and activation.state=binding.state
        and activation.session_id=binding.session_id
-      join public.docket_bill_detail_cache detail
-        on detail.bill_id=queue.source_bill_id
      where activation.source = 'legiscan_bulk_json'
-       and detail.bill ->> 'state' = activation.state
-       and detail.bill ->> 'session_id' = activation.session_id::text
-       and (
-         (
-           detail.source = 'legiscan_bulk_json'
-           and detail.fetched_at = activation.cache_fetched_at
-         )
-         or (
-           detail.source like 'legiscan_get_bill%'
-           and detail.fetched_at > activation.cache_fetched_at
-           and exists (
-             select 1 from public.docket_legiscan_bulk_member_receipt receipt
-              where receipt.bill_id=queue.source_bill_id
-                and receipt.member_kind='bill'
-                and receipt.disposition='inserted'
-           )
-         )
-       )
        and queue.next_attempt_at <= now()
        and (
          queue.queue_state in ('eligible','degraded')
@@ -261,6 +241,19 @@ export const DOCKET_ARCHIVE_ONLY_CLAIM_SQL = `
      order by queue.created_at, queue.queue_id
      for update of queue skip locked
      limit $3::integer
+  ), candidate as materialized (
+    -- Inspect cache identity on only the small, locked candidate set.
+    -- A missing or mismatched archive source is still claimed so the existing
+    -- canonical read fails closed with an explicit job-level error instead of
+    -- silently stranding the queue row.
+    select next_archive.*,
+           detail.source as detail_source,
+           detail.fetched_at as detail_fetched_at,
+           detail.bill->>'state' as detail_state,
+           detail.bill->>'session_id' as detail_session_id
+      from next_archive
+      left join public.docket_bill_detail_cache detail
+        on detail.bill_id=next_archive.source_bill_id
   ), superseded as (
     update public.docket_bill_processing_queue queue
        set queue_state='completed',
@@ -280,6 +273,15 @@ export const DOCKET_ARCHIVE_ONLY_CLAIM_SQL = `
       from candidate
      where queue.queue_id=candidate.queue_id
        and candidate.detail_source like 'legiscan_get_bill%'
+       and candidate.detail_fetched_at > candidate.cache_fetched_at
+       and candidate.detail_state = candidate.state
+       and candidate.detail_session_id = candidate.session_id::text
+       and exists (
+         select 1 from public.docket_legiscan_bulk_member_receipt receipt
+          where receipt.bill_id=queue.source_bill_id
+            and receipt.member_kind='bill'
+            and receipt.disposition='inserted'
+       )
     returning queue.queue_id
   ), claimed as (
     update public.docket_bill_processing_queue queue
@@ -289,7 +291,8 @@ export const DOCKET_ARCHIVE_ONLY_CLAIM_SQL = `
            updated_at=now()
       from candidate
      where queue.queue_id=candidate.queue_id
-       and candidate.detail_source='legiscan_bulk_json'
+       -- Claim non-superseded jobs even if their cache is missing/corrupt:
+       -- read_docket_archive_detail will fail closed and record the reason.
        and not exists (
          select 1 from superseded
           where superseded.queue_id=queue.queue_id
