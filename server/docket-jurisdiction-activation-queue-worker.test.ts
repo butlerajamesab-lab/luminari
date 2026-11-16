@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
 
 const { query, get_bill, project_state, project_archive } = vi.hoisted(() => ({
   query: vi.fn(),
@@ -21,10 +22,12 @@ vi.mock("./civic-genome-projection", () => ({
 }));
 
 import {
+  DOCKET_ARCHIVE_ONLY_CLAIM_SQL,
   classify_docket_bill_activation_failure,
   docket_bill_activation_retry_delay_seconds,
   process_docket_bill_activation_job,
   resolve_docket_activation_source_scope,
+  resolve_docket_archive_canary_queue_ids,
   run_docket_bill_activation_queue_cycle,
 } from "./docket-jurisdiction-activation-queue-worker";
 
@@ -81,6 +84,55 @@ describe("Docket jurisdiction activation queue", () => {
       .toBe("legiscan_bulk_json");
   });
 
+  it("rejects overbroad or malformed restart-safe pilot allowlists", () => {
+    const scope = { DOCKET_BILL_ACTIVATION_SOURCE_SCOPE: "legiscan_bulk_json" };
+    const a = "11111111-1111-4111-8111-111111111111";
+    const b = "22222222-2222-4222-8222-222222222222";
+    expect(resolve_docket_archive_canary_queue_ids(scope)).toBeNull();
+    expect(resolve_docket_archive_canary_queue_ids({ ...scope, DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS: `${a}, ${b}` }))
+      .toEqual([a, b]);
+    for (const raw of ["", "not-a-uuid", `${a},${a}`, `${a},${b},${a}`, Array(6).fill(a).join(",")]) {
+      expect(() => resolve_docket_archive_canary_queue_ids({
+        ...scope, DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS: raw,
+      })).toThrow("docket_archive_canary_invalid_queue_ids");
+    }
+    expect(() => resolve_docket_archive_canary_queue_ids({
+      DOCKET_BILL_ACTIVATION_SOURCE_SCOPE: "all",
+      DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS: a,
+    })).toThrow("docket_archive_canary_requires_archive_scope");
+  });
+
+  it("constrains shared-worker archive activation to exact five one-attempt queue IDs", async () => {
+    const previousScope = process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+    const previousIds = process.env.DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS;
+    const ids = [
+      "11111111-1111-4111-8111-111111111111",
+      "22222222-2222-4222-8222-222222222222",
+    ];
+    process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = "legiscan_bulk_json";
+    process.env.DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS = ids.join(",");
+    try {
+      await run_docket_bill_activation_queue_cycle();
+      const claim = query.mock.calls.find(call =>
+        call[2]?.label === "docket_bill_activation_queue_claim");
+      expect(claim).toBeDefined();
+      const sql = String(claim?.[0] ?? "");
+      expect(claim?.[1]?.[3]).toEqual(ids);
+      expect(sql).toContain("queue.queue_id = any($4::uuid[])");
+      expect(sql).toContain("queue.queue_state = 'eligible'");
+      expect(sql).toContain("queue.locked_at is null");
+      expect(sql).toContain("queue.attempt_count = 0");
+      expect(sql).toContain("'failure_code'");
+      expect(sql).toContain("activation.source = 'legiscan_bulk_json'");
+      expect(get_bill).not.toHaveBeenCalled();
+    } finally {
+      if (previousScope === undefined) delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+      else process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = previousScope;
+      if (previousIds === undefined) delete process.env.DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS;
+      else process.env.DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS = previousIds;
+    }
+  });
+
   it("keeps the legacy live-API claim independent of the uninstalled archive receipt table", async () => {
     const original = process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
     delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
@@ -107,14 +159,16 @@ describe("Docket jurisdiction activation queue", () => {
       const claim = query.mock.calls.find(call =>
         call[2]?.label === "docket_bill_activation_queue_claim");
       const sql = String(claim?.[0] ?? "");
-      expect(sql).toContain("with superseded as (");
+      expect(sql).toContain("with next_archive as materialized (");
+      expect(sql).toContain("candidate as materialized (");
+      expect(sql).toContain("superseded as (");
       expect(sql).toContain("activation.source = 'legiscan_bulk_json'");
-      expect(sql).toContain("receipt.disposition = 'inserted'");
-      expect(sql).toContain("detail.source like 'legiscan_get_bill%'");
+      expect(sql).toContain("receipt.disposition='inserted'");
+      expect(sql).toContain("candidate.detail_source like 'legiscan_get_bill%'");
       expect(sql).toContain("superseded_by_live_api");
       expect(sql).toContain("queue.queue_state = 'submitted'");
       expect(sql).toContain("queue.locked_at < now() - make_interval(mins => $2::integer)");
-      expect(sql).toContain("not exists (select 1 from superseded");
+      expect(sql).toMatch(/not exists \(\s*select 1 from superseded/);
       expect(get_bill).not.toHaveBeenCalled();
     } finally {
       if (original === undefined) delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
@@ -130,13 +184,60 @@ describe("Docket jurisdiction activation queue", () => {
       const claim = query.mock.calls.find(call =>
         call[2]?.label === "docket_bill_activation_queue_claim");
       expect(claim).toBeDefined();
-      expect(String(claim?.[0])).toContain("activation.source = $4::text");
-      expect(claim?.[1]?.[3]).toBe("legiscan_bulk_json");
+      expect(String(claim?.[0])).toContain("activation.source = 'legiscan_bulk_json'");
+      expect(claim?.[1]).toHaveLength(4);
+      expect(claim?.[1]?.[3]).toBeNull();
+      expect(String(claim?.[0])).not.toContain("jsonb_array_elements(cache.bills)");
+      expect(String(claim?.[0])).not.toContain("docket_bill_state_cache");
       expect(get_bill).not.toHaveBeenCalled();
     } finally {
       if (original === undefined) delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
       else process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = original;
     }
+  });
+
+  it("settles only the locked bounded archive cohort before claiming its unsuperseded members", () => {
+    const sql=DOCKET_ARCHIVE_ONLY_CLAIM_SQL;
+    expect(sql).toContain("candidate as materialized (");
+    expect(sql).toContain("for update of queue skip locked");
+    expect(sql).toContain("limit $3::integer");
+    expect(sql.indexOf("next_archive as materialized")).toBeLessThan(sql.indexOf("candidate as materialized"));
+    expect(sql.indexOf("candidate as materialized")).toBeLessThan(sql.indexOf("superseded as ("));
+    expect(sql.indexOf("superseded as (")).toBeLessThan(sql.indexOf("claimed as ("));
+    expect(sql).toContain("receipt.member_kind='bill'");
+    expect(sql).toContain("receipt.disposition='inserted'");
+    expect(sql).toContain("candidate.detail_fetched_at > candidate.cache_fetched_at");
+    expect(sql).toContain("activation.cache_fetched_at");
+    expect(sql).toContain("candidate.detail_state = candidate.state");
+    expect(sql).toContain("candidate.detail_session_id = candidate.session_id::text");
+    expect(sql).toContain("from next_archive");
+    expect(sql).toContain("left join public.docket_bill_detail_cache detail");
+    expect(sql.indexOf("limit $3::integer")).toBeLessThan(sql.indexOf("left join public.docket_bill_detail_cache detail"));
+    expect(sql).toMatch(/not exists \(\s*select 1 from superseded/);
+    expect(sql).not.toContain("jsonb_array_elements(");
+    expect(sql).not.toContain("docket_bill_state_cache");
+    expect(sql).not.toContain("get_bill(");
+    expect(sql).toContain("locked_by=$1::text");
+    expect(sql).toContain("queue.next_attempt_at <= now()");
+    expect(sql).toContain("$4::uuid[] is null");
+    expect(sql).toContain("queue.queue_id = any($4::uuid[])");
+    expect(sql).toContain("queue.locked_at < now() - make_interval(mins => $2::integer)");
+  });
+
+  it("proposes a separate no-API worker with inherited secrets, no automatic deployment", () => {
+    const blueprint = readFileSync(new URL("../render.docket-archive-worker.yaml", import.meta.url), "utf8");
+    expect(blueprint).toContain("type: worker");
+    expect(blueprint).toContain("plan: starter");
+    expect(blueprint).toContain("autoDeployTrigger: off");
+    expect(blueprint).toContain("build:docket-archive-worker");
+    expect(blueprint).toContain("DOCKET_BILL_ACTIVATION_SOURCE_SCOPE");
+    expect(blueprint).toContain("value: legiscan_bulk_json");
+    expect(blueprint).toContain("envVarKey: LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY");
+    expect(blueprint).toContain("envVarKey: DATABASE_URL");
+    expect(blueprint.match(/fromService:/g)).toHaveLength(2);
+    expect(blueprint).toContain('name: "LIGHTHOUSE "');
+    expect(blueprint).not.toContain("LEGISCAN_API_KEY");
+    expect(blueprint).not.toContain("sync: false");
   });
 
   it("rejects a non-archive job without spending LegiScan credits in archive-only mode", async () => {

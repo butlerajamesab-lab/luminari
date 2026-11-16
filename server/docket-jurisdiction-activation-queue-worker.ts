@@ -102,6 +102,30 @@ export function resolve_docket_activation_source_scope(
   throw new Error("docket_bill_activation_invalid_source_scope");
 }
 
+/**
+ * Exact, restart-safe pilot boundary for an existing shared worker.
+ * Optional in normal operation; when set, it requires the archive-only scope.
+ * A pilot may touch at most five named archive queue IDs, once each.
+ */
+export function resolve_docket_archive_canary_queue_ids(
+  environment: NodeJS.ProcessEnv = process.env,
+): string[] | null {
+  const raw = environment.DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS;
+  if (raw === undefined) return null;
+  if ((environment.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE ?? "all") !== "legiscan_bulk_json") {
+    throw new Error("docket_archive_canary_requires_archive_scope");
+  }
+  const ids = raw.split(",").map(value => value.trim().toLowerCase());
+  if (
+    ids.length < 1 || ids.length > 5
+    || ids.some(value => !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value))
+    || new Set(ids).size !== ids.length
+  ) {
+    throw new Error("docket_archive_canary_invalid_queue_ids");
+  }
+  return ids;
+}
+
 function as_record(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
@@ -199,60 +223,149 @@ export function classify_docket_bill_activation_failure(input: {
   };
 }
 
+/**
+ * Archive-only queue claim: same canonical queue/registration path, but no
+ * master-list JSON expansion and no unbounded supersession UPDATE.
+ *
+ * The exact bounded candidate set is locked first. A newer, provenance-verified
+ * API cache settles only its corresponding candidate; all other candidates
+ * stay on the existing ZIP cache/receipt registration path. The supersession
+ * CTE must precede and be referenced by the claim CTE so no candidate is ever
+ * updated twice. No provider API request is possible from this SQL.
+ */
+export const DOCKET_ARCHIVE_ONLY_CLAIM_SQL = `
+  with next_archive as materialized (
+    -- The queue/activation identity determines WHICH bounded jobs are due.
+    -- Never join the 200k-row document cache while picking the first page.
+    select queue.queue_id, queue.source_bill_id,
+           activation.state, activation.session_id,
+           activation.source as activation_source,
+           activation.cache_fetched_at
+      from public.docket_bill_processing_queue queue
+      join public.docket_jurisdiction_activation_bill binding
+        on binding.queue_id=queue.queue_id
+       and binding.source_bill_id=queue.source_bill_id
+      join public.docket_jurisdiction_activation_run activation
+        on activation.activation_id=binding.activation_id
+       and activation.state=binding.state
+       and activation.session_id=binding.session_id
+     where activation.source = 'legiscan_bulk_json'
+       and (
+         $4::uuid[] is null
+         or (
+           queue.queue_id = any($4::uuid[])
+           -- Canary jobs never auto-retry after a crash, error, or lease expiry.
+           and queue.queue_state = 'eligible'
+           and queue.locked_at is null
+           and queue.attempt_count = 0
+           and not (coalesce(queue.receipt_json, '{}'::jsonb) ? 'failure_code')
+         )
+       )
+       and queue.next_attempt_at <= now()
+       and (
+         queue.queue_state in ('eligible','degraded')
+         or (
+           queue.queue_state = 'submitted'
+           and queue.locked_at < now() - make_interval(mins => $2::integer)
+         )
+       )
+       and (
+         queue.locked_at is null
+         or queue.locked_at < now() - make_interval(mins => $2::integer)
+       )
+     order by queue.created_at, queue.queue_id
+     for update of queue skip locked
+     limit $3::integer
+  ), candidate as materialized (
+    -- Inspect cache identity on only the small, locked candidate set.
+    -- A missing or mismatched archive source is still claimed so the existing
+    -- canonical read fails closed with an explicit job-level error instead of
+    -- silently stranding the queue row.
+    select next_archive.*,
+           detail.source as detail_source,
+           detail.fetched_at as detail_fetched_at,
+           detail.bill->>'state' as detail_state,
+           detail.bill->>'session_id' as detail_session_id
+      from next_archive
+      left join public.docket_bill_detail_cache detail
+        on detail.bill_id=next_archive.source_bill_id
+  ), superseded as (
+    update public.docket_bill_processing_queue queue
+       set queue_state='completed',
+           completed_at=now(),
+           locked_at=null,
+           locked_by=null,
+           last_failure_class=null,
+           last_error_code=null,
+           receipt_json=coalesce(queue.receipt_json,'{}'::jsonb) ||
+             jsonb_build_object(
+               'terminal_state','superseded_by_live_api',
+               'superseding_source',candidate.detail_source,
+               'superseding_detail_fetched_at',candidate.detail_fetched_at,
+               'superseded_at',now()
+             ),
+           updated_at=now()
+      from candidate
+     where queue.queue_id=candidate.queue_id
+       and candidate.detail_source like 'legiscan_get_bill%'
+       and candidate.detail_fetched_at > candidate.cache_fetched_at
+       and candidate.detail_state = candidate.state
+       and candidate.detail_session_id = candidate.session_id::text
+       and exists (
+         select 1 from public.docket_legiscan_bulk_member_receipt receipt
+          where receipt.bill_id=queue.source_bill_id
+            and receipt.member_kind='bill'
+            and receipt.disposition='inserted'
+       )
+    returning queue.queue_id
+  ), claimed as (
+    update public.docket_bill_processing_queue queue
+       set queue_state='submitted',
+           locked_at=now(),
+           locked_by=$1::text,
+           updated_at=now()
+      from candidate
+     where queue.queue_id=candidate.queue_id
+       -- Claim non-superseded jobs even if their cache is missing/corrupt:
+       -- read_docket_archive_detail will fail closed and record the reason.
+       and not exists (
+         select 1 from superseded
+          where superseded.queue_id=queue.queue_id
+       )
+    returning queue.queue_id::text,
+              queue.source_bill_id,
+              candidate.state,
+              candidate.session_id,
+              candidate.activation_source,
+              queue.summary_fingerprint,
+              queue.observed_change_hash,
+              queue.attempt_count
+  )
+  select * from claimed`;
+
 const circuit_open_log = new circuit_open_log_gate();
 
 async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> {
   const source_scope = resolve_docket_activation_source_scope();
+  const canary_queue_ids = resolve_docket_archive_canary_queue_ids();
+  if (source_scope === "legiscan_bulk_json") {
+    const result = await query_with_diagnostics<docket_bill_activation_job>(
+      DOCKET_ARCHIVE_ONLY_CLAIM_SQL,
+      [queue_worker_id, QUEUE_LEASE_MINUTES, limit, canary_queue_ids],
+      {
+        label: "docket_bill_activation_queue_claim",
+        pool_acquire_timeout_ms: 1_000,
+        query_timeout_ms: 5_000,
+      },
+    );
+    return result.rows;
+  }
   // The legacy live API worker must never depend on proposal-only receipt DDL.
   // The receipt-bound settlement SQL is available only to the archive host.
-  const supersession_sql = source_scope === "legiscan_bulk_json"
-    ? `
-       -- A newer canonical API detail can replace an archive cache row before
-       -- its archive activation is claimed. Settle only provenance-verified
-       -- archive queue items, not live API jobs or unrelated old backlog.
-       update public.docket_bill_processing_queue queue
-          set queue_state = 'completed',
-              completed_at = now(),
-              locked_at = null,
-              locked_by = null,
-              last_failure_class = null,
-              last_error_code = null,
-              receipt_json = coalesce(queue.receipt_json, '{}'::jsonb) ||
-                jsonb_build_object(
-                  'terminal_state', 'superseded_by_live_api',
-                  'superseding_source', detail.source,
-                  'superseding_detail_fetched_at', detail.fetched_at,
-                  'superseded_at', now()
-                ),
-              updated_at = now()
-         from public.docket_jurisdiction_activation_bill binding
-         join public.docket_jurisdiction_activation_run activation
-           on activation.activation_id = binding.activation_id
-          and activation.state = binding.state
-          and activation.session_id = binding.session_id
-         join public.docket_bill_detail_cache detail
-           on detail.bill_id = binding.source_bill_id
-        where queue.queue_id = binding.queue_id
-          and queue.source_bill_id = binding.source_bill_id
-          and activation.source = 'legiscan_bulk_json'
-          and detail.source like 'legiscan_get_bill%'
-          and detail.fetched_at > activation.cache_fetched_at
-          and detail.bill ->> 'state' = activation.state
-          and detail.bill ->> 'session_id' = activation.session_id::text
-          and exists (
-            select 1
-              from public.docket_legiscan_bulk_member_receipt receipt
-             where receipt.bill_id = queue.source_bill_id
-               and receipt.member_kind = 'bill'
-               and receipt.disposition = 'inserted'
-          )
-          and (
-            queue.queue_state in ('eligible','degraded')
-            or (queue.queue_state = 'submitted'
-                and queue.locked_at < now() - make_interval(mins => $2::integer))
-          )
-        returning queue.queue_id`
-    : `select queue.queue_id from public.docket_bill_processing_queue queue where false`;
+  // The only remaining path below is the general live-API selection.
+  // Archive jobs use the separately bounded, receipt-gated branch above.
+  const supersession_sql =
+    "select queue.queue_id from public.docket_bill_processing_queue queue where false";
   const result = await query_with_diagnostics<docket_bill_activation_job>(
     `with superseded as (
        ${supersession_sql}
@@ -659,6 +772,7 @@ export function run_docket_bill_activation_queue_cycle(): Promise<void> {
 export function start_docket_bill_activation_queue_worker(): void {
   if (queue_timer || !queue_enabled()) return;
   const source_scope = resolve_docket_activation_source_scope();
+  const canary_queue_ids = resolve_docket_archive_canary_queue_ids();
   queue_stopped = false;
   const interval_ms = bounded_poll_interval();
   const concurrency = bounded_concurrency();
@@ -668,6 +782,7 @@ export function start_docket_bill_activation_queue_worker(): void {
     concurrency,
     lease_minutes: QUEUE_LEASE_MINUTES,
     source_scope,
+    canary_queue_ids_configured: canary_queue_ids?.length ?? 0,
   });
   void run_docket_bill_activation_queue_cycle();
   queue_timer = setInterval(() => {
