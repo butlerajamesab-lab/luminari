@@ -68,6 +68,13 @@ jobs:
           psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --set=ON_ERROR_STOP=1 --file=supabase/verification/20260909143000_lighthouse_runtime_postgres_contract_v1_verify.sql
           psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --set=ON_ERROR_STOP=1 --single-transaction --file=supabase/migrations/20260909143000_lighthouse_runtime_postgres_contract_v1.sql --file=supabase/verification/20260909143000_lighthouse_runtime_postgres_contract_v1_verify.sql
 
+      - name: Verify real Civic Genome lifecycle triggers at 3/21/53/66 events (disposable replay only)
+        run: >-
+          psql
+          postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          --set=ON_ERROR_STOP=1
+          --file=supabase/verification/20261116_docket_genome_real_lifecycle_trigger_3_21_53_66.verify.sql
+
       - name: Verify retired Atlas bridge is fail-closed
         run: >-
           psql
