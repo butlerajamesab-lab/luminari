@@ -27,6 +27,7 @@ import {
   docket_bill_activation_retry_delay_seconds,
   process_docket_bill_activation_job,
   resolve_docket_activation_source_scope,
+  resolve_docket_archive_canary_queue_ids,
   run_docket_bill_activation_queue_cycle,
 } from "./docket-jurisdiction-activation-queue-worker";
 
@@ -83,6 +84,55 @@ describe("Docket jurisdiction activation queue", () => {
       .toBe("legiscan_bulk_json");
   });
 
+  it("rejects overbroad or malformed restart-safe pilot allowlists", () => {
+    const scope = { DOCKET_BILL_ACTIVATION_SOURCE_SCOPE: "legiscan_bulk_json" };
+    const a = "11111111-1111-4111-8111-111111111111";
+    const b = "22222222-2222-4222-8222-222222222222";
+    expect(resolve_docket_archive_canary_queue_ids(scope)).toBeNull();
+    expect(resolve_docket_archive_canary_queue_ids({ ...scope, DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS: `${a}, ${b}` }))
+      .toEqual([a, b]);
+    for (const raw of ["", "not-a-uuid", `${a},${a}`, `${a},${b},${a}`, Array(6).fill(a).join(",")]) {
+      expect(() => resolve_docket_archive_canary_queue_ids({
+        ...scope, DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS: raw,
+      })).toThrow("docket_archive_canary_invalid_queue_ids");
+    }
+    expect(() => resolve_docket_archive_canary_queue_ids({
+      DOCKET_BILL_ACTIVATION_SOURCE_SCOPE: "all",
+      DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS: a,
+    })).toThrow("docket_archive_canary_requires_archive_scope");
+  });
+
+  it("constrains shared-worker archive activation to exact five one-attempt queue IDs", async () => {
+    const previousScope = process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+    const previousIds = process.env.DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS;
+    const ids = [
+      "11111111-1111-4111-8111-111111111111",
+      "22222222-2222-4222-8222-222222222222",
+    ];
+    process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = "legiscan_bulk_json";
+    process.env.DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS = ids.join(",");
+    try {
+      await run_docket_bill_activation_queue_cycle();
+      const claim = query.mock.calls.find(call =>
+        call[2]?.label === "docket_bill_activation_queue_claim");
+      expect(claim).toBeDefined();
+      const sql = String(claim?.[0] ?? "");
+      expect(claim?.[1]?.[3]).toEqual(ids);
+      expect(sql).toContain("queue.queue_id = any($4::uuid[])");
+      expect(sql).toContain("queue.queue_state = 'eligible'");
+      expect(sql).toContain("queue.locked_at is null");
+      expect(sql).toContain("queue.attempt_count = 0");
+      expect(sql).toContain("'failure_code'");
+      expect(sql).toContain("activation.source = 'legiscan_bulk_json'");
+      expect(get_bill).not.toHaveBeenCalled();
+    } finally {
+      if (previousScope === undefined) delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+      else process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = previousScope;
+      if (previousIds === undefined) delete process.env.DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS;
+      else process.env.DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS = previousIds;
+    }
+  });
+
   it("keeps the legacy live-API claim independent of the uninstalled archive receipt table", async () => {
     const original = process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
     delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
@@ -135,7 +185,8 @@ describe("Docket jurisdiction activation queue", () => {
         call[2]?.label === "docket_bill_activation_queue_claim");
       expect(claim).toBeDefined();
       expect(String(claim?.[0])).toContain("activation.source = 'legiscan_bulk_json'");
-      expect(claim?.[1]).toHaveLength(3);
+      expect(claim?.[1]).toHaveLength(4);
+      expect(claim?.[1]?.[3]).toBeNull();
       expect(String(claim?.[0])).not.toContain("jsonb_array_elements(cache.bills)");
       expect(String(claim?.[0])).not.toContain("docket_bill_state_cache");
       expect(get_bill).not.toHaveBeenCalled();
@@ -168,6 +219,8 @@ describe("Docket jurisdiction activation queue", () => {
     expect(sql).not.toContain("get_bill(");
     expect(sql).toContain("locked_by=$1::text");
     expect(sql).toContain("queue.next_attempt_at <= now()");
+    expect(sql).toContain("$4::uuid[] is null");
+    expect(sql).toContain("queue.queue_id = any($4::uuid[])");
     expect(sql).toContain("queue.locked_at < now() - make_interval(mins => $2::integer)");
   });
 
