@@ -79,6 +79,13 @@ describe("attachment candidate claim", () => {
     );
   });
 
+  it("also claims stem-linked amendments that still lack their attachment receipt, so a registration-time link is verified instead of stranding the receipt", () => {
+    expect(CLAIM_ATTACHMENT_CANDIDATES_SQL).toContain("base_bill_version_id is not null");
+    expect(CLAIM_ATTACHMENT_CANDIDATES_SQL).toContain(
+      "not (version.receipt_json ? 'amendment_attachment_v1')",
+    );
+  });
+
   it("resumes stale evaluating markers so partial completions are never stranded", () => {
     expect(CLAIM_ATTACHMENT_CANDIDATES_SQL).toContain("->>'status'");
     expect(CLAIM_ATTACHMENT_CANDIDATES_SQL).toMatch(/=\s*'evaluating'/);
