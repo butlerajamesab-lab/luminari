@@ -23,9 +23,15 @@ services:
       - key: LIGHTHOUSE_SUPABASE_URL
         value: https://wepxlinwbjrkqdzkqpar.supabase.co
       - key: LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY
-        sync: false
+        fromService:
+          type: web
+          name: "LIGHTHOUSE "
+          envVarKey: LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY
       - key: DATABASE_URL
-        sync: false
+        fromService:
+          type: web
+          name: "LIGHTHOUSE "
+          envVarKey: DATABASE_URL
       - key: DOCKET_BILL_ACTIVATION_QUEUE_ENABLED
         value: "true"
       - key: DOCKET_BILL_ACTIVATION_SOURCE_SCOPE
