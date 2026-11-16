@@ -1,0 +1,54 @@
+name: Civic Genome source-ID lookup proposal (isolated PostgreSQL)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/civic-genome-source-lookup-gate.yml"
+      - "scripts/civic-genome-source-lookup-acceptance.mjs"
+      - "supabase/proposals/20261116_civic_genome_source_identity_lookup.proposal.sql"
+      - "server/docket-canonical-bill-id.ts"
+      - "server/docket-canonical-bill-id.test.ts"
+      - "server/docket-jurisdiction-activation-queue-worker.ts"
+      - "server/civic-genome-projection.ts"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-lookup:
+    name: Exact expression index / planner / nonnumeric identity preservation
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/app
+      NODE_ENV: test
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v7
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node 20
+        uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+          cache: pnpm
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Run index proposal only against disposable PostgreSQL
+        run: node scripts/civic-genome-source-lookup-acceptance.mjs
