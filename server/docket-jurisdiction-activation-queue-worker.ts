@@ -326,54 +326,10 @@ async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> 
   }
   // The legacy live API worker must never depend on proposal-only receipt DDL.
   // The receipt-bound settlement SQL is available only to the archive host.
-  const supersession_sql = source_scope === "legiscan_bulk_json"
-    ? `
-       -- A newer canonical API detail can replace an archive cache row before
-       -- its archive activation is claimed. Settle only provenance-verified
-       -- archive queue items, not live API jobs or unrelated old backlog.
-       update public.docket_bill_processing_queue queue
-          set queue_state = 'completed',
-              completed_at = now(),
-              locked_at = null,
-              locked_by = null,
-              last_failure_class = null,
-              last_error_code = null,
-              receipt_json = coalesce(queue.receipt_json, '{}'::jsonb) ||
-                jsonb_build_object(
-                  'terminal_state', 'superseded_by_live_api',
-                  'superseding_source', detail.source,
-                  'superseding_detail_fetched_at', detail.fetched_at,
-                  'superseded_at', now()
-                ),
-              updated_at = now()
-         from public.docket_jurisdiction_activation_bill binding
-         join public.docket_jurisdiction_activation_run activation
-           on activation.activation_id = binding.activation_id
-          and activation.state = binding.state
-          and activation.session_id = binding.session_id
-         join public.docket_bill_detail_cache detail
-           on detail.bill_id = binding.source_bill_id
-        where queue.queue_id = binding.queue_id
-          and queue.source_bill_id = binding.source_bill_id
-          and activation.source = 'legiscan_bulk_json'
-          and detail.source like 'legiscan_get_bill%'
-          and detail.fetched_at > activation.cache_fetched_at
-          and detail.bill ->> 'state' = activation.state
-          and detail.bill ->> 'session_id' = activation.session_id::text
-          and exists (
-            select 1
-              from public.docket_legiscan_bulk_member_receipt receipt
-             where receipt.bill_id = queue.source_bill_id
-               and receipt.member_kind = 'bill'
-               and receipt.disposition = 'inserted'
-          )
-          and (
-            queue.queue_state in ('eligible','degraded')
-            or (queue.queue_state = 'submitted'
-                and queue.locked_at < now() - make_interval(mins => $2::integer))
-          )
-        returning queue.queue_id`
-    : `select queue.queue_id from public.docket_bill_processing_queue queue where false`;
+  // The only remaining path below is the general live-API selection.
+  // Archive jobs use the separately bounded, receipt-gated branch above.
+  const supersession_sql =
+    "select queue.queue_id from public.docket_bill_processing_queue queue where false";
   const result = await query_with_diagnostics<docket_bill_activation_job>(
     `with superseded as (
        ${supersession_sql}
