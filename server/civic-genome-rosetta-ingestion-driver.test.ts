@@ -86,6 +86,11 @@ describe("genome rosetta ingestion failure classification", () => {
     for (const code of [
       "legislative_version_non_legislative_document:fiscal_note",
       "legislative_version_source_url_invalid",
+      // Exact-source HTML/PDF parse shortfalls must be held, not refetched
+      // every five minutes without any changed official source evidence.
+      "docket_html_text_incomplete",
+      "legislative_version_pdf_text_incomplete",
+      "legislative_version_html_text_incomplete",
       "legislative_version_reference_date_unavailable",
       "legislative_amendment_attachment_unresolved:no_base",
       "legislative_amendment_base_content_unavailable",
@@ -100,6 +105,13 @@ describe("genome rosetta ingestion failure classification", () => {
     expect(
       is_deterministic_ingestion_failure(new Error("fetch failed")),
     ).toBe(false);
+    expect(
+      is_deterministic_ingestion_failure(new Error("legislative_version_source_fetch_failed:500")),
+    ).toBe(false);
+    expect(
+      is_deterministic_ingestion_failure(new Error("legislative_version_source_fetch_network_failed:ECONNRESET")),
+    ).toBe(false);
+
     expect(
       is_deterministic_ingestion_failure(
         new Error("DbTimeoutDiagnosticError: pool acquire timeout"),
