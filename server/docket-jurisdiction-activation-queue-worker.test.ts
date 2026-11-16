@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
 
 const { query, get_bill, project_state, project_archive } = vi.hoisted(() => ({
   query: vi.fn(),
@@ -168,6 +169,22 @@ describe("Docket jurisdiction activation queue", () => {
     expect(sql).toContain("locked_by=$1::text");
     expect(sql).toContain("queue.next_attempt_at <= now()");
     expect(sql).toContain("queue.locked_at < now() - make_interval(mins => $2::integer)");
+  });
+
+  it("proposes a separate no-API worker with inherited secrets, no automatic deployment", () => {
+    const blueprint = readFileSync(new URL("../render.docket-archive-worker.yaml", import.meta.url), "utf8");
+    expect(blueprint).toContain("type: worker");
+    expect(blueprint).toContain("plan: starter");
+    expect(blueprint).toContain("autoDeployTrigger: off");
+    expect(blueprint).toContain("build:docket-archive-worker");
+    expect(blueprint).toContain("DOCKET_BILL_ACTIVATION_SOURCE_SCOPE");
+    expect(blueprint).toContain("value: legiscan_bulk_json");
+    expect(blueprint).toContain("envVarKey: LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY");
+    expect(blueprint).toContain("envVarKey: DATABASE_URL");
+    expect(blueprint.match(/fromService:/g)).toHaveLength(2);
+    expect(blueprint).toContain('name: "LIGHTHOUSE "');
+    expect(blueprint).not.toContain("LEGISCAN_API_KEY");
+    expect(blueprint).not.toContain("sync: false");
   });
 
   it("rejects a non-archive job without spending LegiScan credits in archive-only mode", async () => {
