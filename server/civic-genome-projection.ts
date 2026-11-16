@@ -330,6 +330,16 @@ const project_bill = async (
 ): Promise<projected_bill_result> => {
   const pool = getPool();
   const client = await pool.connect();
+  // One transaction and one existing deterministic projector. Diagnostic phases
+  // contain only the source bill identity and bounded timing, never bill text,
+  // credentials, statement values or internal SQL. No retry is introduced.
+  const transaction_started_at = Date.now();
+  let phase: string = "begin";
+  let phase_started_at = transaction_started_at;
+  const set_phase = (name: string): void => {
+    phase = name;
+    phase_started_at = Date.now();
+  };
   try {
     await client.query("begin");
   const state_code = normalize_state_code(state_row.state);
@@ -348,6 +358,7 @@ const project_bill = async (
       ? null
       : `legiscan_status_${bill.status}`;
 
+  set_phase("lookup_existing_bill");
   const { rows: existing_rows } = await client.query<{
     genome_bill_id: string;
     family_id: string;
@@ -382,6 +393,7 @@ const project_bill = async (
   const event_type = classification.event_type;
 
   if (existing && !should_append_event) {
+    set_phase("commit_unchanged");
     await client.query("commit");
     return {
       state_code,
@@ -397,6 +409,7 @@ const project_bill = async (
   }
 
   if (existing) {
+    set_phase("capture_existing_entity_versions");
     await capture_projection_entity_versions(
       existing.family_id,
       existing.genome_bill_id,
@@ -411,10 +424,13 @@ const project_bill = async (
     // inferred target family that the bill conflict path will not adopt.
     family_id = existing.family_id;
   } else {
+    set_phase("capture_target_family_version");
     await capture_target_family_version(family_key, client);
+    set_phase("upsert_family");
     family_id = await upsert_family(family_key, bill, client);
   }
 
+  set_phase("upsert_genome_bill");
   const { rows } = await client.query<{
     genome_bill_id: string;
     family_id: string;
@@ -500,6 +516,7 @@ const project_bill = async (
   const genome_bill_id = rows[0].genome_bill_id;
   const persisted_family_id = rows[0].family_id;
   if (should_append_event) {
+    set_phase("append_docket_event");
     await client.query(
       `insert into public.civic_genome_event (
          family_id,
@@ -550,18 +567,31 @@ const project_bill = async (
     );
   }
 
+  set_phase("refresh_family_rollups");
   await refresh_family_rollups(persisted_family_id, client);
+  set_phase("capture_persisted_entity_versions");
   await capture_projection_entity_versions(
     persisted_family_id,
     genome_bill_id,
     client,
   );
   if (existing && existing.family_id !== persisted_family_id) {
+    set_phase("refresh_previous_family_rollups");
     await refresh_family_rollups(existing.family_id, client);
+    set_phase("capture_previous_family_version");
     await capture_family_version(existing.family_id, client);
   }
 
+  set_phase("commit");
   await client.query("commit");
+  const transaction_elapsed_ms = Date.now() - transaction_started_at;
+  if (transaction_elapsed_ms >= 15_000) {
+    console.warn("[CivicGenomeProjection] slow_transaction", {
+      source_bill_id: bill.bill_id,
+      source_transport: state_row.source,
+      transaction_elapsed_ms,
+    });
+  }
 
   return {
     state_code,
@@ -579,6 +609,19 @@ const project_bill = async (
       : "inserted",
   };
   } catch (error) {
+    const pg_code = error && typeof error === "object"
+      && "code" in error && typeof error.code === "string"
+      ? error.code.slice(0, 32)
+      : null;
+    console.error("[CivicGenomeProjection] transaction_failed", {
+      source_bill_id: bill.bill_id,
+      source_transport: state_row.source,
+      phase,
+      phase_elapsed_ms: Date.now() - phase_started_at,
+      transaction_elapsed_ms: Date.now() - transaction_started_at,
+      error_class: error instanceof Error ? error.name : "unknown",
+      pg_code,
+    });
     await client.query("rollback").catch(() => undefined);
     throw error;
   } finally {
