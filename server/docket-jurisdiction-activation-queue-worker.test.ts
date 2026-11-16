@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
+import { canonical_docket_bill_uuid } from "./docket-canonical-bill-id";
 
 const { query, get_bill, project_state, project_archive } = vi.hoisted(() => ({
   query: vi.fn(),
@@ -77,6 +78,16 @@ beforeEach(() => {
 });
 
 describe("Docket jurisdiction activation queue", () => {
+  it("uses indexed canonical bill UUID plus source-ID guard instead of a full Genome JSON scan", async () => {
+    await process_docket_bill_activation_job(job);
+    const call = query.mock.calls.find(c => c[2]?.label === "docket_bill_activation_genome_readiness");
+    expect(call).toBeDefined();
+    expect(String(call?.[0])).toContain("bill.bill_id = $1::uuid");
+    expect(String(call?.[0])).toContain("bill.structural_dna_json ->> 'source_bill_id' = $2::text");
+    expect(call?.[1]).toEqual([canonical_docket_bill_uuid(job.source_bill_id), String(job.source_bill_id)]);
+    expect(String(call?.[0])).not.toContain("where bill.structural_dna_json ->> 'source_bill_id' = $1");
+  });
+
   it("fails closed for an invalid activation source scope", () => {
     expect(() => resolve_docket_activation_source_scope({ DOCKET_BILL_ACTIVATION_SOURCE_SCOPE: "archive_or_api" }))
       .toThrow("docket_bill_activation_invalid_source_scope");
