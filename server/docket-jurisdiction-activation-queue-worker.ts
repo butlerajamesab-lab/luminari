@@ -102,6 +102,30 @@ export function resolve_docket_activation_source_scope(
   throw new Error("docket_bill_activation_invalid_source_scope");
 }
 
+/**
+ * Exact, restart-safe pilot boundary for an existing shared worker.
+ * Optional in normal operation; when set, it requires the archive-only scope.
+ * A pilot may touch at most five named archive queue IDs, once each.
+ */
+export function resolve_docket_archive_canary_queue_ids(
+  environment: NodeJS.ProcessEnv = process.env,
+): string[] | null {
+  const raw = environment.DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS;
+  if (raw === undefined) return null;
+  if ((environment.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE ?? "all") !== "legiscan_bulk_json") {
+    throw new Error("docket_archive_canary_requires_archive_scope");
+  }
+  const ids = raw.split(",").map(value => value.trim().toLowerCase());
+  if (
+    ids.length < 1 || ids.length > 5
+    || ids.some(value => !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value))
+    || new Set(ids).size !== ids.length
+  ) {
+    throw new Error("docket_archive_canary_invalid_queue_ids");
+  }
+  return ids;
+}
+
 function as_record(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
@@ -226,6 +250,17 @@ export const DOCKET_ARCHIVE_ONLY_CLAIM_SQL = `
        and activation.state=binding.state
        and activation.session_id=binding.session_id
      where activation.source = 'legiscan_bulk_json'
+       and (
+         $4::uuid[] is null
+         or (
+           queue.queue_id = any($4::uuid[])
+           -- Canary jobs never auto-retry after a crash, error, or lease expiry.
+           and queue.queue_state = 'eligible'
+           and queue.locked_at is null
+           and queue.attempt_count = 0
+           and not (coalesce(queue.receipt_json, '{}'::jsonb) ? 'failure_code')
+         )
+       )
        and queue.next_attempt_at <= now()
        and (
          queue.queue_state in ('eligible','degraded')
@@ -312,10 +347,11 @@ const circuit_open_log = new circuit_open_log_gate();
 
 async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> {
   const source_scope = resolve_docket_activation_source_scope();
+  const canary_queue_ids = resolve_docket_archive_canary_queue_ids();
   if (source_scope === "legiscan_bulk_json") {
     const result = await query_with_diagnostics<docket_bill_activation_job>(
       DOCKET_ARCHIVE_ONLY_CLAIM_SQL,
-      [queue_worker_id, QUEUE_LEASE_MINUTES, limit],
+      [queue_worker_id, QUEUE_LEASE_MINUTES, limit, canary_queue_ids],
       {
         label: "docket_bill_activation_queue_claim",
         pool_acquire_timeout_ms: 1_000,
@@ -736,6 +772,7 @@ export function run_docket_bill_activation_queue_cycle(): Promise<void> {
 export function start_docket_bill_activation_queue_worker(): void {
   if (queue_timer || !queue_enabled()) return;
   const source_scope = resolve_docket_activation_source_scope();
+  const canary_queue_ids = resolve_docket_archive_canary_queue_ids();
   queue_stopped = false;
   const interval_ms = bounded_poll_interval();
   const concurrency = bounded_concurrency();
@@ -745,6 +782,7 @@ export function start_docket_bill_activation_queue_worker(): void {
     concurrency,
     lease_minutes: QUEUE_LEASE_MINUTES,
     source_scope,
+    canary_queue_ids_configured: canary_queue_ids?.length ?? 0,
   });
   void run_docket_bill_activation_queue_cycle();
   queue_timer = setInterval(() => {
