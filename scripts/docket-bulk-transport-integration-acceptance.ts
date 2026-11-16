@@ -126,9 +126,16 @@ try {
 
   // Explicitly supplied downstream readiness; real Genome projection belongs
   // to an independent integration certification, not this Docket transport gate.
-  await pool.query("insert into public.civic_genome_bill(structural_dna_json) values ($1::jsonb)", [
-    JSON.stringify({ source_bill_id: positiveBillId }),
-  ]);
+  const { canonical_docket_bill_uuid } = await import("../server/docket-canonical-bill-id");
+  const canonicalUuid = canonical_docket_bill_uuid(positiveBillId);
+  await pool.query(
+    "insert into public.civic_genome_bill(bill_id, structural_dna_json) values ($1::uuid, $2::jsonb)",
+    [canonicalUuid, JSON.stringify({ source_bill_id: positiveBillId })],
+  );
+  assert.equal(
+    (await pool.query("select bill_id::text from public.civic_genome_bill where bill_id=$1::uuid", [canonicalUuid])).rows[0]?.bill_id,
+    canonicalUuid,
+  );
   const { run_docket_bill_activation_queue_cycle } = await import(
     "../server/docket-jurisdiction-activation-queue-worker"
   );

@@ -2,6 +2,7 @@ import { CIVIC_GENOME_SOURCE_ONLY_BILL_RECORD_SQL } from "./civic-genome-source-
 import { createHash } from "crypto";
 import type { PoolClient } from "pg";
 import { getPool } from "./db";
+import { canonical_docket_bill_uuid } from "./docket-canonical-bill-id";
 import { classify_docket_event } from "./civic-genome-event-classifier";
 import type { legiscan_master_bill } from "./services/legiscan";
 
@@ -50,19 +51,6 @@ export type civic_genome_projection_result = {
 
 const sha256 = (value: string): string =>
   createHash("sha256").update(value).digest("hex");
-
-const stable_uuid = (value: string): string => {
-  const hash = sha256(value);
-  const variant = ((parseInt(hash[16] ?? "8", 16) & 0x3) | 0x8).toString(16);
-
-  return [
-    hash.slice(0, 8),
-    hash.slice(8, 12),
-    `4${hash.slice(13, 16)}`,
-    `${variant}${hash.slice(17, 20)}`,
-    hash.slice(20, 32),
-  ].join("-");
-};
 
 const slugify = (value: string): string =>
   value
@@ -330,11 +318,21 @@ const project_bill = async (
 ): Promise<projected_bill_result> => {
   const pool = getPool();
   const client = await pool.connect();
+  // One transaction and one existing deterministic projector. Diagnostic phases
+  // contain only the source bill identity and bounded timing, never bill text,
+  // credentials, statement values or internal SQL. No retry is introduced.
+  const transaction_started_at = Date.now();
+  let phase: string = "begin";
+  let phase_started_at = transaction_started_at;
+  const set_phase = (name: string): void => {
+    phase = name;
+    phase_started_at = Date.now();
+  };
   try {
     await client.query("begin");
   const state_code = normalize_state_code(state_row.state);
   const source_bill_number = bill.number;
-  const bill_id = stable_uuid(`docket_room:legiscan:${bill.bill_id}`);
+  const bill_id = canonical_docket_bill_uuid(bill.bill_id);
   const family_key = build_family_key(bill);
   const current_state_position = infer_state_position(bill);
   const docket_observation = build_structural_dna_json(state_row, bill);
@@ -348,6 +346,7 @@ const project_bill = async (
       ? null
       : `legiscan_status_${bill.status}`;
 
+  set_phase("lookup_existing_bill");
   const { rows: existing_rows } = await client.query<{
     genome_bill_id: string;
     family_id: string;
@@ -382,6 +381,7 @@ const project_bill = async (
   const event_type = classification.event_type;
 
   if (existing && !should_append_event) {
+    set_phase("commit_unchanged");
     await client.query("commit");
     return {
       state_code,
@@ -397,6 +397,7 @@ const project_bill = async (
   }
 
   if (existing) {
+    set_phase("capture_existing_entity_versions");
     await capture_projection_entity_versions(
       existing.family_id,
       existing.genome_bill_id,
@@ -411,10 +412,13 @@ const project_bill = async (
     // inferred target family that the bill conflict path will not adopt.
     family_id = existing.family_id;
   } else {
+    set_phase("capture_target_family_version");
     await capture_target_family_version(family_key, client);
+    set_phase("upsert_family");
     family_id = await upsert_family(family_key, bill, client);
   }
 
+  set_phase("upsert_genome_bill");
   const { rows } = await client.query<{
     genome_bill_id: string;
     family_id: string;
@@ -500,6 +504,7 @@ const project_bill = async (
   const genome_bill_id = rows[0].genome_bill_id;
   const persisted_family_id = rows[0].family_id;
   if (should_append_event) {
+    set_phase("append_docket_event");
     await client.query(
       `insert into public.civic_genome_event (
          family_id,
@@ -550,18 +555,31 @@ const project_bill = async (
     );
   }
 
+  set_phase("refresh_family_rollups");
   await refresh_family_rollups(persisted_family_id, client);
+  set_phase("capture_persisted_entity_versions");
   await capture_projection_entity_versions(
     persisted_family_id,
     genome_bill_id,
     client,
   );
   if (existing && existing.family_id !== persisted_family_id) {
+    set_phase("refresh_previous_family_rollups");
     await refresh_family_rollups(existing.family_id, client);
+    set_phase("capture_previous_family_version");
     await capture_family_version(existing.family_id, client);
   }
 
+  set_phase("commit");
   await client.query("commit");
+  const transaction_elapsed_ms = Date.now() - transaction_started_at;
+  if (transaction_elapsed_ms >= 15_000) {
+    console.warn("[CivicGenomeProjection] slow_transaction", {
+      source_bill_id: bill.bill_id,
+      source_transport: state_row.source,
+      transaction_elapsed_ms,
+    });
+  }
 
   return {
     state_code,
@@ -579,6 +597,19 @@ const project_bill = async (
       : "inserted",
   };
   } catch (error) {
+    const pg_code = error && typeof error === "object"
+      && "code" in error && typeof error.code === "string"
+      ? error.code.slice(0, 32)
+      : null;
+    console.error("[CivicGenomeProjection] transaction_failed", {
+      source_bill_id: bill.bill_id,
+      source_transport: state_row.source,
+      phase,
+      phase_elapsed_ms: Date.now() - phase_started_at,
+      transaction_elapsed_ms: Date.now() - transaction_started_at,
+      error_class: error instanceof Error ? error.name : "unknown",
+      pg_code,
+    });
     await client.query("rollback").catch(() => undefined);
     throw error;
   } finally {

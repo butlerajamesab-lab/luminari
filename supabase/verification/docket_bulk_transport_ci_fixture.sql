@@ -46,6 +46,8 @@ create table public.docket_jurisdiction_activation_bill (
   primary key(queue_id,activation_id)
 );
 create table public.civic_genome_bill (
+  -- Matches the real canonical table's indexed Docket bill identity.
+  bill_id uuid primary key,
   structural_dna_json jsonb not null
 );
 

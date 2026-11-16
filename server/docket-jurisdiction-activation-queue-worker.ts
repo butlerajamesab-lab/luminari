@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { canonical_docket_bill_uuid } from "./docket-canonical-bill-id";
 
 import { project_docket_bulk_bill_to_civic_genome, project_docket_state_cache_to_civic_genome_serialized } from "./civic-genome-projection";
 import { query_with_diagnostics } from "./db";
@@ -461,9 +462,10 @@ async function civic_genome_bill_ready(source_bill_id: number): Promise<boolean>
     `select exists (
        select 1
        from public.civic_genome_bill bill
-       where bill.structural_dna_json ->> 'source_bill_id' = $1::text
+       where bill.bill_id = $1::uuid
+         and bill.structural_dna_json ->> 'source_bill_id' = $2::text
      ) as ready`,
-    [source_bill_id],
+    [canonical_docket_bill_uuid(source_bill_id), String(source_bill_id)],
     {
       label: "docket_bill_activation_genome_readiness",
       pool_acquire_timeout_ms: 1_000,
