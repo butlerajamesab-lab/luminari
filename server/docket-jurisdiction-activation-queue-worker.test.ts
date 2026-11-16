@@ -114,7 +114,7 @@ describe("Docket jurisdiction activation queue", () => {
       expect(sql).toContain("superseded as (");
       expect(sql).toContain("activation.source = 'legiscan_bulk_json'");
       expect(sql).toContain("receipt.disposition='inserted'");
-      expect(sql).toContain("detail.source like 'legiscan_get_bill%'");
+      expect(sql).toContain("candidate.detail_source like 'legiscan_get_bill%'");
       expect(sql).toContain("superseded_by_live_api");
       expect(sql).toContain("queue.queue_state = 'submitted'");
       expect(sql).toContain("queue.locked_at < now() - make_interval(mins => $2::integer)");
@@ -147,7 +147,7 @@ describe("Docket jurisdiction activation queue", () => {
 
   it("settles only the locked bounded archive cohort before claiming its unsuperseded members", () => {
     const sql=DOCKET_ARCHIVE_ONLY_CLAIM_SQL;
-    expect(sql).toContain("with candidate as materialized (");
+    expect(sql).toContain("candidate as materialized (");
     expect(sql).toContain("for update of queue skip locked");
     expect(sql).toContain("limit $3::integer");
     expect(sql.indexOf("next_archive as materialized")).toBeLessThan(sql.indexOf("candidate as materialized"));
