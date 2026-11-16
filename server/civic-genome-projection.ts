@@ -2,6 +2,7 @@ import { CIVIC_GENOME_SOURCE_ONLY_BILL_RECORD_SQL } from "./civic-genome-source-
 import { createHash } from "crypto";
 import type { PoolClient } from "pg";
 import { getPool } from "./db";
+import { canonical_docket_bill_uuid } from "./docket-canonical-bill-id";
 import { classify_docket_event } from "./civic-genome-event-classifier";
 import type { legiscan_master_bill } from "./services/legiscan";
 
@@ -50,19 +51,6 @@ export type civic_genome_projection_result = {
 
 const sha256 = (value: string): string =>
   createHash("sha256").update(value).digest("hex");
-
-const stable_uuid = (value: string): string => {
-  const hash = sha256(value);
-  const variant = ((parseInt(hash[16] ?? "8", 16) & 0x3) | 0x8).toString(16);
-
-  return [
-    hash.slice(0, 8),
-    hash.slice(8, 12),
-    `4${hash.slice(13, 16)}`,
-    `${variant}${hash.slice(17, 20)}`,
-    hash.slice(20, 32),
-  ].join("-");
-};
 
 const slugify = (value: string): string =>
   value
@@ -344,7 +332,7 @@ const project_bill = async (
     await client.query("begin");
   const state_code = normalize_state_code(state_row.state);
   const source_bill_number = bill.number;
-  const bill_id = stable_uuid(`docket_room:legiscan:${bill.bill_id}`);
+  const bill_id = canonical_docket_bill_uuid(bill.bill_id);
   const family_key = build_family_key(bill);
   const current_state_position = infer_state_position(bill);
   const docket_observation = build_structural_dna_json(state_row, bill);
