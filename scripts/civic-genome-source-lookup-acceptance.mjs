@@ -43,7 +43,8 @@ try {
   await client.query(`create table public.docket_bill_detail_cache (bill_id integer primary key)`);
   await client.query(`insert into public.docket_bill_detail_cache values (1890233)`);
   await client.query(`insert into public.civic_genome_bill (structural_dna_json)
-    select jsonb_build_object('source_bill_id', source_id::text)
+    select jsonb_build_object('source_bill_id',
+      (case when source_id=40000 then 1890233 else source_id end)::text)
     from generate_series(1,40000) source_id`);
   await client.query(`insert into public.civic_genome_bill (structural_dna_json)
     values ('{"source_bill_id":"not_a_number"}'::jsonb), ('{}'::jsonb)`);
