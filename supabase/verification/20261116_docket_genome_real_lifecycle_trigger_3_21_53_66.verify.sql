@@ -23,6 +23,19 @@ declare
   v_after_revisions integer;
   v_start timestamptz;
   v_duration_ms numeric;
+  v_document_count integer;
+  v_observation_count integer;
+  v_version_count integer;
+  v_version_queue_count integer;
+  v_first_original_event_id uuid;
+  v_correction_event_id uuid;
+  v_original_bill_id uuid;
+  v_after_bill_id uuid;
+  v_corrected_record jsonb;
+  v_empty_record jsonb;
+  v_effective_at timestamptz;
+  v_current_state text;
+  v_tombstone_count integer;
 begin
   if to_regprocedure('public.sync_civic_genome_lifecycle_history_v3(integer)') is null
       or to_regprocedure('public.register_docket_legislative_version_spine(integer,boolean)') is null
@@ -68,8 +81,24 @@ begin
       'status_date', '2025-01-01',
       'last_action_date', '2025-07-01',
       'history', v_history,
-      'texts', '[]'::jsonb,
-      'amendments', '[]'::jsonb
+      -- Real trigger must create text + amendment source observations, never
+      -- only run a no-op with two empty document arrays.
+      'texts', jsonb_build_array(jsonb_build_object(
+        'doc_id', v_source_bill_id::bigint + 100000,
+        'type', 'Introduced',
+        'state_link', format('https://example.invalid/ci/%s/text/introduced', v_source_bill_id),
+        'url', format('https://legiscan.com/TX/text/%s/id/%s', v_number, v_source_bill_id::bigint + 100000),
+        'date', '2025-01-01'
+      )),
+      'amendments', jsonb_build_array(jsonb_build_object(
+        'amendment_id', v_source_bill_id::bigint + 200000,
+        'title', 'Committee amendment 1',
+        'chamber', 'H',
+        'state_link', format('https://example.invalid/ci/%s/amendment/1', v_source_bill_id),
+        'url', format('https://legiscan.com/TX/amendment/%s/id/%s', v_number, v_source_bill_id::bigint + 200000),
+        'date', '2025-03-30',
+        'adopted', 0
+      ))
     );
 
     insert into public.civic_genome_family (
@@ -104,6 +133,37 @@ begin
     ) returning genome_bill_id into v_genome_bill_id;
     v_duration_ms := round((extract(epoch from clock_timestamp() - v_start) * 1000)::numeric, 1);
 
+    -- Registration must have actually run on the real AFTER INSERT trigger.
+    select count(*)::integer into v_document_count
+    from public.docket_bill_source_document
+    where source_bill_id = v_source_bill_id;
+    select count(*)::integer into v_observation_count
+    from public.docket_bill_source_document_observation observation
+    join public.docket_bill_source_document document
+      on document.source_document_key = observation.source_document_key
+    where document.source_bill_id = v_source_bill_id;
+    select count(*)::integer into v_version_count
+    from public.civic_genome_bill_version
+    where genome_bill_id = v_genome_bill_id and source_bill_id = v_source_bill_id;
+    select count(*)::integer into v_version_queue_count
+    from public.civic_genome_legislative_version_queue queue
+    join public.civic_genome_bill_version version
+      on version.bill_version_id = queue.bill_version_id
+    where version.genome_bill_id = v_genome_bill_id;
+
+    if v_document_count <> 2 or v_observation_count <> 2
+        or v_version_count <> 2 or v_version_queue_count <> 0
+        or (select count(*) from public.docket_bill_source_document
+            where source_bill_id = v_source_bill_id
+              and document_family = 'text') <> 1
+        or (select count(*) from public.docket_bill_source_document
+            where source_bill_id = v_source_bill_id
+              and document_family = 'amendment') <> 1 then
+      raise exception 'real_spine_registration_mismatch history=% docs=% observations=% versions=% enqueued=%',
+        v_history_length, v_document_count, v_observation_count,
+        v_version_count, v_version_queue_count;
+    end if;
+
     select count(*)::integer into v_actual_events
     from public.civic_genome_lifecycle_event_v2
     where genome_bill_id = v_genome_bill_id
@@ -135,8 +195,131 @@ begin
         v_history_length, v_actual_events, v_revisions, v_after_events, v_after_revisions;
     end if;
 
-    raise notice 'lifecycle_real_trigger_verified history=% events=% current=% revisions=% insert_ms=%',
-      v_history_length, v_actual_events, v_current_events, v_revisions, v_duration_ms;
+    -- On the long-history case exercise UPDATE trigger wiring (not just direct
+    -- function invocation): replace action, remove all history, then restore.
+    if v_history_length = 66 then
+      select event.lifecycle_event_id into v_first_original_event_id
+      from public.civic_genome_lifecycle_event_v2 event
+      where event.genome_bill_id = v_genome_bill_id
+        and event.action_text = 'Referred to standing committee 2';
+      select bill.bill_id into v_original_bill_id
+      from public.civic_genome_bill bill
+      where bill.genome_bill_id = v_genome_bill_id;
+      if v_first_original_event_id is null or v_original_bill_id is null then
+        raise exception 'long_history_original_source_identity_missing';
+      end if;
+
+      v_corrected_record := jsonb_set(
+        v_record, '{history,1,action}',
+        to_jsonb('Effective date 7/1/2026.'::text), false
+      );
+      update public.docket_bill_detail_cache
+         set bill = v_corrected_record,
+             fetched_at = timestamptz '2026-11-14 12:00:01+00'
+       where bill_id = v_source_bill_id;
+
+      select event.lifecycle_event_id into v_correction_event_id
+      from public.v_civic_genome_lifecycle_event_current_v3 event
+      where event.genome_bill_id = v_genome_bill_id
+        and event.action_text = 'Effective date 7/1/2026.'
+        and event.supersedes_lifecycle_event_id = v_first_original_event_id;
+      select bill.bill_id, bill.effective_at
+        into v_after_bill_id, v_effective_at
+      from public.civic_genome_bill bill
+      where bill.genome_bill_id = v_genome_bill_id;
+      if v_correction_event_id is null
+          or v_after_bill_id is distinct from v_original_bill_id
+          or v_effective_at::date is distinct from date '2026-07-01'
+          or exists (
+            select 1 from public.v_civic_genome_lifecycle_event_current_v3
+            where lifecycle_event_id = v_first_original_event_id
+          ) then
+        raise exception 'long_history_correction_not_current_or_unlinked';
+      end if;
+
+      v_empty_record := jsonb_set(v_record, '{history}', '[]'::jsonb, false);
+      update public.docket_bill_detail_cache
+         set bill = v_empty_record,
+             fetched_at = timestamptz '2026-11-14 12:00:02+00'
+       where bill_id = v_source_bill_id;
+      select count(*)::integer into v_current_events
+      from public.v_civic_genome_lifecycle_event_current_v3
+      where genome_bill_id = v_genome_bill_id;
+      select bill.bill_id, bill.effective_at, bill.current_state_position
+        into v_after_bill_id, v_effective_at, v_current_state
+      from public.civic_genome_bill bill
+      where bill.genome_bill_id = v_genome_bill_id;
+      select count(*)::integer into v_tombstone_count
+      from public.civic_genome_lifecycle_event_v2
+      where genome_bill_id = v_genome_bill_id
+        and event_type = 'source_tombstone'
+        and supersedes_lifecycle_event_id = v_correction_event_id;
+      if v_current_events <> 0 or v_tombstone_count <> 1
+          or v_effective_at is not null or v_current_state is not null
+          or v_after_bill_id is distinct from v_original_bill_id then
+        raise exception 'long_history_deleted_events_or_temporal_projection_stale current=% tombstones=%',
+          v_current_events, v_tombstone_count;
+      end if;
+
+      update public.docket_bill_detail_cache
+         set bill = v_record,
+             fetched_at = timestamptz '2026-11-14 12:00:03+00'
+       where bill_id = v_source_bill_id;
+      select count(*)::integer into v_current_events
+      from public.v_civic_genome_lifecycle_event_current_v3
+      where genome_bill_id = v_genome_bill_id;
+      select bill.bill_id, bill.effective_at, bill.current_state_position
+        into v_after_bill_id, v_effective_at, v_current_state
+      from public.civic_genome_bill bill
+      where bill.genome_bill_id = v_genome_bill_id;
+      if v_current_events <> 66
+          or v_after_bill_id is distinct from v_original_bill_id
+          or v_effective_at is not null
+          or v_current_state is distinct from 'active_in_committee'
+          or not exists (
+            select 1 from public.v_civic_genome_lifecycle_event_current_v3
+            where lifecycle_event_id = v_first_original_event_id
+          )
+          or exists (
+            select 1 from public.v_civic_genome_lifecycle_event_current_v3
+            where lifecycle_event_id = v_correction_event_id
+          ) then
+        raise exception 'long_history_restoration_not_canonical current=% state=%',
+          v_current_events, v_current_state;
+      end if;
+
+      select count(*)::integer into v_after_events
+      from public.civic_genome_lifecycle_event_v2
+      where genome_bill_id = v_genome_bill_id;
+      select count(*)::integer into v_after_revisions
+      from public.civic_genome_lifecycle_source_revision_v3
+      where genome_bill_id = v_genome_bill_id;
+
+      -- Exact replay through the UPDATE trigger must not grow immutable ledgers.
+      update public.docket_bill_detail_cache
+         set bill = v_record,
+             fetched_at = timestamptz '2026-11-14 12:00:03+00'
+       where bill_id = v_source_bill_id;
+      if v_after_events <> (
+          select count(*) from public.civic_genome_lifecycle_event_v2
+          where genome_bill_id = v_genome_bill_id
+        ) or v_after_revisions <> (
+          select count(*) from public.civic_genome_lifecycle_source_revision_v3
+          where genome_bill_id = v_genome_bill_id
+        ) or exists (
+          select 1 from public.civic_genome_legislative_version_queue queue
+          join public.civic_genome_bill_version version
+            on version.bill_version_id = queue.bill_version_id
+          where version.genome_bill_id = v_genome_bill_id
+        ) then
+        raise exception 'long_history_exact_update_replay_mutated_ledger_or_queue';
+      end if;
+
+      raise notice 'lifecycle_correction_delete_restore_verified history=66 current=66 replays_idempotent=true';
+    end if;
+
+    raise notice 'lifecycle_real_trigger_verified history=% events=% revisions=% docs=% insert_ms=%',
+      v_history_length, v_actual_events, v_revisions, v_document_count, v_duration_ms;
   end loop;
 end
 $acceptance$;
