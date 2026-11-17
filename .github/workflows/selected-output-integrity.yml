@@ -1,0 +1,29 @@
+name: Selected output integrity consumer
+on:
+  pull_request:
+    paths:
+      - 'server/current-law-rosetta-live.ts'
+      - 'server/current-law-rosetta-live.test.ts'
+      - 'server/rosetta-selected-output-integrity.*'
+      - 'tests/selected-output-*.node.mjs'
+      - 'tests/fixtures/selected-output-six-source-integrity.json'
+      - '.github/workflows/selected-output-integrity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'server/current-law-rosetta-live.ts'
+      - 'server/rosetta-selected-output-integrity.*'
+      - '.github/workflows/selected-output-integrity.yml'
+permissions:
+  contents: read
+jobs:
+  selected-output-consumer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --check server/current-law-rosetta-live.ts
+      - run: node --experimental-vm-modules --test tests/selected-output-integrity.node.mjs tests/selected-output-consumer.node.mjs

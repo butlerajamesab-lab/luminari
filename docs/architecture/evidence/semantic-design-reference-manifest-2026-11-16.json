@@ -1,0 +1,168 @@
+{
+  "contract": "rosetta-semantic-historical-reference-manifest-v1",
+  "date_pacific": "2026-11-16",
+  "purpose": "Historical design evidence for the V-series semantic validation proposal; not implementation or certification authority.",
+  "uploaded_code_executed": false,
+  "uploaded_tests_executed": false,
+  "production_mutations_authorized": false,
+  "capture_scope": "Latest available workspace copy of each filename. Repeated upload names are not independently version-reconciled.",
+  "source_count": 26,
+  "bounded_comparison": {
+    "repository": "butlerajamesab-lab/rosetta",
+    "main_commit": "673dd17a1326bba5c8ecb5ec7e8c6eabd9e63dcf",
+    "historical_worker": {
+      "path": "lib/semantic-clause-universal-worker.js",
+      "git_blob_sha1": "0ad75398bfdc8d57d56e66e3f1be91eda1202657",
+      "observed": "Configuration disables execution; selection and processing entry points throw the explicit retirement reason."
+    },
+    "selected_runtime": "rosetta-rule-ref-v13",
+    "selected_ruleset_sha256": "5d22c131858022b07a1a66589cd457e55bf771af4d761556e9e3764e9c64e457",
+    "installed_writer": {
+      "function": "rosetta_rule_out.decompose_v13(uuid,boolean)",
+      "body_md5": "af7532f5d59dfe3d5e3b971b03551f7e"
+    },
+    "installed_historical_candidate_helper": {
+      "function": "public.rosetta_semantic_worker_candidates_v1(text,text,integer,integer)",
+      "body_md5": "bca3b7954302de888f8c00882b6c39a9",
+      "observed_engine_filter": "rosetta-v3-deterministic-sql-2.3.0"
+    },
+    "installed_historical_input_helper": {
+      "function": "public.rosetta_semantic_worker_input_v1(text,integer)",
+      "body_md5": "b5570ba686d2480cf7af29b032330884",
+      "observed_engine_scope": "rosetta-v3-deterministic-sql-2.3.0"
+    },
+    "limits": "Bounded repository, Render start-command and SELECT-only function inspection in this session; not proof of absence across every platform path. No historical worker or helper executed."
+  },
+  "sources": [
+    {
+      "file": "20260926120000_rosetta_v2540_semantic_v2_repair.sql",
+      "sha256": "6e7062f7253eded01731d8726e79db9fcf58956c76489fefc242d5950d5290e7",
+      "bytes": 55818
+    },
+    {
+      "file": "SEMANTIC_CLAUSE_SHADOW.md",
+      "sha256": "ae83b6a528422b408e713d6b7891141dcda2adae2131a99628f46deaea9d171a",
+      "bytes": 10746
+    },
+    {
+      "file": "SEMANTIC_PUBLICATION_BOUNDARY_20260910.md",
+      "sha256": "c7d1ea3e793fc66c5f92867fca7f6c50313bc2d6d305b0b19b556d248010ee10",
+      "bytes": 4573
+    },
+    {
+      "file": "UNIVERSAL_SEMANTIC_ADMISSIBILITY.md",
+      "sha256": "d0bcd287ba6a994fa65a9103a9c39a83119d668a873435ad5ec27285b933f00a",
+      "bytes": 1269
+    },
+    {
+      "file": "run_semantic_publication_gate.py",
+      "sha256": "c7758b338323daa4a0cc2d5266ad3a2db43c313067de35a2ccb7eb975744794e",
+      "bytes": 10328
+    },
+    {
+      "file": "semantic-clause-abbreviation-sentence-boundary.test.cjs",
+      "sha256": "3afc61ab2ad3cf6fc09d4b22dad655a2fe23a2dce1a247b91d198a01594b51b9",
+      "bytes": 1422
+    },
+    {
+      "file": "semantic-clause-acceptance-hardening.test.cjs",
+      "sha256": "8d9941ebe2995f07b2109756cfd4e3d123f3971c1e2a21f22e935aef49fe6260",
+      "bytes": 10222
+    },
+    {
+      "file": "semantic-clause-citation-label-boundary.test.cjs",
+      "sha256": "66e482ddb280f0dd5610317e25143be77ccd645cbc3ac4d49c924616c2be04af",
+      "bytes": 2173
+    },
+    {
+      "file": "semantic-clause-disposition-contract.test.cjs",
+      "sha256": "e6abe7cbbe669aa983707da82cd25b802738e58266e3776b332a56ad01763a5e",
+      "bytes": 2365
+    },
+    {
+      "file": "semantic-clause-exact-head-hardening.test.cjs",
+      "sha256": "085763f7371140fb2538f1857acf13efbbbd455e1edbda8420fd37ff51b93099",
+      "bytes": 4363
+    },
+    {
+      "file": "semantic-clause-final-boundaries.test.cjs",
+      "sha256": "7611d741a83bfe8227c7ad72e9e17a94921085c187655f476db84696ffb84801",
+      "bytes": 5456
+    },
+    {
+      "file": "semantic-clause-parser.js",
+      "sha256": "1b586d833aff3674d186cdd6618491eb9036204fc3845f9f09a45c239d7ba08d",
+      "bytes": 23653
+    },
+    {
+      "file": "semantic-clause-projection.js",
+      "sha256": "fa296c006ee8dc1e0b3e3681476172599d9147f5bb11c1d7ad5d607c5fb080c1",
+      "bytes": 9584
+    },
+    {
+      "file": "semantic-clause-shadow-run.js",
+      "sha256": "c225b891bf1a19aba3893b06d9bf9d8ce3a09f032d69c8db650c82ce92f663e7",
+      "bytes": 30879
+    },
+    {
+      "file": "semantic-clause-shadow-run.mjs",
+      "sha256": "36b729be086a5e4516822875d230305563e0a88d4d5799e6509e1f0b9c0d1a46",
+      "bytes": 1849
+    },
+    {
+      "file": "semantic-clause-shadow-store.js",
+      "sha256": "3a0a5852cdf5a3da128fd4c118328734d9f1e2ab475a054290ae02f9659351a6",
+      "bytes": 12497
+    },
+    {
+      "file": "semantic-clause-universal-v021.js",
+      "sha256": "40e703310cb4f95be226c3e8ccbbdd031cf01895a433cc9795bc5e2c82052f71",
+      "bytes": 11760
+    },
+    {
+      "file": "semantic-clause-universal-v022.js",
+      "sha256": "dccc75c3410dd73cb4a232338328fc620debf334a0c467e4d2482ca418a55b18",
+      "bytes": 7714
+    },
+    {
+      "file": "semantic-clause-universal-v023.js",
+      "sha256": "03d0f5ed55b16d2902ed3c812fcf780e399fdef56b587b71c2daaed4bfdf7fb1",
+      "bytes": 10564
+    },
+    {
+      "file": "semantic-clause-universal-v024.js",
+      "sha256": "f29e4912475f52461b8c98aaf39707b4af041dc85a85eb19a3f3426a7be57311",
+      "bytes": 10328
+    },
+    {
+      "file": "semantic-clause-universal-v025.js",
+      "sha256": "0f42ab4ef354c3e6db6823679538b8ac49fac84645fd6c0d4f7487940403b869",
+      "bytes": 9034
+    },
+    {
+      "file": "semantic-clause-universal-v026.js",
+      "sha256": "567956260ab8490eb96d19ceb98952f96de0b4c8845f66f9c89e498c137b523b",
+      "bytes": 12887
+    },
+    {
+      "file": "semantic-clause-universal-worker.js",
+      "sha256": "b87fbcf13974d1eaf42120875cd68d393840d578e5aef26501a49444eca06c72",
+      "bytes": 11322
+    },
+    {
+      "file": "server-with-semantic.js",
+      "sha256": "85c7171f78289476ee400fb400bceafb172e2786c88f1c282e8097fa70c4db95",
+      "bytes": 145
+    },
+    {
+      "file": "v2540_semantic_v2_fixtures.sql",
+      "sha256": "d6cd45a52c9adad226a507672d24afa1f9b7c9035f2ac54c85286c08f7fd83e9",
+      "bytes": 10320
+    },
+    {
+      "file": "v2540_semantic_v2_function_diff.patch",
+      "sha256": "a5002f174abca530bce3ff901cefef0ea879cb1f7b7c57bd043c753f9e50de50",
+      "bytes": 15835
+    }
+  ]
+}

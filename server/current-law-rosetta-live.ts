@@ -1,3 +1,4 @@
+import { inspect_selected_output_integrity, type SelectedOutputIntegrity } from "./rosetta-selected-output-integrity.js";
 import { get_rosetta_review_base_url } from "./rosetta-review-url";
 
 const CURRENT_ROSETTA_LAYERS = new Set(["H", "W", "A", "O", "D", "R"]);
@@ -19,6 +20,7 @@ export type current_rosetta_live_unit = {
 
 export type current_rosetta_live_detail = {
   contract: "rosetta-rule-live-detail-v1";
+  output_integrity?: SelectedOutputIntegrity;
   observed_at: string | null;
   target: json_record;
   source: {
@@ -152,7 +154,9 @@ export async function get_current_rosetta_live_detail(input: {
     const units = Array.isArray(payload.units)
       ? payload.units.map(normalize_unit)
       : [];
+    const output_integrity = inspect_selected_output_integrity(payload, input);
     return {
+      output_integrity,
       contract: "rosetta-rule-live-detail-v1",
       observed_at: string_value(payload.observed_at),
       target,
