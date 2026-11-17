@@ -75,6 +75,12 @@ jobs:
           --set=ON_ERROR_STOP=1
           --file=supabase/verification/20261116_docket_genome_real_lifecycle_trigger_3_21_53_66.verify.sql
 
+      - name: Verify proposed scoped Docket SHA256 reader with real triggers (disposable only)
+        run: |
+          psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --set=ON_ERROR_STOP=1 --file=supabase/proposals/20261117_docket_history_scoped_sha256_lookup.proposal.sql
+          psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --set=ON_ERROR_STOP=1 --file=supabase/verification/20261117_docket_history_sha256_identity_vectors.verify.sql
+          psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --set=ON_ERROR_STOP=1 --file=supabase/verification/20261117_docket_history_canonical_sha256_3_21_53_66.verify.sql
+
       - name: Verify retired Atlas bridge is fail-closed
         run: >-
           psql
