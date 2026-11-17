@@ -19,7 +19,7 @@ The default invocation reads local Docket cache only; **no paid API requests**. 
 1. Run only on an approved isolated worker, with exact `DOCKET_EXACT_PRINT_REFRESH_APPROVED_SHA256` matching the plan hash emitted by dry-run. This hash is an approval guard, not a substitute for authorization, review or access control.
 2. Validate existing cache identity and retain both prior `doc_id` ↔ official PN URL tuples.
 3. Make **exactly one** budget-controlled `get_bill(1940853)` call. No retries and no `getBillText` call.
-4. Validate provider identity (`state PA`, `session 2192`, `HB349`), preserve prior document identities and order, prove a positive **provider-assigned** ID for PN4024's exact official URL, and fail with **no write** if missing or ambiguous. Never invent the new provider document ID.
+4. Validate provider identity (`state PA`, `session 2192`, `HB349`), preserve prior document identities and order, prove a positive **provider-assigned** ID for PN4024's exact official URL **as the final provider text document at the time of refresh**, and fail with **no write** if missing or ambiguous. Never invent the new provider document ID.
 5. Use existing `accept_docket_bill_detail` to update its cache. Re-read the Docket source-document key, provider ID/official URL and predecessor as well as the Civic Genome version/predecessor. Fail if any binding does not match.
 6. Leave source-byte acquisition, official PDF styling/strikeout proof, Rosetta decomposition, Prism, Genome assembly, and publication separately held.
 
