@@ -121,6 +121,12 @@ export function parse_amendment_target_reference(
   }
 
   if (String(state_code ?? "").toUpperCase() !== "WA") return explicit;
+  // Fail closed even when an expanded target is also present: otherwise a
+  // conflicting pair of WA printed covers could be silently ignored.
+  const covers = [...source_text.slice(0, 12_000).matchAll(WASHINGTON_AMENDMENT_HEADER)];
+  if (new Set(covers.map(match =>
+    [match[1].toUpperCase(), String(Number(match[2]))].join(":"),
+  )).size > 1) return null;
   const cover = parse_washington_amendment_header(source_text);
   if (!cover) return explicit;
 
