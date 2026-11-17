@@ -29,7 +29,7 @@ async function main() {
       [expected.sourceDocumentKey,TARGET.billId],
       {label:'docket_exact_print_refresh_readback',query_timeout_ms:10000});
     const row=result.rows[0];
-    return {
+    return { matchingRowCount:result.rows.length,
       docketDocument:row?{source_document_key:row.d_key,source_bill_id:row.d_bill,provider_document_id:row.d_doc,source_url:row.d_url,predecessor_source_document_key:row.d_predecessor}:null,
       genomeVersion:row && row.v_key?{source_document_key:row.v_key,source_bill_id:row.v_bill,predecessor_source_document_key:row.v_predecessor}:null,
     };
