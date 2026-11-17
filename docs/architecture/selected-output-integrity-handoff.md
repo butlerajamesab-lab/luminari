@@ -1,6 +1,6 @@
 # Selected-runtime output integrity handoff
 
-The supported read path is Rosetta's /api/live-rule/:sourceId -> Lighthouse's get_current_rosetta_live_detail -> human/report and integrity-inspection consumers. The publication observer exits while the quarantine is closed. The old V12-named admission proposal and retired current_source_result_evidence_v1 are not the selected runtime handoff.
+The supported read path is Rosetta's /api/live-rule/:sourceId -> Lighthouse's get_current_rosetta_live_detail -> human/report and integrity-inspection consumers. The publication observer exits while publication quarantine is active. The old V12-named admission proposal and retired current_source_result_evidence_v1 are not the selected runtime handoff.
 
 ## Paired change
 
@@ -31,3 +31,7 @@ Tests cover all six sources, source/unit tampering, wrong runtime/read identity,
 - No engine selection, decomposition run, provider request, worker activation or publication is triggered.
 - Keep both sides under review together. Complete exact-head checks and independent review before any merge/deployment decision.
 - Source preparation, post-decomposition semantic validators, bounded remedies and independent downstream admission remain required at their proper scopes. This change does not complete the entire matrix.
+
+## Semantic continuation proposal
+
+The [V-series semantic validation candidate contract](vseries-semantic-validation-contract.md) maps the historical semantic design into the retained matrix and defines source/output/validator identity, applicability, coverage and downstream acceptance requirements. Its reference manifest records the 26 supplied files. This is documentation for review; the semantic worker remains retired, and no semantic parser, policy, receipt writer or admission path is enabled by this addition.
