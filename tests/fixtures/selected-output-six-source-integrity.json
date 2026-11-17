@@ -1,0 +1,1876 @@
+{
+  "capture_type": "read_only_canonical_source_and_selected_output_query",
+  "source_project": "kjzytnzkkdpdxtqtjlew",
+  "limitations": "Stored source/unit/count integrity fixture. No semantic labels or original-byte certification. Internal clean classification text is not reconstructed.",
+  "documents": [
+    {
+      "units": [
+        {
+          "kind": "start",
+          "path": "",
+          "rules": [
+            "H:beneficiary+benefit"
+          ],
+          "layers": [
+            "H"
+          ],
+          "raw_end": 174,
+          "raw_text": "SENATE BILL NO. 1169 A bill to amend 1961 PA 236, entitled \"Revised judicature act of 1961,\" by amending section 531 (MCL 600.531). the people of the state of michigan enact:",
+          "unit_ord": 1,
+          "raw_start": 0,
+          "disposition": "LAYERED",
+          "section_ord": 0,
+          "text_sha256": "831b8e84a6315e719f09d4978fdedbc4fdd5999f4d8902d7c30b230fcc3d6cf5",
+          "effective_text": "SENATE BILL NO. 1169 A bill to amend 1961 PA 236, entitled \"Revised judicature act of 1961,\" by amending section 531 (MCL 600.531). the people of the state of michigan enact:",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "01384014-d666-4710-9dac-a49e1b1ee937"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 531.",
+          "rules": [
+            "no_rule_matched"
+          ],
+          "layers": [],
+          "raw_end": 266,
+          "raw_text": "Sec. 531. The thirtieth judicial circuit consists of the county of Ingham and has 7 judges.",
+          "unit_ord": 2,
+          "raw_start": 175,
+          "disposition": "UNCLASSIFIED",
+          "section_ord": 1,
+          "text_sha256": "73ff82e590a68fcb49f3036d2d7f339c46e01c9f5a3906d2e75dca801081087e",
+          "effective_text": "Sec. 531. The thirtieth judicial circuit consists of the county of Ingham and has 7 judges.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "01384014-d666-4710-9dac-a49e1b1ee937"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 531.",
+          "rules": [
+            "W:modal"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 367,
+          "raw_text": "Subject to section 550, this judicial circuit may have 1 additional judge beginning January 1, 2027.",
+          "unit_ord": 3,
+          "raw_start": 267,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "131a0b9eb9d4cd23b47c9fbcf51433beea3a3e3c45c8593eacfb98272cf84c04",
+          "effective_text": "Subject to section 550, this judicial circuit may have 1 additional judge beginning January 1, 2027.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "01384014-d666-4710-9dac-a49e1b1ee937"
+        }
+      ],
+      "source": {
+        "media_type": "text/html",
+        "source_url": "https://legiscan.com/MI/text/SB1169/id/3458386",
+        "source_text": "SENATE BILL NO. 1169 A bill to amend 1961 PA 236, entitled \"Revised judicature act of 1961,\" by amending section 531 (MCL 600.531). the people of the state of michigan enact: Sec. 531. The thirtieth judicial circuit consists of the county of Ingham and has 7 judges. Subject to section 550, this judicial circuit may have 1 additional judge beginning January 1, 2027.",
+        "source_version": "legiscan_text:3458386:Introduced:official-legislative-version-html-strip-v1:legiscan-api-hash-checked-provider-copy-v2",
+        "source_content_id": "01384014-d666-4710-9dac-a49e1b1ee937",
+        "source_document_id": 20416,
+        "source_content_hash": "360a9c8452ec8f1f476d7c1255309de783876806b96e8d2423f356682763464e"
+      },
+      "target": {
+        "contract": "rosetta-rule-runtime-target-v1",
+        "selected_at": "2026-11-15T02:36:34.70152+00:00",
+        "selected_by": "v13-mask-length-preservation",
+        "identity_valid": true,
+        "ruleset_sha256": "5d22c131858022b07a1a66589cd457e55bf771af4d761556e9e3764e9c64e457",
+        "ruleset_version": "rosetta-rule-ref-v13",
+        "read_identity_valid": true,
+        "read_contract_sha256": "6e87755749a8c5968a4cd51b2787622fb56188ca56fb3b9ad1aca6bbe391c0c4",
+        "engine_identity_valid": true,
+        "installed_ruleset_sha256": "5d22c131858022b07a1a66589cd457e55bf771af4d761556e9e3764e9c64e457",
+        "read_contract_configured": true,
+        "installed_read_contract_sha256": "6e87755749a8c5968a4cd51b2787622fb56188ca56fb3b9ad1aca6bbe391c0c4"
+      },
+      "contract": "rosetta-rule-live-detail-v1",
+      "sections": [
+        {
+          "label": null,
+          "raw_end": 174,
+          "raw_start": 0,
+          "unit_count": 1,
+          "section_ord": 0,
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "01384014-d666-4710-9dac-a49e1b1ee937"
+        },
+        {
+          "label": "Sec. 531.",
+          "raw_end": 367,
+          "raw_start": 175,
+          "unit_count": 2,
+          "section_ord": 1,
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "01384014-d666-4710-9dac-a49e1b1ee937"
+        }
+      ],
+      "observed_at": "2026-11-17T01:15:37.984374+00:00",
+      "hold_receipt": null,
+      "decomposition": {
+        "flags": {
+          "convention": "unreviewed",
+          "convention_status": "unreviewed",
+          "convention_unreviewed": true
+        },
+        "reason": null,
+        "outcome": "decomposed",
+        "created_at": "2026-11-16T06:55:16.4999+00:00",
+        "unit_count": 3,
+        "layer_counts": {
+          "H": 1,
+          "W": 1
+        },
+        "section_count": 2,
+        "ruleset_sha256": "5d22c131858022b07a1a66589cd457e55bf771af4d761556e9e3764e9c64e457",
+        "ruleset_version": "rosetta-rule-ref-v13",
+        "source_content_id": "01384014-d666-4710-9dac-a49e1b1ee937",
+        "source_content_hash": "360a9c8452ec8f1f476d7c1255309de783876806b96e8d2423f356682763464e",
+        "docket_provider_document_id": "3458386"
+      },
+      "failure_receipts": []
+    },
+    {
+      "units": [
+        {
+          "kind": "section",
+          "path": "Sec. 1.",
+          "rules": [
+            "instruction_prefix_stripped",
+            "instruction"
+          ],
+          "layers": [],
+          "raw_end": 739,
+          "raw_text": "Sec. 1. 22 MRSA §3174-PPP is enacted to read:\n3 §3174-PPP. Reimbursement for lactation services\n4 1. Definition.",
+          "unit_ord": 1,
+          "raw_start": 627,
+          "disposition": "STRUCT",
+          "section_ord": 1,
+          "text_sha256": "026eb9372d8545c5693fceeb818572aa3c3091301c79f1f4547dc34e77dcfde8",
+          "effective_text": "Sec. 1. 22 MRSA §3174-PPP is enacted to read:\n3 §3174-PPP. Reimbursement for lactation services\n4 1. Definition.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 1.",
+          "rules": [
+            "definition"
+          ],
+          "layers": [
+            "D"
+          ],
+          "raw_end": 865,
+          "raw_text": "For the purposes of this section, \"lactation services\" means educational\n5 or consultation services related to breastfeeding.",
+          "unit_ord": 2,
+          "raw_start": 740,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "c74dab963629e3da28295e707f83e043a1c6ae35c4a299e5b601946115e0016e",
+          "effective_text": "For the purposes of this section, \"lactation services\" means educational\n5 or consultation services related to breastfeeding.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 1. > 2.",
+          "rules": [
+            "no_rule_matched"
+          ],
+          "layers": [],
+          "raw_end": 885,
+          "raw_text": "2. Reimbursement.",
+          "unit_ord": 3,
+          "raw_start": 868,
+          "disposition": "UNCLASSIFIED",
+          "section_ord": 1,
+          "text_sha256": "6e7d54cc0761bfa18c1bc177d141fd9b0c42dd3b3dad581d366b5b5f4188e626",
+          "effective_text": "2. Reimbursement.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 1. > 2.",
+          "rules": [
+            "W:modal"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 1061,
+          "raw_text": "The department shall provide reimbursement under the\n7 MaineCare program for lactation services provided in a hospital or in the home of the\n8 person eligible for the program.",
+          "unit_ord": 4,
+          "raw_start": 886,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "3c114eb4f0f60e3b2324f276dc28fc86f6d10328dff82cebd6f1ab67627c6b4e",
+          "effective_text": "The department shall provide reimbursement under the\n7 MaineCare program for lactation services provided in a hospital or in the home of the\n8 person eligible for the program.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 1. > 2.",
+          "rules": [
+            "W:modal"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 1441,
+          "raw_text": "Lactation services may be provided by a health care\n9 professional licensed under Title 32 acting within the health care professional's authorized\n10 scope of practice or by a consultant or counselor who is certified by a national organization\n11 that provides a national certification program in lactation consulting or lactation counseling\n12 and is approved by the department.",
+          "unit_ord": 5,
+          "raw_start": 1062,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "bc04fb01f1a38c6202bbaf5f3925e7f570be5b6b86d73886d9d83e9e0222c0b8",
+          "effective_text": "Lactation services may be provided by a health care\n9 professional licensed under Title 32 acting within the health care professional's authorized\n10 scope of practice or by a consultant or counselor who is certified by a national organization\n11 that provides a national certification program in lactation consulting or lactation counseling\n12 and is approved by the department.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 1. > 3.",
+          "rules": [
+            "H:beneficiary+benefit"
+          ],
+          "layers": [
+            "H"
+          ],
+          "raw_end": 1492,
+          "raw_text": "3. Eligibility for parents of covered children.",
+          "unit_ord": 6,
+          "raw_start": 1445,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "b93fc4a7be157ac1efe2a59d42b6acf9cafd2905b4d9eef6c04b9d192b62661a",
+          "effective_text": "3. Eligibility for parents of covered children.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 1. > 3.",
+          "rules": [
+            "H:beneficiary+benefit"
+          ],
+          "layers": [
+            "H"
+          ],
+          "raw_end": 1829,
+          "raw_text": "The parent breastfeeding a child who\n14 is eligible for coverage under the MaineCare program established in section 3174-G,\n15 subsection 1, paragraph B or the Children's Health Insurance Program established in section\n16 3174-T, is eligible for services under this section even if the parent is not otherwise eligible\n17 for MaineCare.",
+          "unit_ord": 7,
+          "raw_start": 1493,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "d7705c384ccef3083e1641d4e3b4194578c0f4c25e7897aa76571410dcd3f480",
+          "effective_text": "The parent breastfeeding a child who\n14 is eligible for coverage under the MaineCare program established in section 3174-G,\n15 subsection 1, paragraph B or the Children's Health Insurance Program established in section\n16 3174-T, is eligible for services under this section even if the parent is not otherwise eligible\n17 for MaineCare.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 1. > 4.",
+          "rules": [
+            "no_rule_matched"
+          ],
+          "layers": [],
+          "raw_end": 1847,
+          "raw_text": "4. Rulemaking.",
+          "unit_ord": 8,
+          "raw_start": 1833,
+          "disposition": "UNCLASSIFIED",
+          "section_ord": 1,
+          "text_sha256": "5377e1347fc2d01aac281aac65266b709cff5a4524d4c8ac335886f1e7a003c1",
+          "effective_text": "4. Rulemaking.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 1. > 4.",
+          "rules": [
+            "W:modal"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 1907,
+          "raw_text": "The department shall adopt rules to implement this section.",
+          "unit_ord": 9,
+          "raw_start": 1848,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "c0ba226da8534a99ef5bf4246e251c6c69008796f80d2844de4bdf794522c5c6",
+          "effective_text": "The department shall adopt rules to implement this section.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 1. > 4.",
+          "rules": [
+            "no_rule_matched"
+          ],
+          "layers": [],
+          "raw_end": 2035,
+          "raw_text": "Rules\n19 adopted pursuant to this subsection are routine technical rules as defined in Title 5, chapter\n20 375, subchapter 2-A.",
+          "unit_ord": 10,
+          "raw_start": 1908,
+          "disposition": "UNCLASSIFIED",
+          "section_ord": 1,
+          "text_sha256": "056303ed7634594f25e8a9b6a4a4a7e3fd7e0d5949157c1f205459ba7bf4461f",
+          "effective_text": "Rules\n19 adopted pursuant to this subsection are routine technical rules as defined in Title 5, chapter\n20 375, subchapter 2-A.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 2.",
+          "rules": [
+            "heading"
+          ],
+          "layers": [],
+          "raw_end": 2068,
+          "raw_text": "Sec. 2. State plan amendment.",
+          "unit_ord": 11,
+          "raw_start": 2039,
+          "disposition": "STRUCT",
+          "section_ord": 2,
+          "text_sha256": "7f050546d71b4063dd3b15e92a495e56d56c858220ef479306558de10b14b262",
+          "effective_text": "Sec. 2. State plan amendment.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 2.",
+          "rules": [
+            "H:beneficiary+benefit",
+            "W:modal"
+          ],
+          "layers": [
+            "H",
+            "W"
+          ],
+          "raw_end": 2717,
+          "raw_text": "No later than January 1, 2026, the Department of\n22 Health and Human Services shall apply to the United States Department of Health and\n23 Human Services, Centers for Medicare and Medicaid Services for a state plan amendment\n24 to implement the Maine Revised Statutes, Title 22, section 3174-PPP. The state plan\n25 amendment application must allow for Medicaid reimbursement for lactation services\n26 provided at the hospital or at the home of eligible persons that are performed by lactation\n27 consultants certified by the International Board of Lactation Consultant Examiners or its\n28 successor organization acting within the scope of practice.",
+          "unit_ord": 12,
+          "raw_start": 2069,
+          "disposition": "LAYERED",
+          "section_ord": 2,
+          "text_sha256": "ad4883d56cea59f5b9c4865cb1dba9d0f4267c7be02a8a3895829203f4240d0f",
+          "effective_text": "No later than January 1, 2026, the Department of\n22 Health and Human Services shall apply to the United States Department of Health and\n23 Human Services, Centers for Medicare and Medicaid Services for a state plan amendment\n24 to implement the Maine Revised Statutes, Title 22, section 3174-PPP. The state plan\n25 amendment application must allow for Medicaid reimbursement for lactation services\n26 provided at the hospital or at the home of eligible persons that are performed by lactation\n27 consultants certified by the International Board of Lactation Consultant Examiners or its\n28 successor organization acting within the scope of practice.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 3.",
+          "rules": [
+            "heading"
+          ],
+          "layers": [],
+          "raw_end": 2740,
+          "raw_text": "Sec. 3. Rulemaking.",
+          "unit_ord": 13,
+          "raw_start": 2721,
+          "disposition": "STRUCT",
+          "section_ord": 3,
+          "text_sha256": "09c118164b446a9f4fe5a527afa9552c65779a4ff55736068f418bef059beaf2",
+          "effective_text": "Sec. 3. Rulemaking.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 3.",
+          "rules": [
+            "H:beneficiary+benefit",
+            "W:modal"
+          ],
+          "layers": [
+            "H",
+            "W"
+          ],
+          "raw_end": 3164,
+          "raw_text": "Upon approval of a state plan amendment under section 2, the\n30 Department of Health and Human Services shall adopt or amend rules within 6 months to\n31 allow for reimbursement required pursuant to the Maine Revised Statutes, Title 22, section\n32 3174-PPP.\n33 SUMMARY\n34 This bill requires the Department of Health and Human Services to reimburse for\n35 lactation services in hospitals and in the homes of eligible persons.",
+          "unit_ord": 14,
+          "raw_start": 2741,
+          "disposition": "LAYERED",
+          "section_ord": 3,
+          "text_sha256": "4cf9efc0124abf21b2b4e9cced24d5b8a65d274d341b276462488d2f43b60633",
+          "effective_text": "Upon approval of a state plan amendment under section 2, the\n30 Department of Health and Human Services shall adopt or amend rules within 6 months to\n31 allow for reimbursement required pursuant to the Maine Revised Statutes, Title 22, section\n32 3174-PPP.\n33 SUMMARY\n34 This bill requires the Department of Health and Human Services to reimburse for\n35 lactation services in hospitals and in the homes of eligible persons.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 3.",
+          "rules": [
+            "no_rule_matched"
+          ],
+          "layers": [],
+          "raw_end": 3329,
+          "raw_text": "It requires the\n36 department to reimburse for services provided by lactation consultants certified by the\n37 International Board of Lactation Consultant Examiners.",
+          "unit_ord": 15,
+          "raw_start": 3165,
+          "disposition": "UNCLASSIFIED",
+          "section_ord": 3,
+          "text_sha256": "99695e4257b9ed17e925915f28b0b3067d74a69a43d61852743dc4b51810ed69",
+          "effective_text": "It requires the\n36 department to reimburse for services provided by lactation consultants certified by the\n37 International Board of Lactation Consultant Examiners.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 3.",
+          "rules": [
+            "W:modal"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 3472,
+          "raw_text": "The department must apply for a\n38 state plan amendment no later than January 1, 2026 and adopt or amend rules within 6\n39 months of approval.",
+          "unit_ord": 16,
+          "raw_start": 3330,
+          "disposition": "LAYERED",
+          "section_ord": 3,
+          "text_sha256": "c9719780499599b78479e66b5fc1122c90211c571a93c8cf0f572586ea9282cc",
+          "effective_text": "The department must apply for a\n38 state plan amendment no later than January 1, 2026 and adopt or amend rules within 6\n39 months of approval.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794"
+        }
+      ],
+      "source": {
+        "media_type": "application/pdf",
+        "source_url": "https://legislature.maine.gov/legis/bills/getPDF.asp?paper=HP0551&item=1&snum=132",
+        "source_text": "Printed on recycled paper\n132nd MAINE LEGISLATURE\nFIRST REGULAR SESSION-2025\nLegislative Document No. 865\nH.P. 551 House of Representatives, March 4, 2025\nAn Act to Require MaineCare to Reimburse for Lactation Services\nin the Homes of Eligible Persons\nReference to the Committee on Health and Human Services suggested and ordered printed.\nROBERT B. HUNT\nClerk\nPresented by Representative BOYER of Cape Elizabeth.\nCosponsored by Senator CARNEY of Cumberland and\nRepresentatives: CLOUTIER of Lewiston, MILLIKEN of Blue Hill.\n\n-- 1 of 2 --\n\nPage 1 - 132LR1015(01)\n1 Be it enacted by the People of the State of Maine as follows:\n2 Sec. 1. 22 MRSA §3174-PPP is enacted to read:\n3 §3174-PPP. Reimbursement for lactation services\n4 1. Definition. For the purposes of this section, \"lactation services\" means educational\n5 or consultation services related to breastfeeding.\n6 2. Reimbursement. The department shall provide reimbursement under the\n7 MaineCare program for lactation services provided in a hospital or in the home of the\n8 person eligible for the program. Lactation services may be provided by a health care\n9 professional licensed under Title 32 acting within the health care professional's authorized\n10 scope of practice or by a consultant or counselor who is certified by a national organization\n11 that provides a national certification program in lactation consulting or lactation counseling\n12 and is approved by the department.\n13 3. Eligibility for parents of covered children. The parent breastfeeding a child who\n14 is eligible for coverage under the MaineCare program established in section 3174-G,\n15 subsection 1, paragraph B or the Children's Health Insurance Program established in section\n16 3174-T, is eligible for services under this section even if the parent is not otherwise eligible\n17 for MaineCare.\n18 4. Rulemaking. The department shall adopt rules to implement this section. Rules\n19 adopted pursuant to this subsection are routine technical rules as defined in Title 5, chapter\n20 375, subchapter 2-A.\n21 Sec. 2. State plan amendment. No later than January 1, 2026, the Department of\n22 Health and Human Services shall apply to the United States Department of Health and\n23 Human Services, Centers for Medicare and Medicaid Services for a state plan amendment\n24 to implement the Maine Revised Statutes, Title 22, section 3174-PPP. The state plan\n25 amendment application must allow for Medicaid reimbursement for lactation services\n26 provided at the hospital or at the home of eligible persons that are performed by lactation\n27 consultants certified by the International Board of Lactation Consultant Examiners or its\n28 successor organization acting within the scope of practice.\n29 Sec. 3. Rulemaking. Upon approval of a state plan amendment under section 2, the\n30 Department of Health and Human Services shall adopt or amend rules within 6 months to\n31 allow for reimbursement required pursuant to the Maine Revised Statutes, Title 22, section\n32 3174-PPP.\n33 SUMMARY\n34 This bill requires the Department of Health and Human Services to reimburse for\n35 lactation services in hospitals and in the homes of eligible persons. It requires the\n36 department to reimburse for services provided by lactation consultants certified by the\n37 International Board of Lactation Consultant Examiners. The department must apply for a\n38 state plan amendment no later than January 1, 2026 and adopt or amend rules within 6\n39 months of approval.\n34\n35\n36\n37\n38\n39\n\n-- 2 of 2 --",
+        "source_version": "legiscan_text:3150020:Introduced:pdf-parse-2.4.5-legislative-version-v1",
+        "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794",
+        "source_document_id": 31270,
+        "source_content_hash": "3e811c8e8f015106b8369bf952577bf0dd25eb22b2aaac77a68bfbc990777ef9"
+      },
+      "target": {
+        "contract": "rosetta-rule-runtime-target-v1",
+        "selected_at": "2026-11-15T02:36:34.70152+00:00",
+        "selected_by": "v13-mask-length-preservation",
+        "identity_valid": true,
+        "ruleset_sha256": "5d22c131858022b07a1a66589cd457e55bf771af4d761556e9e3764e9c64e457",
+        "ruleset_version": "rosetta-rule-ref-v13",
+        "read_identity_valid": true,
+        "read_contract_sha256": "6e87755749a8c5968a4cd51b2787622fb56188ca56fb3b9ad1aca6bbe391c0c4",
+        "engine_identity_valid": true,
+        "installed_ruleset_sha256": "5d22c131858022b07a1a66589cd457e55bf771af4d761556e9e3764e9c64e457",
+        "read_contract_configured": true,
+        "installed_read_contract_sha256": "6e87755749a8c5968a4cd51b2787622fb56188ca56fb3b9ad1aca6bbe391c0c4"
+      },
+      "contract": "rosetta-rule-live-detail-v1",
+      "sections": [
+        {
+          "label": "Sec. 1.",
+          "raw_end": 2035,
+          "raw_start": 627,
+          "unit_count": 10,
+          "section_ord": 1,
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794"
+        },
+        {
+          "label": "Sec. 2.",
+          "raw_end": 2717,
+          "raw_start": 2039,
+          "unit_count": 2,
+          "section_ord": 2,
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794"
+        },
+        {
+          "label": "Sec. 3.",
+          "raw_end": 3472,
+          "raw_start": 2721,
+          "unit_count": 4,
+          "section_ord": 3,
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794"
+        }
+      ],
+      "observed_at": "2026-11-17T01:15:37.984374+00:00",
+      "hold_receipt": null,
+      "decomposition": {
+        "flags": {
+          "convention": "unreviewed",
+          "convention_status": "unreviewed",
+          "convention_unreviewed": true
+        },
+        "reason": null,
+        "outcome": "decomposed",
+        "created_at": "2026-11-16T20:26:02.204331+00:00",
+        "unit_count": 16,
+        "layer_counts": {
+          "D": 1,
+          "H": 4,
+          "W": 6
+        },
+        "section_count": 3,
+        "ruleset_sha256": "5d22c131858022b07a1a66589cd457e55bf771af4d761556e9e3764e9c64e457",
+        "ruleset_version": "rosetta-rule-ref-v13",
+        "source_content_id": "15b466fb-bfb6-462b-8ede-e0aeb2b24794",
+        "source_content_hash": "3e811c8e8f015106b8369bf952577bf0dd25eb22b2aaac77a68bfbc990777ef9",
+        "docket_provider_document_id": "3150020"
+      },
+      "failure_receipts": []
+    },
+    {
+      "units": [
+        {
+          "kind": "start",
+          "path": "",
+          "rules": [
+            "label_only"
+          ],
+          "layers": [],
+          "raw_end": 185,
+          "raw_text": "",
+          "unit_ord": 1,
+          "raw_start": 184,
+          "disposition": "STRUCT",
+          "section_ord": 0,
+          "text_sha256": "b4c5e282d97f3d30c3b3d64583f8ef0e7d0b477a3d6c97027640fcab8f4d89bf",
+          "effective_text": "",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "16ca6a62-b9a4-4788-aea8-707c35b10ec6"
+        },
+        {
+          "kind": "section",
+          "path": "SECTION 1.",
+          "rules": [
+            "instruction_prefix_stripped",
+            "instruction"
+          ],
+          "layers": [],
+          "raw_end": 262,
+          "raw_text": "SECTION 1. A NEW SECTION OF KRS CHAPTER 198B IS CREATED TO\t3\nREAD AS FOLLOWS:",
+          "unit_ord": 2,
+          "raw_start": 185,
+          "disposition": "STRUCT",
+          "section_ord": 1,
+          "text_sha256": "1c808b94716c5a706378feebabd378413f1629e1e2675341363bc35f9eadb489",
+          "effective_text": "SECTION 1. A NEW SECTION OF KRS CHAPTER 198B IS CREATED TO\t3\nREAD AS FOLLOWS:",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "16ca6a62-b9a4-4788-aea8-707c35b10ec6"
+        },
+        {
+          "kind": "item",
+          "path": "SECTION 1. > (1)",
+          "rules": [
+            "definition_leadin"
+          ],
+          "layers": [],
+          "raw_end": 293,
+          "raw_text": "(1) As used in this section:",
+          "unit_ord": 3,
+          "raw_start": 265,
+          "disposition": "STRUCT",
+          "section_ord": 1,
+          "text_sha256": "c343123cb3a4acdaf34a527b5827a39f420cfd7778cb215b959f1aee3a446999",
+          "effective_text": "(1) As used in this section:",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "16ca6a62-b9a4-4788-aea8-707c35b10ec6"
+        },
+        {
+          "kind": "item",
+          "path": "SECTION 1. > (a)",
+          "rules": [
+            "definition"
+          ],
+          "layers": [
+            "D"
+          ],
+          "raw_end": 452,
+          "raw_text": "(a) \"Approved safety pool cover\" means a manually-operated or power-\t6\noperated safety pool cover that meets all ASTM International performance\t7\nstandards;",
+          "unit_ord": 4,
+          "raw_start": 296,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "fafd374c835d37a99a3ac6dba643ad93ceb040d4953e48975998234faef5e132",
+          "effective_text": "(a) \"Approved safety pool cover\" means a manually-operated or power-\t6\noperated safety pool cover that meets all ASTM International performance\t7\nstandards;",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "16ca6a62-b9a4-4788-aea8-707c35b10ec6"
+        },
+        {
+          "kind": "item",
+          "path": "SECTION 1. > (b)",
+          "rules": [
+            "definition"
+          ],
+          "layers": [
+            "D"
+          ],
+          "raw_end": 667,
+          "raw_text": "(b) \"Barrier or enclosure\" means a fence, wall, or any combination thereof,\t9\nthat surrounds a swimming pool completely and obstructs access to the\t10\nswimming pool from the area outside the barrier or enclosure;",
+          "unit_ord": 5,
+          "raw_start": 455,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "b16e3769d48207063d7913af5adbf1d10fa30bf5871bc089bb344860126847f5",
+          "effective_text": "(b) \"Barrier or enclosure\" means a fence, wall, or any combination thereof,\t9\nthat surrounds a swimming pool completely and obstructs access to the\t10\nswimming pool from the area outside the barrier or enclosure;",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "16ca6a62-b9a4-4788-aea8-707c35b10ec6"
+        },
+        {
+          "kind": "item",
+          "path": "SECTION 1. > (c)",
+          "rules": [
+            "definition"
+          ],
+          "layers": [
+            "D"
+          ],
+          "raw_end": 837,
+          "raw_text": "(c) \"Local government\" means a city, county, charter county government,\t12\nurban-county government, consolidated local government, or unified local\t13\ngovernment; and",
+          "unit_ord": 6,
+          "raw_start": 671,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "02ec739ad0e74527321cf2d56ef5a2a0bc2e8207a17b77b1dd29ad317a5914d6",
+          "effective_text": "(c) \"Local government\" means a city, county, charter county government,\t12\nurban-county government, consolidated local government, or unified local\t13\ngovernment; and",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "16ca6a62-b9a4-4788-aea8-707c35b10ec6"
+        },
+        {
+          "kind": "item",
+          "path": "SECTION 1. > (d)",
+          "rules": [
+            "definition_block_item"
+          ],
+          "layers": [
+            "D"
+          ],
+          "raw_end": 861,
+          "raw_text": "(d) \"Swimming pool\":",
+          "unit_ord": 7,
+          "raw_start": 841,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "1d5c63d2602bd8c52f18ab5f51ec2b9c3dda3f5bf433414eb0f1f2fbefe88632",
+          "effective_text": "(d) \"Swimming pool\":",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "16ca6a62-b9a4-4788-aea8-707c35b10ec6"
+        },
+        {
+          "kind": "item",
+          "path": "SECTION 1. > 1.",
+          "rules": [
+            "definition_block_item"
+          ],
+          "layers": [
+            "D"
+          ],
+          "raw_end": 995,
+          "raw_text": "1. Means any structure intended for swimming or recreational bathing\t16\nthat contains water over twenty-four (24) inches deep; and",
+          "unit_ord": 8,
+          "raw_start": 865,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "14d06a7bdccf0eba5dc240d8e1f4272c7acf9dcc54c12f45c205437eec832180",
+          "effective_text": "1. Means any structure intended for swimming or recreational bathing\t16\nthat contains water over twenty-four (24) inches deep; and",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "16ca6a62-b9a4-4788-aea8-707c35b10ec6"
+        },
+        {
+          "kind": "item",
+          "path": "SECTION 1. > 2.",
+          "rules": [
+            "no_rule_matched"
+          ],
+          "layers": [],
+          "raw_end": 1101,
+          "raw_text": "2. Includes but is not limited to in-ground pools, hot tubs, spas, and\t18\nfixed-in-place wading pools.",
+          "unit_ord": 9,
+          "raw_start": 999,
+          "disposition": "UNCLASSIFIED",
+          "section_ord": 1,
+          "text_sha256": "6b04db686fea936d5673cc8fbb2e14467837b8a1960940912d9d22a0807600db",
+          "effective_text": "2. Includes but is not limited to in-ground pools, hot tubs, spas, and\t18\nfixed-in-place wading pools.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "16ca6a62-b9a4-4788-aea8-707c35b10ec6"
+        },
+        {
+          "kind": "item",
+          "path": "SECTION 1. > (2)",
+          "rules": [
+            "W:modal"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 1288,
+          "raw_text": "(2) The department shall allow a private swimming pool to be constructed without a\t20\nbarrier or enclosure if the swimming pool will be equipped with an approved\t21\nsafety pool cover.",
+          "unit_ord": 10,
+          "raw_start": 1105,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "0251b43d4ce279e30affd673e749b920547962590e071ce8f0c970a16fcda974",
+          "effective_text": "(2) The department shall allow a private swimming pool to be constructed without a\t20\nbarrier or enclosure if the swimming pool will be equipped with an approved\t21\nsafety pool cover.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "16ca6a62-b9a4-4788-aea8-707c35b10ec6"
+        },
+        {
+          "kind": "item",
+          "path": "SECTION 1. > (3)",
+          "rules": [
+            "W:modal"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 1475,
+          "raw_text": "(3) The department shall incorporate the provisions of this section into the Kentucky\t23\nBuilding Code by administrative regulations promulgated in accordance with\t24\nKRS Chapter 13A.",
+          "unit_ord": 11,
+          "raw_start": 1292,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "58d8735e6c8fc107779fa4e4dc727f7c44b841013aa4844433dd658621567c63",
+          "effective_text": "(3) The department shall incorporate the provisions of this section into the Kentucky\t23\nBuilding Code by administrative regulations promulgated in accordance with\t24\nKRS Chapter 13A.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "16ca6a62-b9a4-4788-aea8-707c35b10ec6"
+        },
+        {
+          "kind": "item",
+          "path": "SECTION 1. > (4)",
+          "rules": [
+            "W:modal"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 1794,
+          "raw_text": "(4) The legislative body of a local government may, by ordinance, adopt more\t26\nstringent requirements to govern approved safety pool covers and barriers or\t27\n\n-- 1 of 2 --\n\nUNOFFICIAL COPY 26 RS BR 1537\nPage 2 of 2\nXXXX 1/13/2026 3:51 PM Jacketed\nenclosures than those specified in subsection (2) of this section.",
+          "unit_ord": 12,
+          "raw_start": 1479,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "99cef4970ea600b9d164eecb9759b0c55532cfbc235ab0c56a8b281379ca6ed1",
+          "effective_text": "(4) The legislative body of a local government may, by ordinance, adopt more\t26\nstringent requirements to govern approved safety pool covers and barriers or\t27\n\n-- 1 of 2 --\n\nUNOFFICIAL COPY 26 RS BR 1537\nPage 2 of 2\nXXXX 1/13/2026 3:51 PM Jacketed\nenclosures than those specified in subsection (2) of this section.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "16ca6a62-b9a4-4788-aea8-707c35b10ec6"
+        }
+      ],
+      "source": {
+        "media_type": "application/pdf",
+        "source_url": "https://apps.legislature.ky.gov/recorddocuments/bill/26RS/hb382/orig_bill.pdf",
+        "source_text": "UNOFFICIAL COPY 26 RS BR 1537\nPage 1 of 2\nXXXX 1/13/2026 3:51 PM Jacketed\nAN ACT relating to swimming pools.\t1\nBe it enacted by the General Assembly of the Commonwealth of Kentucky:\t2\nSECTION 1. A NEW SECTION OF KRS CHAPTER 198B IS CREATED TO\t3\nREAD AS FOLLOWS:\t4\n(1) As used in this section:\t5\n(a) \"Approved safety pool cover\" means a manually-operated or power-\t6\noperated safety pool cover that meets all ASTM International performance\t7\nstandards;\t8\n(b) \"Barrier or enclosure\" means a fence, wall, or any combination thereof,\t9\nthat surrounds a swimming pool completely and obstructs access to the\t10\nswimming pool from the area outside the barrier or enclosure;\t11\n(c) \"Local government\" means a city, county, charter county government,\t12\nurban-county government, consolidated local government, or unified local\t13\ngovernment; and\t14\n(d) \"Swimming pool\":\t15\n1. Means any structure intended for swimming or recreational bathing\t16\nthat contains water over twenty-four (24) inches deep; and\t17\n2. Includes but is not limited to in-ground pools, hot tubs, spas, and\t18\nfixed-in-place wading pools.\t19\n(2) The department shall allow a private swimming pool to be constructed without a\t20\nbarrier or enclosure if the swimming pool will be equipped with an approved\t21\nsafety pool cover.\t22\n(3) The department shall incorporate the provisions of this section into the Kentucky\t23\nBuilding Code by administrative regulations promulgated in accordance with\t24\nKRS Chapter 13A.\t25\n(4) The legislative body of a local government may, by ordinance, adopt more\t26\nstringent requirements to govern approved safety pool covers and barriers or\t27\n\n-- 1 of 2 --\n\nUNOFFICIAL COPY 26 RS BR 1537\nPage 2 of 2\nXXXX 1/13/2026 3:51 PM Jacketed\nenclosures than those specified in subsection (2) of this section.\t1\n\n-- 2 of 2 --",
+        "source_version": "legiscan_text:3316882:Introduced:pdf-parse-2.4.5-legislative-version-v1",
+        "source_content_id": "16ca6a62-b9a4-4788-aea8-707c35b10ec6",
+        "source_document_id": 30501,
+        "source_content_hash": "feae631c1157154656913062ee963c9222b9f20aaf8b4265a7ac41c7ce8a1ad6"
+      },
+      "target": {
+        "contract": "rosetta-rule-runtime-target-v1",
+        "selected_at": "2026-11-15T02:36:34.70152+00:00",
+        "selected_by": "v13-mask-length-preservation",
+        "identity_valid": true,
+        "ruleset_sha256": "5d22c131858022b07a1a66589cd457e55bf771af4d761556e9e3764e9c64e457",
+        "ruleset_version": "rosetta-rule-ref-v13",
+        "read_identity_valid": true,
+        "read_contract_sha256": "6e87755749a8c5968a4cd51b2787622fb56188ca56fb3b9ad1aca6bbe391c0c4",
+        "engine_identity_valid": true,
+        "installed_ruleset_sha256": "5d22c131858022b07a1a66589cd457e55bf771af4d761556e9e3764e9c64e457",
+        "read_contract_configured": true,
+        "installed_read_contract_sha256": "6e87755749a8c5968a4cd51b2787622fb56188ca56fb3b9ad1aca6bbe391c0c4"
+      },
+      "contract": "rosetta-rule-live-detail-v1",
+      "sections": [
+        {
+          "label": null,
+          "raw_end": 185,
+          "raw_start": 184,
+          "unit_count": 1,
+          "section_ord": 0,
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "16ca6a62-b9a4-4788-aea8-707c35b10ec6"
+        },
+        {
+          "label": "SECTION 1.",
+          "raw_end": 1794,
+          "raw_start": 185,
+          "unit_count": 11,
+          "section_ord": 1,
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "16ca6a62-b9a4-4788-aea8-707c35b10ec6"
+        }
+      ],
+      "observed_at": "2026-11-17T01:15:37.984374+00:00",
+      "hold_receipt": null,
+      "decomposition": {
+        "flags": {
+          "convention": "ky_bracket_deletions",
+          "convention_status": "recoverable",
+          "insert_provenance": "not_recoverable_from_stored_text",
+          "deleted_spans_masked": 0
+        },
+        "reason": null,
+        "outcome": "decomposed",
+        "created_at": "2026-11-16T20:24:21.370277+00:00",
+        "unit_count": 12,
+        "layer_counts": {
+          "D": 5,
+          "W": 3
+        },
+        "section_count": 2,
+        "ruleset_sha256": "5d22c131858022b07a1a66589cd457e55bf771af4d761556e9e3764e9c64e457",
+        "ruleset_version": "rosetta-rule-ref-v13",
+        "source_content_id": "16ca6a62-b9a4-4788-aea8-707c35b10ec6",
+        "source_content_hash": "feae631c1157154656913062ee963c9222b9f20aaf8b4265a7ac41c7ce8a1ad6",
+        "docket_provider_document_id": "3316882"
+      },
+      "failure_receipts": []
+    },
+    {
+      "units": [
+        {
+          "kind": "section",
+          "path": "Sec. 1.",
+          "rules": [
+            "instruction_prefix_stripped",
+            "A:enforce",
+            "W:modal"
+          ],
+          "layers": [
+            "A",
+            "W"
+          ],
+          "raw_end": 621,
+          "raw_text": "Sec. 1. 25 MRSA §1512 is enacted to read:\n§1512. Missing persons list\nIn cooperation with appropriate law enforcement agencies, the Bureau of State Police\nshall establish by December 31, 2026 and maintain a publicly accessible website that lists\nall open missing persons cases in the State.",
+          "unit_ord": 1,
+          "raw_start": 331,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "c98f182ec3b09b95f7cf896df11bd867f547bba0d61e9db0e2f6b7c8a283b519",
+          "effective_text": "Sec. 1. 25 MRSA §1512 is enacted to read:\n§1512. Missing persons list\nIn cooperation with appropriate law enforcement agencies, the Bureau of State Police\nshall establish by December 31, 2026 and maintain a publicly accessible website that lists\nall open missing persons cases in the State.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 1.",
+          "rules": [
+            "W:modal"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 929,
+          "raw_text": "The website must contain details regarding each\nmissing person in the State that include, but are not limited to, the missing person's\ndemographics, photograph, circumstances of disappearance and last known location and\nany additional information that may help in locating or identifying the missing person.",
+          "unit_ord": 2,
+          "raw_start": 622,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "d5bc839d85d7f63f6a73efee81b8313c4869f9d192b0d8c5379cdc998128164d",
+          "effective_text": "The website must contain details regarding each\nmissing person in the State that include, but are not limited to, the missing person's\ndemographics, photograph, circumstances of disappearance and last known location and\nany additional information that may help in locating or identifying the missing person.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 1.",
+          "rules": [
+            "W:modal"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 1066,
+          "raw_text": "The\nwebsite must be updated, at a minimum, once every month to include any new missing\nperson's information as required by this section.",
+          "unit_ord": 3,
+          "raw_start": 930,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "3ca2868674874cc97bc78580b4b3e16360a5fbf0fb63801d3301283829369c06",
+          "effective_text": "The\nwebsite must be updated, at a minimum, once every month to include any new missing\nperson's information as required by this section.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 2.",
+          "rules": [
+            "heading"
+          ],
+          "layers": [],
+          "raw_end": 1152,
+          "raw_text": "Sec. 2. Department of Public Safety, Bureau of State Police to convene\nworking group.",
+          "unit_ord": 4,
+          "raw_start": 1067,
+          "disposition": "STRUCT",
+          "section_ord": 2,
+          "text_sha256": "a55488fb045d34be157ae225d94c2afe8f9cae4fd96a9913c8674bc66fa3bb17",
+          "effective_text": "Sec. 2. Department of Public Safety, Bureau of State Police to convene\nworking group.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 2.",
+          "rules": [
+            "A:complaint",
+            "W:modal"
+          ],
+          "layers": [
+            "A",
+            "W"
+          ],
+          "raw_end": 1626,
+          "raw_text": "The Department of Public Safety, Bureau of State Police shall convene\na working group to review best practices for investigating missing persons cases in the\nState, determining the feasibility of implementing those best practices in a training module\nin the Maine Criminal Justice Academy's curriculum, reviewing the effectiveness of the\nSilver Alert Program under the Maine Revised Statutes, Title 25, section 2202 and\nidentifying ways to improve the Silver Alert Program.",
+          "unit_ord": 5,
+          "raw_start": 1153,
+          "disposition": "LAYERED",
+          "section_ord": 2,
+          "text_sha256": "08b7be9d1560c672c3f1ae6c90a15600bd06e8d879973fcad6db3750de690af7",
+          "effective_text": "The Department of Public Safety, Bureau of State Police shall convene\na working group to review best practices for investigating missing persons cases in the\nState, determining the feasibility of implementing those best practices in a training module\nin the Maine Criminal Justice Academy's curriculum, reviewing the effectiveness of the\nSilver Alert Program under the Maine Revised Statutes, Title 25, section 2202 and\nidentifying ways to improve the Silver Alert Program.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 2.",
+          "rules": [
+            "W:modal"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 1680,
+          "raw_text": "The working group must include the\nfollowing members:",
+          "unit_ord": 6,
+          "raw_start": 1627,
+          "disposition": "LAYERED",
+          "section_ord": 2,
+          "text_sha256": "3d2ae5a9c8d2828bc091641ccc7db0d0526b13cba899b6f2ef760c09fdc3d3ce",
+          "effective_text": "The working group must include the\nfollowing members:",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 2. > 1.",
+          "rules": [
+            "inherit_list_leadin"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 1750,
+          "raw_text": "1. The Commissioner of Public Safety, or the commissioner's designee;",
+          "unit_ord": 7,
+          "raw_start": 1681,
+          "disposition": "LAYERED",
+          "section_ord": 2,
+          "text_sha256": "e1c8ba0dc7cff708cc807a4a25be5785114adb21fed71ff5b2f36e8ae8c677a2",
+          "effective_text": "1. The Commissioner of Public Safety, or the commissioner's designee;",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 2. > 2.",
+          "rules": [
+            "inherit_list_leadin"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 1809,
+          "raw_text": "2. The Chief of the State Police, or the chief's designee;",
+          "unit_ord": 8,
+          "raw_start": 1751,
+          "disposition": "LAYERED",
+          "section_ord": 2,
+          "text_sha256": "295c406ec0587f6da470f302949d9cba4519b4292ee790d3de4e2f3a490d957f",
+          "effective_text": "2. The Chief of the State Police, or the chief's designee;",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 2. > 3.",
+          "rules": [
+            "inherit_list_leadin"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 1865,
+          "raw_text": "3. The Chief Medical Examiner, or the chief's designee;",
+          "unit_ord": 9,
+          "raw_start": 1810,
+          "disposition": "LAYERED",
+          "section_ord": 2,
+          "text_sha256": "853b15387b6541dabc194ad61b764238f74a3b8f6c5428f2c69902b3d4fc2623",
+          "effective_text": "3. The Chief Medical Examiner, or the chief's designee;",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 2. > 4.",
+          "rules": [
+            "inherit_list_leadin"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 1965,
+          "raw_text": "4. A representative from the Department of Inland Fisheries and Wildlife, Bureau of\nWarden Service;",
+          "unit_ord": 10,
+          "raw_start": 1866,
+          "disposition": "LAYERED",
+          "section_ord": 2,
+          "text_sha256": "166b5ad89a4e1ec0ae656c46ba57b0aff7a9a7283f5bdf95f212a4b3774b67a5",
+          "effective_text": "4. A representative from the Department of Inland Fisheries and Wildlife, Bureau of\nWarden Service;",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 2. > 5.",
+          "rules": [
+            "inherit_list_leadin"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 2215,
+          "raw_text": "5. The Director of the Maine Criminal Justice Academy, or the director's designee;\nAPPROVED\nJULY 1, 2025\nBY GOVERNOR\nCHAPTER\n447\nPUBLIC LAW\n\n-- 1 of 2 --\n\nPage 2 - 132LR0397(05)\n6. A representative from a statewide association representing sheriffs;",
+          "unit_ord": 11,
+          "raw_start": 1966,
+          "disposition": "LAYERED",
+          "section_ord": 2,
+          "text_sha256": "2ca677b74437f32e3491932f94729489d7b14b6b98d0f986afab32bbae4dd5a3",
+          "effective_text": "5. The Director of the Maine Criminal Justice Academy, or the director's designee;\nAPPROVED\nJULY 1, 2025\nBY GOVERNOR\nCHAPTER\n447\nPUBLIC LAW\n\n-- 1 of 2 --\n\nPage 2 - 132LR0397(05)\n6. A representative from a statewide association representing sheriffs;",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 2. > 7.",
+          "rules": [
+            "inherit_list_leadin"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 2295,
+          "raw_text": "7. A representative from a statewide association representing chiefs of police;",
+          "unit_ord": 12,
+          "raw_start": 2216,
+          "disposition": "LAYERED",
+          "section_ord": 2,
+          "text_sha256": "62994970fbb765eb571edd9b854623e3f2f6021d0b9d6d0353f72e6da4cde4e0",
+          "effective_text": "7. A representative from a statewide association representing chiefs of police;",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 2. > 8.",
+          "rules": [
+            "inherit_list_leadin"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 2389,
+          "raw_text": "8. A representative from a statewide volunteer association specializing in search and\nrescue;",
+          "unit_ord": 13,
+          "raw_start": 2296,
+          "disposition": "LAYERED",
+          "section_ord": 2,
+          "text_sha256": "e6aae63d9b8a3c7e985f6065e58bb79028900547f2f95766f834198776dec20e",
+          "effective_text": "8. A representative from a statewide volunteer association specializing in search and\nrescue;",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 2. > 9.",
+          "rules": [
+            "inherit_list_leadin"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 2486,
+          "raw_text": "9. A representative from an organization that specializes in maintaining a missing\npersons list;",
+          "unit_ord": 14,
+          "raw_start": 2390,
+          "disposition": "LAYERED",
+          "section_ord": 2,
+          "text_sha256": "a5e5b0501c393d7c17ee245f9202fa342bbb80af2efddcabff72ae379af072d5",
+          "effective_text": "9. A representative from an organization that specializes in maintaining a missing\npersons list;",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 2. > 10.",
+          "rules": [
+            "inherit_list_leadin"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 2531,
+          "raw_text": "10. A family member of a missing person; and",
+          "unit_ord": 15,
+          "raw_start": 2487,
+          "disposition": "LAYERED",
+          "section_ord": 2,
+          "text_sha256": "de85db1a165842d021ce9d2d62ee4af2f4984f7fde9f6df739e73e970da834e2",
+          "effective_text": "10. A family member of a missing person; and",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 2. > 11.",
+          "rules": [
+            "inherit_list_leadin"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 2704,
+          "raw_text": "11. A representative from each of the federally recognized Indian tribes, nations or\nbands in the State, appointed by the representative's respective tribe, nation or band.",
+          "unit_ord": 16,
+          "raw_start": 2532,
+          "disposition": "LAYERED",
+          "section_ord": 2,
+          "text_sha256": "78ce4ad713641b9b45cca64b6ee48554e18e5fcf8b7f061f7b9f3f1f2d041527",
+          "effective_text": "11. A representative from each of the federally recognized Indian tribes, nations or\nbands in the State, appointed by the representative's respective tribe, nation or band.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 2. > 11.",
+          "rules": [
+            "A:oversight_report",
+            "W:modal"
+          ],
+          "layers": [
+            "A",
+            "W"
+          ],
+          "raw_end": 2948,
+          "raw_text": "By December 3, 2025, the bureau shall submit a report that includes the findings and\nrecommendations of the working group, including suggested legislation, for presentation\nto the Joint Standing Committee on Criminal Justice and Public Safety.",
+          "unit_ord": 17,
+          "raw_start": 2705,
+          "disposition": "LAYERED",
+          "section_ord": 2,
+          "text_sha256": "86a94ab0c9cd05f333c1606eb4533b7b983293c9a2b6bf1d6f730e5e3aa6a3a6",
+          "effective_text": "By December 3, 2025, the bureau shall submit a report that includes the findings and\nrecommendations of the working group, including suggested legislation, for presentation\nto the Joint Standing Committee on Criminal Justice and Public Safety.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 2. > 11.",
+          "rules": [
+            "W:modal"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 3061,
+          "raw_text": "The committee\nmay submit legislation based on the report to the Second Regular Session of the 132nd\nLegislature.",
+          "unit_ord": 18,
+          "raw_start": 2949,
+          "disposition": "LAYERED",
+          "section_ord": 2,
+          "text_sha256": "c80abb1dc4786f0395c3cb80d7797d4a9f3cb526fbadf8a5f84aace26ac2a47b",
+          "effective_text": "The committee\nmay submit legislation based on the report to the Second Regular Session of the 132nd\nLegislature.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 3.",
+          "rules": [
+            "heading"
+          ],
+          "layers": [],
+          "raw_end": 3101,
+          "raw_text": "Sec. 3. Appropriations and allocations.",
+          "unit_ord": 19,
+          "raw_start": 3062,
+          "disposition": "STRUCT",
+          "section_ord": 3,
+          "text_sha256": "c6aeeca38fe14399594b2bc51c20989003d0ed5c57da1bbdcdf6282c953b7609",
+          "effective_text": "Sec. 3. Appropriations and allocations.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 3.",
+          "rules": [
+            "heading"
+          ],
+          "layers": [],
+          "raw_end": 3156,
+          "raw_text": "The following appropriations and\nallocations are made.",
+          "unit_ord": 20,
+          "raw_start": 3102,
+          "disposition": "STRUCT",
+          "section_ord": 3,
+          "text_sha256": "055349b2a0532d1705df600e17e98be33c312e1e54240c8cc3a0c6f6158b16b0",
+          "effective_text": "The following appropriations and\nallocations are made.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 3.",
+          "rules": [
+            "no_rule_matched"
+          ],
+          "layers": [],
+          "raw_end": 3308,
+          "raw_text": "PUBLIC SAFETY, DEPARTMENT OF\nState Police 0291\nInitiative: Provides one-time funding for technology costs to establish the publicly\naccessible website.",
+          "unit_ord": 21,
+          "raw_start": 3157,
+          "disposition": "UNCLASSIFIED",
+          "section_ord": 3,
+          "text_sha256": "93c658033ed6212064781809ea66497524b4d0f4078686c5a9aeee431da08eaa",
+          "effective_text": "PUBLIC SAFETY, DEPARTMENT OF\nState Police 0291\nInitiative: Provides one-time funding for technology costs to establish the publicly\naccessible website.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 3.",
+          "rules": [
+            "no_rule_matched"
+          ],
+          "layers": [],
+          "raw_end": 3508,
+          "raw_text": "GENERAL FUND 2025-26 2026-27\nAll Other $4,139 $0\n__________ __________\nGENERAL FUND TOTAL $4,139 $0\nHIGHWAY FUND 2025-26 2026-27\nAll Other $2,229 $0\n__________ __________\nHIGHWAY FUND TOTAL $2,229 $0",
+          "unit_ord": 22,
+          "raw_start": 3309,
+          "disposition": "UNCLASSIFIED",
+          "section_ord": 3,
+          "text_sha256": "a7e32e7cab0545e50e7bc03539a08a1139ed2f854f540ecd66c16c6e0cfc1f7d",
+          "effective_text": "GENERAL FUND 2025-26 2026-27\nAll Other $4,139 $0\n__________ __________\nGENERAL FUND TOTAL $4,139 $0\nHIGHWAY FUND 2025-26 2026-27\nAll Other $2,229 $0\n__________ __________\nHIGHWAY FUND TOTAL $2,229 $0",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        }
+      ],
+      "source": {
+        "media_type": "application/pdf",
+        "source_url": "https://legislature.maine.gov/legis/bills/getPDF.asp?paper=HP0105&item=5&snum=132",
+        "source_text": "Page 1 - 132LR0397(05)\nSTATE OF MAINE\n_____\nIN THE YEAR OF OUR LORD\nTWO THOUSAND TWENTY-FIVE\n_____\nH.P. 105 - L.D. 172\nAn Act to Require the Maine State Police to Create a Statewide List of\nMissing Persons and Study Improvements for Investigating Missing Persons\nCases\nBe it enacted by the People of the State of Maine as follows:\nSec. 1. 25 MRSA §1512 is enacted to read:\n§1512. Missing persons list\nIn cooperation with appropriate law enforcement agencies, the Bureau of State Police\nshall establish by December 31, 2026 and maintain a publicly accessible website that lists\nall open missing persons cases in the State. The website must contain details regarding each\nmissing person in the State that include, but are not limited to, the missing person's\ndemographics, photograph, circumstances of disappearance and last known location and\nany additional information that may help in locating or identifying the missing person. The\nwebsite must be updated, at a minimum, once every month to include any new missing\nperson's information as required by this section.\nSec. 2. Department of Public Safety, Bureau of State Police to convene\nworking group. The Department of Public Safety, Bureau of State Police shall convene\na working group to review best practices for investigating missing persons cases in the\nState, determining the feasibility of implementing those best practices in a training module\nin the Maine Criminal Justice Academy's curriculum, reviewing the effectiveness of the\nSilver Alert Program under the Maine Revised Statutes, Title 25, section 2202 and\nidentifying ways to improve the Silver Alert Program. The working group must include the\nfollowing members:\n1. The Commissioner of Public Safety, or the commissioner's designee;\n2. The Chief of the State Police, or the chief's designee;\n3. The Chief Medical Examiner, or the chief's designee;\n4. A representative from the Department of Inland Fisheries and Wildlife, Bureau of\nWarden Service;\n5. The Director of the Maine Criminal Justice Academy, or the director's designee;\nAPPROVED\nJULY 1, 2025\nBY GOVERNOR\nCHAPTER\n447\nPUBLIC LAW\n\n-- 1 of 2 --\n\nPage 2 - 132LR0397(05)\n6. A representative from a statewide association representing sheriffs;\n7. A representative from a statewide association representing chiefs of police;\n8. A representative from a statewide volunteer association specializing in search and\nrescue;\n9. A representative from an organization that specializes in maintaining a missing\npersons list;\n10. A family member of a missing person; and\n11. A representative from each of the federally recognized Indian tribes, nations or\nbands in the State, appointed by the representative's respective tribe, nation or band.\nBy December 3, 2025, the bureau shall submit a report that includes the findings and\nrecommendations of the working group, including suggested legislation, for presentation\nto the Joint Standing Committee on Criminal Justice and Public Safety. The committee\nmay submit legislation based on the report to the Second Regular Session of the 132nd\nLegislature.\nSec. 3. Appropriations and allocations. The following appropriations and\nallocations are made.\nPUBLIC SAFETY, DEPARTMENT OF\nState Police 0291\nInitiative: Provides one-time funding for technology costs to establish the publicly\naccessible website.\nGENERAL FUND 2025-26 2026-27\nAll Other $4,139 $0\n__________ __________\nGENERAL FUND TOTAL $4,139 $0\nHIGHWAY FUND 2025-26 2026-27\nAll Other $2,229 $0\n__________ __________\nHIGHWAY FUND TOTAL $2,229 $0\n\n-- 2 of 2 --",
+        "source_version": "legiscan_text:3260324:Chaptered:pdf-parse-2.4.5-legislative-version-v1",
+        "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28",
+        "source_document_id": 29960,
+        "source_content_hash": "f529cb7e9f8bf32b314aa966d7de32c0958ce8ec170920190b53f2f6eb66b07e"
+      },
+      "target": {
+        "contract": "rosetta-rule-runtime-target-v1",
+        "selected_at": "2026-11-15T02:36:34.70152+00:00",
+        "selected_by": "v13-mask-length-preservation",
+        "identity_valid": true,
+        "ruleset_sha256": "5d22c131858022b07a1a66589cd457e55bf771af4d761556e9e3764e9c64e457",
+        "ruleset_version": "rosetta-rule-ref-v13",
+        "read_identity_valid": true,
+        "read_contract_sha256": "6e87755749a8c5968a4cd51b2787622fb56188ca56fb3b9ad1aca6bbe391c0c4",
+        "engine_identity_valid": true,
+        "installed_ruleset_sha256": "5d22c131858022b07a1a66589cd457e55bf771af4d761556e9e3764e9c64e457",
+        "read_contract_configured": true,
+        "installed_read_contract_sha256": "6e87755749a8c5968a4cd51b2787622fb56188ca56fb3b9ad1aca6bbe391c0c4"
+      },
+      "contract": "rosetta-rule-live-detail-v1",
+      "sections": [
+        {
+          "label": "Sec. 1.",
+          "raw_end": 1066,
+          "raw_start": 331,
+          "unit_count": 3,
+          "section_ord": 1,
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "label": "Sec. 2.",
+          "raw_end": 3061,
+          "raw_start": 1067,
+          "unit_count": 15,
+          "section_ord": 2,
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        },
+        {
+          "label": "Sec. 3.",
+          "raw_end": 3508,
+          "raw_start": 3062,
+          "unit_count": 4,
+          "section_ord": 3,
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28"
+        }
+      ],
+      "observed_at": "2026-11-17T01:15:37.984374+00:00",
+      "hold_receipt": null,
+      "decomposition": {
+        "flags": {
+          "convention": "unreviewed",
+          "convention_status": "unreviewed",
+          "convention_unreviewed": true
+        },
+        "reason": null,
+        "outcome": "decomposed",
+        "created_at": "2026-11-16T20:25:30.740083+00:00",
+        "unit_count": 22,
+        "layer_counts": {
+          "A": 3,
+          "W": 17
+        },
+        "section_count": 3,
+        "ruleset_sha256": "5d22c131858022b07a1a66589cd457e55bf771af4d761556e9e3764e9c64e457",
+        "ruleset_version": "rosetta-rule-ref-v13",
+        "source_content_id": "2b61c4e6-ed7b-461c-90cf-010913b24a28",
+        "source_content_hash": "f529cb7e9f8bf32b314aa966d7de32c0958ce8ec170920190b53f2f6eb66b07e",
+        "docket_provider_document_id": "3260324"
+      },
+      "failure_receipts": []
+    },
+    {
+      "units": [
+        {
+          "kind": "section",
+          "path": "Sec. 1.",
+          "rules": [
+            "instruction_prefix_stripped",
+            "instruction"
+          ],
+          "layers": [],
+          "raw_end": 386,
+          "raw_text": "Sec. 1. 22 MRSA §3174-PPP is enacted to read:\n§3174-PPP. Reimbursement for lactation services\n1. Definition.",
+          "unit_ord": 1,
+          "raw_start": 278,
+          "disposition": "STRUCT",
+          "section_ord": 1,
+          "text_sha256": "548c8733829ede2c0f6126548e2c150739fab89d8e543a3ef067ac9a193fbb19",
+          "effective_text": "Sec. 1. 22 MRSA §3174-PPP is enacted to read:\n§3174-PPP. Reimbursement for lactation services\n1. Definition.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 1.",
+          "rules": [
+            "definition"
+          ],
+          "layers": [
+            "D"
+          ],
+          "raw_end": 510,
+          "raw_text": "For the purposes of this section, \"lactation services\" means educational\nor consultation services related to breastfeeding.",
+          "unit_ord": 2,
+          "raw_start": 387,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "0f19b0127abb4e21543c6e6c2448693dcb00e71a7ddcab763067ac823b12aed9",
+          "effective_text": "For the purposes of this section, \"lactation services\" means educational\nor consultation services related to breastfeeding.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 1. > 2.",
+          "rules": [
+            "no_rule_matched"
+          ],
+          "layers": [],
+          "raw_end": 528,
+          "raw_text": "2. Reimbursement.",
+          "unit_ord": 3,
+          "raw_start": 511,
+          "disposition": "UNCLASSIFIED",
+          "section_ord": 1,
+          "text_sha256": "6e7d54cc0761bfa18c1bc177d141fd9b0c42dd3b3dad581d366b5b5f4188e626",
+          "effective_text": "2. Reimbursement.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 1. > 2.",
+          "rules": [
+            "H:beneficiary+benefit",
+            "W:modal"
+          ],
+          "layers": [
+            "H",
+            "W"
+          ],
+          "raw_end": 1192,
+          "raw_text": "The department shall provide reimbursement under the\nMaineCare program for lactation services provided in a hospital, clinic, office, community\nor in the home for a child eligible for coverage under the MaineCare program or the\nChildren's Health Insurance Program established in section 3174-T. Lactation services\nmay be provided by a health care professional licensed under Title 32 acting within the\nhealth care professional's authorized scope of practice or by a consultant or counselor who\nis certified by a national organization that provides a national certification program in\nlactation consulting or lactation counseling and is approved by the department.",
+          "unit_ord": 4,
+          "raw_start": 529,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "4e38639bbc51f8f8e3cbabfe3891c9271f952779a475a7c12a4feb17cf1317bb",
+          "effective_text": "The department shall provide reimbursement under the\nMaineCare program for lactation services provided in a hospital, clinic, office, community\nor in the home for a child eligible for coverage under the MaineCare program or the\nChildren's Health Insurance Program established in section 3174-T. Lactation services\nmay be provided by a health care professional licensed under Title 32 acting within the\nhealth care professional's authorized scope of practice or by a consultant or counselor who\nis certified by a national organization that provides a national certification program in\nlactation consulting or lactation counseling and is approved by the department.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 1. > 3.",
+          "rules": [
+            "no_rule_matched"
+          ],
+          "layers": [],
+          "raw_end": 1207,
+          "raw_text": "3. Rulemaking.",
+          "unit_ord": 5,
+          "raw_start": 1193,
+          "disposition": "UNCLASSIFIED",
+          "section_ord": 1,
+          "text_sha256": "41958ac6444557d68798c0e0fad16f55e8dc6f850c4e5ff1f63d2c3ffa1a1fa9",
+          "effective_text": "3. Rulemaking.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 1. > 3.",
+          "rules": [
+            "W:modal"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 1267,
+          "raw_text": "The department shall adopt rules to implement this section.",
+          "unit_ord": 6,
+          "raw_start": 1208,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "c0ba226da8534a99ef5bf4246e251c6c69008796f80d2844de4bdf794522c5c6",
+          "effective_text": "The department shall adopt rules to implement this section.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351"
+        },
+        {
+          "kind": "item",
+          "path": "Sec. 1. > 3.",
+          "rules": [
+            "no_rule_matched"
+          ],
+          "layers": [],
+          "raw_end": 1389,
+          "raw_text": "Rules\nadopted pursuant to this subsection are routine technical rules as defined in Title 5, chapter\n375, subchapter 2-A.",
+          "unit_ord": 7,
+          "raw_start": 1268,
+          "disposition": "UNCLASSIFIED",
+          "section_ord": 1,
+          "text_sha256": "13d6a7dde124f74a71c3b3385d69a131048e4afb7b3e5df7325388a5ad2094f2",
+          "effective_text": "Rules\nadopted pursuant to this subsection are routine technical rules as defined in Title 5, chapter\n375, subchapter 2-A.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 2.",
+          "rules": [
+            "heading"
+          ],
+          "layers": [],
+          "raw_end": 1419,
+          "raw_text": "Sec. 2. State plan amendment.",
+          "unit_ord": 8,
+          "raw_start": 1390,
+          "disposition": "STRUCT",
+          "section_ord": 2,
+          "text_sha256": "7f050546d71b4063dd3b15e92a495e56d56c858220ef479306558de10b14b262",
+          "effective_text": "Sec. 2. State plan amendment.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 2.",
+          "rules": [
+            "H:beneficiary+benefit",
+            "W:modal"
+          ],
+          "layers": [
+            "H",
+            "W"
+          ],
+          "raw_end": 2016,
+          "raw_text": "The Department of Health and Human Services\nshall apply to the United States Department of Health and Human Services, Centers for\nMedicare and Medicaid Services for a state plan amendment to implement the Maine\nRevised Statutes, Title 22, section 3174-PPP. The state plan amendment application must\nallow for Medicaid reimbursement for lactation services provided at the hospital or at the\nhome of eligible persons that are performed by lactation consultants certified by the\nInternational Board of Lactation Consultant Examiners or its successor organization acting\nwithin the scope of practice.",
+          "unit_ord": 9,
+          "raw_start": 1420,
+          "disposition": "LAYERED",
+          "section_ord": 2,
+          "text_sha256": "9a798d091bacd4a4f55b591d8d203f009cbe63a7a4c766700ccb31f182b65ec3",
+          "effective_text": "The Department of Health and Human Services\nshall apply to the United States Department of Health and Human Services, Centers for\nMedicare and Medicaid Services for a state plan amendment to implement the Maine\nRevised Statutes, Title 22, section 3174-PPP. The state plan amendment application must\nallow for Medicaid reimbursement for lactation services provided at the hospital or at the\nhome of eligible persons that are performed by lactation consultants certified by the\nInternational Board of Lactation Consultant Examiners or its successor organization acting\nwithin the scope of practice.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 3.",
+          "rules": [
+            "heading"
+          ],
+          "layers": [],
+          "raw_end": 2036,
+          "raw_text": "Sec. 3. Rulemaking.",
+          "unit_ord": 10,
+          "raw_start": 2017,
+          "disposition": "STRUCT",
+          "section_ord": 3,
+          "text_sha256": "09c118164b446a9f4fe5a527afa9552c65779a4ff55736068f418bef059beaf2",
+          "effective_text": "Sec. 3. Rulemaking.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 3.",
+          "rules": [
+            "W:modal"
+          ],
+          "layers": [
+            "W"
+          ],
+          "raw_end": 2364,
+          "raw_text": "Upon approval of a state plan amendment under section 2, the\nDepartment of Health and Human Services shall adopt or amend rules to allow for\nAPPROVED\nJULY 1, 2025\nBY GOVERNOR\nCHAPTER\n468\nPUBLIC LAW\n\n-- 1 of 3 --\n\nPage 2 - 132LR1015(03)\nreimbursement required pursuant to the Maine Revised Statutes, Title 22, section 3174-\nPPP.",
+          "unit_ord": 11,
+          "raw_start": 2037,
+          "disposition": "LAYERED",
+          "section_ord": 3,
+          "text_sha256": "f0086fcf6b4e80485f57a3e7ad6c60a569713e893ab7f9e1fda7d48225d4f87c",
+          "effective_text": "Upon approval of a state plan amendment under section 2, the\nDepartment of Health and Human Services shall adopt or amend rules to allow for\nAPPROVED\nJULY 1, 2025\nBY GOVERNOR\nCHAPTER\n468\nPUBLIC LAW\n\n-- 1 of 3 --\n\nPage 2 - 132LR1015(03)\nreimbursement required pursuant to the Maine Revised Statutes, Title 22, section 3174-\nPPP.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 4.",
+          "rules": [
+            "heading"
+          ],
+          "layers": [],
+          "raw_end": 2404,
+          "raw_text": "Sec. 4. Appropriations and allocations.",
+          "unit_ord": 12,
+          "raw_start": 2365,
+          "disposition": "STRUCT",
+          "section_ord": 4,
+          "text_sha256": "da8501b4532bad4236dd5415278a33c3526e9999410fd5b870e9a6d08d24f617",
+          "effective_text": "Sec. 4. Appropriations and allocations.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 4.",
+          "rules": [
+            "heading"
+          ],
+          "layers": [],
+          "raw_end": 2459,
+          "raw_text": "The following appropriations and\nallocations are made.",
+          "unit_ord": 13,
+          "raw_start": 2405,
+          "disposition": "STRUCT",
+          "section_ord": 4,
+          "text_sha256": "055349b2a0532d1705df600e17e98be33c312e1e54240c8cc3a0c6f6158b16b0",
+          "effective_text": "The following appropriations and\nallocations are made.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 4.",
+          "rules": [
+            "no_rule_matched"
+          ],
+          "layers": [],
+          "raw_end": 2644,
+          "raw_text": "HEALTH AND HUMAN SERVICES, DEPARTMENT OF\nMedical Care - Payments to Providers 0147\nInitiative: Provides funding for MaineCare reimbursement for lactation services provided\nin the home.",
+          "unit_ord": 14,
+          "raw_start": 2460,
+          "disposition": "UNCLASSIFIED",
+          "section_ord": 4,
+          "text_sha256": "3ea7a2d69c0da942576bad07973931b1f00cd501dd4bd0fcb0e6acf6c2ebae00",
+          "effective_text": "HEALTH AND HUMAN SERVICES, DEPARTMENT OF\nMedical Care - Payments to Providers 0147\nInitiative: Provides funding for MaineCare reimbursement for lactation services provided\nin the home.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 4.",
+          "rules": [
+            "no_rule_matched"
+          ],
+          "layers": [],
+          "raw_end": 3227,
+          "raw_text": "GENERAL FUND 2025-26 2026-27\nAll Other $0 $12,257\n__________ __________\nGENERAL FUND TOTAL $0 $12,257\nFEDERAL EXPENDITURES FUND 2025-26 2026-27\nAll Other $0 $19,942\n__________ __________\nFEDERAL EXPENDITURES FUND TOTAL $0 $19,942\nFEDERAL BLOCK GRANT FUND 2025-26 2026-27\nAll Other $0 $546\n__________ __________\nFEDERAL BLOCK GRANT FUND TOTAL $0 $546\nOffice of MaineCare Services 0129\nInitiative: Provides one-time funding for MaineCare technology costs and development of\nrate methodology and payment model to implement MaineCare coverage of lactation\nservices provided in the home.",
+          "unit_ord": 15,
+          "raw_start": 2645,
+          "disposition": "UNCLASSIFIED",
+          "section_ord": 4,
+          "text_sha256": "9eddc238c9e88b7ad8757c4a7af3ec65c62c6aea202fbf67ef4ba056c7a9c202",
+          "effective_text": "GENERAL FUND 2025-26 2026-27\nAll Other $0 $12,257\n__________ __________\nGENERAL FUND TOTAL $0 $12,257\nFEDERAL EXPENDITURES FUND 2025-26 2026-27\nAll Other $0 $19,942\n__________ __________\nFEDERAL EXPENDITURES FUND TOTAL $0 $19,942\nFEDERAL BLOCK GRANT FUND 2025-26 2026-27\nAll Other $0 $546\n__________ __________\nFEDERAL BLOCK GRANT FUND TOTAL $0 $546\nOffice of MaineCare Services 0129\nInitiative: Provides one-time funding for MaineCare technology costs and development of\nrate methodology and payment model to implement MaineCare coverage of lactation\nservices provided in the home.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 4.",
+          "rules": [
+            "no_rule_matched"
+          ],
+          "layers": [],
+          "raw_end": 3731,
+          "raw_text": "GENERAL FUND 2025-26 2026-27\nAll Other $0 $91,993\n__________ __________\nGENERAL FUND TOTAL $0 $91,993\nFEDERAL EXPENDITURES FUND 2025-26 2026-27\nAll Other $0 $178,901\n__________ __________\nFEDERAL EXPENDITURES FUND TOTAL $0 $178,901\nHEALTH AND HUMAN SERVICES,\nDEPARTMENT OF\nDEPARTMENT TOTALS 2025-26 2026-27\nGENERAL FUND $0 $104,250\n\n-- 2 of 3 --\n\nPage 3 - 132LR1015(03)\nFEDERAL EXPENDITURES FUND $0 $198,843\nFEDERAL BLOCK GRANT FUND $0 $546\n__________ __________\nDEPARTMENT TOTAL - ALL FUNDS $0 $303,639",
+          "unit_ord": 16,
+          "raw_start": 3228,
+          "disposition": "UNCLASSIFIED",
+          "section_ord": 4,
+          "text_sha256": "efac6c50481c508f63782c751635f5b13b551b4e55340b09cdb7150f097f610b",
+          "effective_text": "GENERAL FUND 2025-26 2026-27\nAll Other $0 $91,993\n__________ __________\nGENERAL FUND TOTAL $0 $91,993\nFEDERAL EXPENDITURES FUND 2025-26 2026-27\nAll Other $0 $178,901\n__________ __________\nFEDERAL EXPENDITURES FUND TOTAL $0 $178,901\nHEALTH AND HUMAN SERVICES,\nDEPARTMENT OF\nDEPARTMENT TOTALS 2025-26 2026-27\nGENERAL FUND $0 $104,250\n\n-- 2 of 3 --\n\nPage 3 - 132LR1015(03)\nFEDERAL EXPENDITURES FUND $0 $198,843\nFEDERAL BLOCK GRANT FUND $0 $546\n__________ __________\nDEPARTMENT TOTAL - ALL FUNDS $0 $303,639",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351"
+        }
+      ],
+      "source": {
+        "media_type": "application/pdf",
+        "source_url": "https://legislature.maine.gov/legis/bills/getPDF.asp?paper=HP0551&item=3&snum=132",
+        "source_text": "Page 1 - 132LR1015(03)\nSTATE OF MAINE\n_____\nIN THE YEAR OF OUR LORD\nTWO THOUSAND TWENTY-FIVE\n_____\nH.P. 551 - L.D. 865\nAn Act to Require MaineCare to Reimburse for Lactation Services in the\nHomes of Eligible Persons\nBe it enacted by the People of the State of Maine as follows:\nSec. 1. 22 MRSA §3174-PPP is enacted to read:\n§3174-PPP. Reimbursement for lactation services\n1. Definition. For the purposes of this section, \"lactation services\" means educational\nor consultation services related to breastfeeding.\n2. Reimbursement. The department shall provide reimbursement under the\nMaineCare program for lactation services provided in a hospital, clinic, office, community\nor in the home for a child eligible for coverage under the MaineCare program or the\nChildren's Health Insurance Program established in section 3174-T. Lactation services\nmay be provided by a health care professional licensed under Title 32 acting within the\nhealth care professional's authorized scope of practice or by a consultant or counselor who\nis certified by a national organization that provides a national certification program in\nlactation consulting or lactation counseling and is approved by the department.\n3. Rulemaking. The department shall adopt rules to implement this section. Rules\nadopted pursuant to this subsection are routine technical rules as defined in Title 5, chapter\n375, subchapter 2-A.\nSec. 2. State plan amendment. The Department of Health and Human Services\nshall apply to the United States Department of Health and Human Services, Centers for\nMedicare and Medicaid Services for a state plan amendment to implement the Maine\nRevised Statutes, Title 22, section 3174-PPP. The state plan amendment application must\nallow for Medicaid reimbursement for lactation services provided at the hospital or at the\nhome of eligible persons that are performed by lactation consultants certified by the\nInternational Board of Lactation Consultant Examiners or its successor organization acting\nwithin the scope of practice.\nSec. 3. Rulemaking. Upon approval of a state plan amendment under section 2, the\nDepartment of Health and Human Services shall adopt or amend rules to allow for\nAPPROVED\nJULY 1, 2025\nBY GOVERNOR\nCHAPTER\n468\nPUBLIC LAW\n\n-- 1 of 3 --\n\nPage 2 - 132LR1015(03)\nreimbursement required pursuant to the Maine Revised Statutes, Title 22, section 3174-\nPPP.\nSec. 4. Appropriations and allocations. The following appropriations and\nallocations are made.\nHEALTH AND HUMAN SERVICES, DEPARTMENT OF\nMedical Care - Payments to Providers 0147\nInitiative: Provides funding for MaineCare reimbursement for lactation services provided\nin the home.\nGENERAL FUND 2025-26 2026-27\nAll Other $0 $12,257\n__________ __________\nGENERAL FUND TOTAL $0 $12,257\nFEDERAL EXPENDITURES FUND 2025-26 2026-27\nAll Other $0 $19,942\n__________ __________\nFEDERAL EXPENDITURES FUND TOTAL $0 $19,942\nFEDERAL BLOCK GRANT FUND 2025-26 2026-27\nAll Other $0 $546\n__________ __________\nFEDERAL BLOCK GRANT FUND TOTAL $0 $546\nOffice of MaineCare Services 0129\nInitiative: Provides one-time funding for MaineCare technology costs and development of\nrate methodology and payment model to implement MaineCare coverage of lactation\nservices provided in the home.\nGENERAL FUND 2025-26 2026-27\nAll Other $0 $91,993\n__________ __________\nGENERAL FUND TOTAL $0 $91,993\nFEDERAL EXPENDITURES FUND 2025-26 2026-27\nAll Other $0 $178,901\n__________ __________\nFEDERAL EXPENDITURES FUND TOTAL $0 $178,901\nHEALTH AND HUMAN SERVICES,\nDEPARTMENT OF\nDEPARTMENT TOTALS 2025-26 2026-27\nGENERAL FUND $0 $104,250\n\n-- 2 of 3 --\n\nPage 3 - 132LR1015(03)\nFEDERAL EXPENDITURES FUND $0 $198,843\nFEDERAL BLOCK GRANT FUND $0 $546\n__________ __________\nDEPARTMENT TOTAL - ALL FUNDS $0 $303,639\n\n-- 3 of 3 --",
+        "source_version": "legiscan_text:3260367:Chaptered:pdf-parse-2.4.5-legislative-version-v1",
+        "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351",
+        "source_document_id": 31271,
+        "source_content_hash": "9615894a8d5fbcb3a327adc9de3e6dc9ebc6d691cb619c993bd4e76b648a3114"
+      },
+      "target": {
+        "contract": "rosetta-rule-runtime-target-v1",
+        "selected_at": "2026-11-15T02:36:34.70152+00:00",
+        "selected_by": "v13-mask-length-preservation",
+        "identity_valid": true,
+        "ruleset_sha256": "5d22c131858022b07a1a66589cd457e55bf771af4d761556e9e3764e9c64e457",
+        "ruleset_version": "rosetta-rule-ref-v13",
+        "read_identity_valid": true,
+        "read_contract_sha256": "6e87755749a8c5968a4cd51b2787622fb56188ca56fb3b9ad1aca6bbe391c0c4",
+        "engine_identity_valid": true,
+        "installed_ruleset_sha256": "5d22c131858022b07a1a66589cd457e55bf771af4d761556e9e3764e9c64e457",
+        "read_contract_configured": true,
+        "installed_read_contract_sha256": "6e87755749a8c5968a4cd51b2787622fb56188ca56fb3b9ad1aca6bbe391c0c4"
+      },
+      "contract": "rosetta-rule-live-detail-v1",
+      "sections": [
+        {
+          "label": "Sec. 1.",
+          "raw_end": 1389,
+          "raw_start": 278,
+          "unit_count": 7,
+          "section_ord": 1,
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351"
+        },
+        {
+          "label": "Sec. 2.",
+          "raw_end": 2016,
+          "raw_start": 1390,
+          "unit_count": 2,
+          "section_ord": 2,
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351"
+        },
+        {
+          "label": "Sec. 3.",
+          "raw_end": 2364,
+          "raw_start": 2017,
+          "unit_count": 2,
+          "section_ord": 3,
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351"
+        },
+        {
+          "label": "Sec. 4.",
+          "raw_end": 3731,
+          "raw_start": 2365,
+          "unit_count": 5,
+          "section_ord": 4,
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351"
+        }
+      ],
+      "observed_at": "2026-11-17T01:15:37.984374+00:00",
+      "hold_receipt": null,
+      "decomposition": {
+        "flags": {
+          "convention": "unreviewed",
+          "convention_status": "unreviewed",
+          "convention_unreviewed": true
+        },
+        "reason": null,
+        "outcome": "decomposed",
+        "created_at": "2026-11-16T20:26:02.204331+00:00",
+        "unit_count": 16,
+        "layer_counts": {
+          "D": 1,
+          "H": 2,
+          "W": 4
+        },
+        "section_count": 4,
+        "ruleset_sha256": "5d22c131858022b07a1a66589cd457e55bf771af4d761556e9e3764e9c64e457",
+        "ruleset_version": "rosetta-rule-ref-v13",
+        "source_content_id": "63803af6-f0f3-43f7-a612-86f61ced6351",
+        "source_content_hash": "9615894a8d5fbcb3a327adc9de3e6dc9ebc6d691cb619c993bd4e76b648a3114",
+        "docket_provider_document_id": "3260367"
+      },
+      "failure_receipts": []
+    },
+    {
+      "units": [
+        {
+          "kind": "section",
+          "path": "Sec. 1.",
+          "rules": [
+            "instruction_prefix_stripped",
+            "A:enforce",
+            "W:modal"
+          ],
+          "layers": [
+            "A",
+            "W"
+          ],
+          "raw_end": 1031,
+          "raw_text": "Sec. 1. 25 MRSA §1512 is enacted to read:\n3 §1512. Missing persons list\n4 In cooperation with appropriate law enforcement agencies, the Bureau of State Police\n5 shall establish and maintain a publicly accessible website that lists all open missing person\n6 cases in the State.",
+          "unit_ord": 1,
+          "raw_start": 755,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "a5f1e3b2c611822081f5e6cf0fcbd5ca97c864c1a1622f0e5116eaf42fbcbc06",
+          "effective_text": "Sec. 1. 25 MRSA §1512 is enacted to read:\n3 §1512. Missing persons list\n4 In cooperation with appropriate law enforcement agencies, the Bureau of State Police\n5 shall establish and maintain a publicly accessible website that lists all open missing person\n6 cases in the State.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "ef67a840-0781-46bd-b54f-6d5ece0842f2"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 1.",
+          "rules": [
+            "A:complaint",
+            "W:modal"
+          ],
+          "layers": [
+            "A",
+            "W"
+          ],
+          "raw_end": 1220,
+          "raw_text": "For each missing person listed, the website must contain a summary of\n7 the details of the case, a picture of the missing person and the contact information for the\n8 investigating agency.",
+          "unit_ord": 2,
+          "raw_start": 1032,
+          "disposition": "LAYERED",
+          "section_ord": 1,
+          "text_sha256": "ced17ebd0550514f5602a022f8d97265b585dd3f194bf9a83163571013fe9b65",
+          "effective_text": "For each missing person listed, the website must contain a summary of\n7 the details of the case, a picture of the missing person and the contact information for the\n8 investigating agency.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "ef67a840-0781-46bd-b54f-6d5ece0842f2"
+        },
+        {
+          "kind": "section",
+          "path": "Sec. 1.",
+          "rules": [
+            "no_rule_matched"
+          ],
+          "layers": [],
+          "raw_end": 1391,
+          "raw_text": "SUMMARY\n10 This bill requires the Department of Public Safety, Bureau of State Police to establish\n11 and maintain a publicly accessible statewide missing persons list.",
+          "unit_ord": 3,
+          "raw_start": 1223,
+          "disposition": "UNCLASSIFIED",
+          "section_ord": 1,
+          "text_sha256": "434d91bca8b9d00f4d2b5cb5f89a08953ccb9d825871776a49ad17db247c6e63",
+          "effective_text": "SUMMARY\n10 This bill requires the Department of Public Safety, Bureau of State Police to establish\n11 and maintain a publicly accessible statewide missing persons list.",
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "ef67a840-0781-46bd-b54f-6d5ece0842f2"
+        }
+      ],
+      "source": {
+        "media_type": "application/pdf",
+        "source_url": "https://legislature.maine.gov/legis/bills/getPDF.asp?paper=HP0105&item=1&snum=132",
+        "source_text": "Printed on recycled paper\n132nd MAINE LEGISLATURE\nFIRST REGULAR SESSION-2025\nLegislative Document No. 172\nH.P. 105 House of Representatives, January 14, 2025\nAn Act to Require the Maine State Police to Create a Statewide List\nof Missing Persons\nReference to the Committee on Criminal Justice and Public Safety suggested and ordered\nprinted.\nROBERT B. HUNT\nClerk\nPresented by Representative MILLIKEN of Blue Hill.\nCosponsored by Senator CYRWAY of Kennebec and\nRepresentatives: ARDELL of Monticello, BABIN of Fort Fairfield, BISHOP of Bucksport,\nDODGE of Belfast, GATTINE of Westbrook, LAJOIE of Lewiston, NUTTING of Oakland,\nPERKINS of Dover-Foxcroft.\n\n-- 1 of 2 --\n\nPage 1 - 132LR0397(01)\n1 Be it enacted by the People of the State of Maine as follows:\n2 Sec. 1. 25 MRSA §1512 is enacted to read:\n3 §1512. Missing persons list\n4 In cooperation with appropriate law enforcement agencies, the Bureau of State Police\n5 shall establish and maintain a publicly accessible website that lists all open missing person\n6 cases in the State. For each missing person listed, the website must contain a summary of\n7 the details of the case, a picture of the missing person and the contact information for the\n8 investigating agency.\n9 SUMMARY\n10 This bill requires the Department of Public Safety, Bureau of State Police to establish\n11 and maintain a publicly accessible statewide missing persons list.\n10\n11\n\n-- 2 of 2 --",
+        "source_version": "legiscan_text:3052547:Introduced:pdf-parse-2.4.5-legislative-version-v1",
+        "source_content_id": "ef67a840-0781-46bd-b54f-6d5ece0842f2",
+        "source_document_id": 29961,
+        "source_content_hash": "ec34dc484d9ba7e153c516a4e1f3b0905a75df667b89842b57957da4a5540c04"
+      },
+      "target": {
+        "contract": "rosetta-rule-runtime-target-v1",
+        "selected_at": "2026-11-15T02:36:34.70152+00:00",
+        "selected_by": "v13-mask-length-preservation",
+        "identity_valid": true,
+        "ruleset_sha256": "5d22c131858022b07a1a66589cd457e55bf771af4d761556e9e3764e9c64e457",
+        "ruleset_version": "rosetta-rule-ref-v13",
+        "read_identity_valid": true,
+        "read_contract_sha256": "6e87755749a8c5968a4cd51b2787622fb56188ca56fb3b9ad1aca6bbe391c0c4",
+        "engine_identity_valid": true,
+        "installed_ruleset_sha256": "5d22c131858022b07a1a66589cd457e55bf771af4d761556e9e3764e9c64e457",
+        "read_contract_configured": true,
+        "installed_read_contract_sha256": "6e87755749a8c5968a4cd51b2787622fb56188ca56fb3b9ad1aca6bbe391c0c4"
+      },
+      "contract": "rosetta-rule-live-detail-v1",
+      "sections": [
+        {
+          "label": "Sec. 1.",
+          "raw_end": 1391,
+          "raw_start": 755,
+          "unit_count": 3,
+          "section_ord": 1,
+          "ruleset_version": "rosetta-rule-ref-v13",
+          "source_content_id": "ef67a840-0781-46bd-b54f-6d5ece0842f2"
+        }
+      ],
+      "observed_at": "2026-11-17T01:15:37.984374+00:00",
+      "hold_receipt": null,
+      "decomposition": {
+        "flags": {
+          "convention": "unreviewed",
+          "convention_status": "unreviewed",
+          "convention_unreviewed": true
+        },
+        "reason": null,
+        "outcome": "decomposed",
+        "created_at": "2026-11-16T20:25:30.740083+00:00",
+        "unit_count": 3,
+        "layer_counts": {
+          "A": 2,
+          "W": 2
+        },
+        "section_count": 1,
+        "ruleset_sha256": "5d22c131858022b07a1a66589cd457e55bf771af4d761556e9e3764e9c64e457",
+        "ruleset_version": "rosetta-rule-ref-v13",
+        "source_content_id": "ef67a840-0781-46bd-b54f-6d5ece0842f2",
+        "source_content_hash": "ec34dc484d9ba7e153c516a4e1f3b0905a75df667b89842b57957da4a5540c04",
+        "docket_provider_document_id": "3052547"
+      },
+      "failure_receipts": []
+    }
+  ],
+  "failure_receipts_checked_separately": true,
+  "failure_receipt_count": 0
+}

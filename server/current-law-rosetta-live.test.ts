@@ -1,6 +1,7 @@
+import { createHash } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("./civic-genome-rosetta-evaluation", () => ({
+vi.mock("./rosetta-review-url", () => ({
   get_rosetta_review_base_url: () => "https://rosetta.example.org",
 }));
 
@@ -8,8 +9,8 @@ import { get_current_rosetta_live_detail } from "./current-law-rosetta-live";
 
 const fetch_mock = vi.fn();
 const source_content_id = "11111111-1111-4111-8111-111111111111";
-const source_content_hash = "a".repeat(64);
 const source_text = "The agency shall act.";
+const source_content_hash = createHash("sha256").update(source_text).digest("hex");
 
 const fixture = {
   contract: "rosetta-rule-live-detail-v1",
@@ -18,6 +19,12 @@ const fixture = {
     ruleset_version: "rosetta-rule-ref-v10",
     ruleset_sha256: "b".repeat(64),
     identity_valid: true,
+    engine_identity_valid: true,
+    read_identity_valid: true,
+    read_contract_configured: true,
+    installed_ruleset_sha256: "b".repeat(64),
+    read_contract_sha256: "e".repeat(64),
+    installed_read_contract_sha256: "e".repeat(64),
   },
   source: {
     source_content_id,
@@ -33,13 +40,20 @@ const fixture = {
   },
   decomposition: {
     outcome: "decomposed",
+    source_content_id,
+    source_content_hash,
+    ruleset_version: "rosetta-rule-ref-v10",
+    ruleset_sha256: "b".repeat(64),
     unit_count: 1,
     section_count: 1,
     layer_counts: { H: 0, W: 1, A: 0, O: 0, D: 0, R: 1 },
   },
-  sections: [{ section_ord: 1 }],
+  sections: [{ section_ord: 1, source_content_id, ruleset_version: "rosetta-rule-ref-v10", raw_start: 0, raw_end: source_text.length, unit_count: 1 }],
   units: [{
     unit_ord: 1,
+    source_content_id,
+    ruleset_version: "rosetta-rule-ref-v10",
+    text_sha256: source_content_hash,
     section_ord: 1,
     kind: "sentence",
     disposition: "OPERATIVE",
@@ -72,6 +86,7 @@ describe("current Rosetta live presentation reader", () => {
     });
     expect(result?.contract).toBe("rosetta-rule-live-detail-v1");
     expect(result?.units[0].layers).toEqual(["W", "R"]);
+    expect(result?.output_integrity).toMatchObject({status:"verified",semantic_certification:false,publication_authorized:false});
     expect(result?.source.source_content_hash).toBe(source_content_hash);
     const url = new URL(String(fetch_mock.mock.calls[0][0]));
     expect(url.pathname).toBe(`/api/live-rule/${source_content_id}`);
