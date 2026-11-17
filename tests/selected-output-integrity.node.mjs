@@ -44,6 +44,13 @@ test('source text tampering and wrong selectors reject',()=>{
  const good=synthetic();
  assert.throws(()=>inspect(good,{...selector(good),source_content_hash:'c'.repeat(64)}),/source_identity/);
 });
+test('malformed JSON identity fields produce the declared integrity error',()=>{
+ for(const field of ['source_content_id','source_content_hash']){
+  const d=synthetic(),expected=selector(d);d.source[field]=[d.source[field]];
+  assert.throws(()=>inspect(d,expected),error=>
+   error.message==='selected_output_integrity_source_identity'&&error.status===502);
+ }
+});
 test('every advertised selected/read identity flag is required',()=>{
  for(const key of ['identity_valid','engine_identity_valid','read_identity_valid','read_contract_configured']){
   for(const value of [false,undefined]){const d=synthetic();d.target[key]=value;

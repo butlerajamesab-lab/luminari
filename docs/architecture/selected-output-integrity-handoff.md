@@ -24,6 +24,8 @@ The fixture reconstructs canonical stored source and V13 output fields with SELE
 
 Tests cover all six sources, source/unit tampering, wrong runtime/read identity, mixed output identity, count/layer errors, Unicode offsets, holds/failures, absent failure exposure, producer/consumer digest agreement and contradictory producer receipts. The consumer integration tests execute its real TypeScript reader with mocked HTTP transport and the actual verifier, not a reimplementation. They prove one current-detail request per source with no certification-route request.
 
+The producer HTTP acceptance starts the actual branch server.js against a loopback-only mock PostgREST backend with an explicit fixture environment and no inherited production credentials. It exercises all six real details, hash/identity corruption and malformed UUID rejection as HTTP 502, inspectable not-ready states, missing/invalid selectors, capability gating, and retired-route/unauthorized-intake non-access. It does not call a real database, provider, decomposition writer or semantic worker.
+
 ## Boundaries and next steps
 
 - No SQL migration or production database write is part of this change.

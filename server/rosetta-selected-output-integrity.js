@@ -29,6 +29,7 @@ export function inspect_selected_output_integrity(detail, selector) {
   if (!object(detail) || detail.contract !== 'rosetta-rule-live-detail-v1') invalid('contract');
   const source=detail.source, target=detail.target;
   if (!object(source) || !object(target) ||
+      typeof source.source_content_id !== 'string' || typeof source.source_content_hash !== 'string' ||
       !UUID.test(source.source_content_id || '') || !integer(source.source_document_id) || source.source_document_id <= 0 ||
       typeof source.source_text !== 'string' || !HASH.test(source.source_content_hash || '') ||
       !selector || source.source_content_id.toLowerCase() !== String(selector.source_content_id).toLowerCase() ||
