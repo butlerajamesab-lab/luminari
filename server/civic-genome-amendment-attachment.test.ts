@@ -283,6 +283,12 @@ describe("Washington evidence-only explicit SHB/ESHB header target", () => {
     expect(parse_amendment_target_reference("A summary mentions ESHB 1533", "WA")).toBeNull();
   });
 
+  it("holds contradictory WA covers even when an expanded target agrees with one", () => {
+    expect(parse_amendment_target_reference(
+      "SHB 1533 - H AMD and ESHB 1533 - S COMM AMD plus Original House Bill No. 1533", "WA",
+    )).toBeNull();
+  });
+
   it("holds conflicting expanded and shorthand targets in the same source", () => {
     expect(parse_amendment_target_reference(
       "ESHB 1533 - S COMM AMD Amendments to Original House Bill No. 1533", "WA",
