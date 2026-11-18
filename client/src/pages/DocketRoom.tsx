@@ -700,7 +700,7 @@ const snapshot_is_fresh = (fetched_at?: string | null): boolean => {
 
 function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?: string }) {
   const [preferred_state, set_selected_state] = useState("ALL");
-  const selected_state = level === "federal" ? "US" : preferred_state;
+  const selected_state = level === "federal" ? "US" : level === "state" && preferred_state === "US" ? "ALL" : preferred_state;
   const [state_data, set_state_data] = useState<docket_state_payload | null>(null);
   const [state_error, set_state_error] = useState<string | null>(null);
   const [state_loading, set_state_loading] = useState(false);
@@ -795,6 +795,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
       try {
         const params = new URLSearchParams({ q: search_term, limit: "25" });
         if (search_state_scope) params.set("state", search_state_scope);
+        if (level === "state") params.set("jurisdiction_scope", "state");
         const response = await fetch(`/api/docket/search?${params.toString()}`, {
           signal: controller.signal,
         });
@@ -819,7 +820,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
 
     void load_search();
     return () => controller.abort();
-  }, [search_active, search_term, search_state_scope]);
+  }, [search_active, search_term, search_state_scope, level]);
 
   // Changing jurisdiction or returning from search starts a fresh page.
   // Do not append a previously loaded cursor page twice after clearing search.
@@ -844,6 +845,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
       try {
         const params = new URLSearchParams({limit:"25", after:String(archive_cursor)});
         if (selected_state !== "ALL") params.set("state",selected_state);
+        if (level === "state") params.set("jurisdiction_scope", "state");
         const response = await fetch(`/api/docket/archive?${params.toString()}`, {signal: controller.signal});
         const payload = await response.json().catch(() => ({
           ok:false,message:`api_docket_archive_failed_http_${response.status}`
