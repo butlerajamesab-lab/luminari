@@ -18,11 +18,11 @@ import pg from "pg";
 const { Pool } = pg;
 const sha256 = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
 const root = "MT/2025-2025_Regular_Session";
-const canaryBillIds = [1895956, 1895958, 1895959, 1895960, 1895961];
-const controlBillId = 1895962;
+const canaryBillIds = [2100010001, 2100010002, 2100010003, 2100010004, 2100010005];
+const controlBillId = 2100010006;
 const positiveBillIds = [...canaryBillIds, controlBillId];
 const positiveBillId = canaryBillIds[0];
-const heldBillId = 1895957;
+const heldBillId = 2100010007;
 const reportAssertion = (result: ReturnType<typeof spawnSync>, report: string, phase: string) => {
   assert.equal(result.error, undefined, phase + ": process error");
   assert.equal(result.status, 0, phase + ": source-only admission preserves one held bill without error");
@@ -47,6 +47,9 @@ if (!process.env.DATABASE_URL || !/localhost|127\.0\.0\.1/.test(process.env.DATA
 if (process.env.LEGISCAN_API_KEY) {
   throw new Error("ci_docket_bulk_integration_must_not_have_paid_provider_credential");
 }
+if (process.env.DOCKET_QUEUE_FIVE_JOB_TEST_ALLOW_RESET !== "true") {
+  throw new Error("ci_docket_five_job_acceptance_requires_explicit_fixture_reset");
+}
 process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = "legiscan_bulk_json";
 process.env.DOCKET_BILL_ACTIVATION_CONCURRENCY = "5";
 
@@ -54,6 +57,17 @@ const temp = mkdtempSync(join(tmpdir(), "docket-bulk-real-pg-"));
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 let workerPool: { end(): Promise<void> } | undefined;
 try {
+  // The preceding transport integration shares this isolated PostgreSQL
+  // service and leaves synthetic rows behind. Reset only the disposable
+  // Docket fixture tables before this independent acceptance run.
+  await pool.query(`truncate table
+    public.docket_jurisdiction_activation_bill,
+    public.docket_bill_processing_queue,
+    public.docket_jurisdiction_activation_run,
+    public.civic_genome_bill,
+    public.docket_legiscan_bulk_member_receipt,
+    public.docket_bill_detail_cache
+  `);
   const zip = new JSZip();
   const acceptedBills = positiveBillIds.map((bill_id, index) => ({
     bill_id, state: "MT", session_id: 2159,
