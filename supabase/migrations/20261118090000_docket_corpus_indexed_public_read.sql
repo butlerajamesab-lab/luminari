@@ -30,9 +30,26 @@ ON public.docket_bill_detail_cache (
 );
 
 -- Ordinary title/keyword lookup. Trigram index prevents full-corpus JSON scans.
-CREATE INDEX docket_bill_detail_cache_title_trgm_public_idx
-ON public.docket_bill_detail_cache
-USING gin ((coalesce(bill ->> 'title', '')) extensions.gin_trgm_ops);
+-- Supabase installs pg_trgm in different schemas on different projects.
+-- Use pg_extension's exact installed namespace, not a guessed schema name.
+DO $trgm_index$
+DECLARE
+  operator_schema text;
+BEGIN
+  SELECT n.nspname INTO operator_schema
+  FROM pg_extension e JOIN pg_namespace n ON n.oid=e.extnamespace
+  WHERE e.extname='pg_trgm';
+  IF operator_schema IS NULL THEN
+    RAISE EXCEPTION 'docket_title_search_trgm_extension_missing';
+  END IF;
+  EXECUTE format(
+    'CREATE INDEX docket_bill_detail_cache_title_trgm_public_idx '
+    || 'ON public.docket_bill_detail_cache '
+    || 'USING gin ((coalesce(bill ->> ''title'', '''')) %I.gin_trgm_ops)',
+    operator_schema
+  );
+END;
+$trgm_index$;
 
 DO $postflight$
 BEGIN
