@@ -168,7 +168,7 @@ try {
   await pool.query(
     `insert into public.docket_legiscan_bulk_member_receipt
      (archive_sha256,member_path,member_sha256,member_kind,provider_record_id,bill_id,session_id,state,disposition)
-     values($1,$2,$3,'bill',$4,$4,2159,'MT','existing_preserved')`,
+     values($1,$2,$3,'bill',$4::bigint,$4::integer,2159,'MT','existing_preserved')`,
     [secondArchiveHash, root + "/bill/HB1_from_second_archive.json", "a".repeat(64), positiveBillId],
   );
   await pool.query(
