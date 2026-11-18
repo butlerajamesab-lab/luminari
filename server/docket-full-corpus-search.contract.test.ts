@@ -42,9 +42,12 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(route).toContain("where cache.bill_id=$5::integer");
     expect(route).toContain("upper(regexp_replace(");
     expect(route).toContain("coalesce(cache.bill->>'title','') ilike");
-    const titleBranch = route.match(/select cache\\.bill_id,2 as match_rank([\\s\\S]*?)\\)\\s*candidates/)?.[1];
-    expect(titleBranch).toBeDefined();
-    expect(titleBranch).not.toMatch(/order by cache\\.bill_id/);
+    const titleStart = route.indexOf("select cache.bill_id,2 as match_rank");
+    const titleEnd = route.indexOf(") candidates", titleStart);
+    const titleBranch = route.slice(titleStart, titleEnd);
+    expect(titleStart).toBeGreaterThanOrEqual(0);
+    expect(titleEnd).toBeGreaterThan(titleStart);
+    expect(titleBranch).not.toContain("order by cache.bill_id");
     expect(route).toContain("select cache.bill_id,0 as match_rank");
     expect(route).toContain("select cache.bill_id,1 as match_rank");
     expect(route).toContain("select cache.bill_id,2 as match_rank");
