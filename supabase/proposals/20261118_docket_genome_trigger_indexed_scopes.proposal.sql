@@ -465,7 +465,7 @@ begin
   affected_count := affected_count + step_count;
   return affected_count;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.register_docket_legislative_version_spine(p_source_bill_id integer, p_enqueue boolean DEFAULT true)
  RETURNS jsonb
@@ -806,4 +806,4 @@ begin
     'docket_fetched_at', v_fetched_at
   );
 end;
-$function$
+$function$;
