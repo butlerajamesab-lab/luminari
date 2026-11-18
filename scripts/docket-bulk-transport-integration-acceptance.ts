@@ -107,6 +107,25 @@ try {
   assert.equal(await count("select count(*) from public.docket_legiscan_bulk_member_receipt"), 4);
   assert.equal(await count("select count(*) from public.docket_jurisdiction_activation_bill"), 1);
   assert.equal(await count("select count(*) from public.docket_bill_processing_queue"), 1);
+
+
+  // The held bill is source-preserved, not silently queued for activation.
+  assert.equal(await count("select count(*) from public.docket_jurisdiction_activation_bill where source_bill_id=" + heldBillId), 0);
+  assert.equal(await count("select count(*) from public.docket_bill_processing_queue where source_bill_id=" + heldBillId), 0);
+
+  const held = (await pool.query(
+    "select disposition from public.docket_legiscan_bulk_member_receipt where bill_id=$1",
+    [heldBillId],
+  )).rows;
+  assert.deepEqual(held.map(row => row.disposition), ["held_chronology"]);
+
+  const duplicate = reportAssertion(runApply(), report, "exact-repeat import");
+  assert.equal(duplicate.totals.inserted, 0);
+  assert.equal(duplicate.totals.activated, 0);
+  assert.equal(await count("select count(*) from public.docket_bill_detail_cache"), 2);
+  assert.equal(await count("select count(*) from public.docket_legiscan_bulk_member_receipt"), 4);
+  assert.equal(await count("select count(*) from public.docket_bill_processing_queue"), 1);
+
   // Read source-preserved archive people and roll calls using exact receipt,
   // archive, bill ID, and state identity. Missing/dangling/mismatched links fail closed.
   const { get_docket_archive_auxiliary_receipts } = await import("../server/docket-archive-auxiliary-read");
@@ -141,23 +160,6 @@ try {
   const afterNegatives = await get_docket_archive_auxiliary_receipts(positiveBillId);
   assert.deepEqual(afterNegatives.roll_calls.map(row => row.provider_record_id), [1481116]);
   assert.deepEqual(afterNegatives.people.map(row => row.provider_record_id), [7855]);
-
-  // The held bill is source-preserved, not silently queued for activation.
-  assert.equal(await count("select count(*) from public.docket_jurisdiction_activation_bill where source_bill_id=" + heldBillId), 0);
-  assert.equal(await count("select count(*) from public.docket_bill_processing_queue where source_bill_id=" + heldBillId), 0);
-
-  const held = (await pool.query(
-    "select disposition from public.docket_legiscan_bulk_member_receipt where bill_id=$1",
-    [heldBillId],
-  )).rows;
-  assert.deepEqual(held.map(row => row.disposition), ["held_chronology"]);
-
-  const duplicate = reportAssertion(runApply(), report, "exact-repeat import");
-  assert.equal(duplicate.totals.inserted, 0);
-  assert.equal(duplicate.totals.activated, 0);
-  assert.equal(await count("select count(*) from public.docket_bill_detail_cache"), 2);
-  assert.equal(await count("select count(*) from public.docket_legiscan_bulk_member_receipt"), 4);
-  assert.equal(await count("select count(*) from public.docket_bill_processing_queue"), 1);
 
   // Explicitly supplied downstream readiness; real Genome projection belongs
   // to an independent integration certification, not this Docket transport gate.
