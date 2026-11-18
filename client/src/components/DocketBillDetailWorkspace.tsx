@@ -215,6 +215,23 @@ export function DocketBillDetailWorkspace({
     },
   });
   const procedural_status = procedural_status_labels[lifecycle.procedural_state];
+  const render_archive_receipt = (item: unknown, index: number): React.ReactNode => {
+    if (!is_record(item)) return null;
+    const provenance = is_record(item._source_receipt) ? item._source_receipt : {};
+    const payload = { ...item };
+    delete payload._source_receipt;
+    return (
+      <div key={`${display_value(provenance.archive_sha256)}:${display_value(provenance.member_path)}:${index}`} style={{ background: palette.slate, border: `1px solid ${palette.rule}`, borderRadius: 6, padding: "0.65rem" }}>
+        <div style={{ fontFamily: font_sans, fontSize: "0.82rem", color: palette.paper, lineHeight: 1.4 }}>{record_label(payload)}</div>
+        <div style={{ display: "grid", gap: "0.2rem", marginTop: "0.45rem", fontFamily: font_mono, fontSize: "0.61rem", color: palette.muted, overflowWrap: "anywhere" }}>
+          <span>provider_record_id {display_value(provenance.provider_record_id)} · state {display_value(provenance.state)}</span>
+          <span>archive_sha256 {display_value(provenance.archive_sha256)}</span>
+          <span>member_path {display_value(provenance.member_path)}</span>
+          <span>member_sha256 {display_value(provenance.member_sha256)}</span>
+        </div>
+      </div>
+    );
+  };
   const analysis_status = !valid_bill_id
     ? "Analysis unavailable"
     : verified_enrichment.isLoading
@@ -291,11 +308,11 @@ export function DocketBillDetailWorkspace({
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: "0.75rem" }}>
         <Section title="Legislative history" items={normalized.history} empty_text="No actions returned" default_open />
         <Section title="Sponsors" items={normalized.sponsors} empty_text="No sponsors returned" />
-        <Section title="LegiScan source-preserved people" items={archive_people.map(item => ({ ...item.payload, _source_receipt: item.provenance }))} empty_text="No exact source-linked people receipts returned" />
+        <Section title="LegiScan source-preserved people" items={archive_people.map(item => ({ ...item.payload, _source_receipt: item.provenance }))} empty_text="No exact source-linked people receipts returned" render_item={render_archive_receipt} />
         <Section title="Committees and referrals" items={normalized.committees} empty_text="No committees returned" />
         <Section title="Bill texts and documents" items={normalized.texts} empty_text="No texts returned" />
         <Section title="Bill-detail vote fields · source response" items={normalized.votes} empty_text="No votes returned in the cached bill detail" />
-        <Section title="Source-preserved roll-call receipts · not validated/current" items={archive_roll_calls.map(item => ({ ...item.payload, _source_receipt: item.provenance }))} empty_text="No exact source-linked roll-call receipts returned" />
+        <Section title="Source-preserved roll-call receipts · not validated/current" items={archive_roll_calls.map(item => ({ ...item.payload, _source_receipt: item.provenance }))} empty_text="No exact source-linked roll-call receipts returned" render_item={render_archive_receipt} />
         <Section title="Amendments and supplements" items={normalized.amendments} empty_text="No amendments returned" />
         <Section title="Subjects" items={normalized.subjects} empty_text="No subjects returned" />
         <Section title="Calendar" items={normalized.calendar} empty_text="No calendar entries returned" />
