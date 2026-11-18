@@ -841,6 +841,96 @@ docket_router.post("/warm-next-batch", async (req, res) => {
   }
 });
 
+// Canonical public Docket surface. Read ONLY the preserved provider corpus.
+// Historical state snapshots and curated docket_entries remain separate.
+docket_router.get("/archive", async (req, res) => {
+  try {
+    const state = normalize_optional_state_code(req.query.state);
+    const limit = normalize_search_limit(req.query.limit);
+    const after = req.query.after == null || req.query.after === ""
+      ? 0 : normalize_bill_id(String(req.query.after));
+    // A state-specific query without this index can scan 100k+ JSON rows.
+    if (state) {
+      const index = await query_with_diagnostics<{ ready: boolean }>(
+        "select to_regclass('public.docket_bill_detail_cache_state_bill_id_public_idx') is not null as ready",
+        [], {label:"docket_archive_index_contract",query_timeout_ms:1000}
+      );
+      if (!index.rows[0]?.ready) {
+        return res.status(503).json({ok:false,message:"docket_archive_state_index_not_installed"});
+      }
+    }
+    const scope = state
+      ? "upper(cache.bill->>'state')=$2 and cache.bill_id>$1"
+      : "cache.bill_id>$1";
+    const cap = state ? "$3" : "$2";
+    const params = state ? [after,state,limit+1] : [after,limit+1];
+    const select = "select cache.bill_id,upper(coalesce(cache.bill->>'state','')) as state,"
+      + "coalesce(cache.bill->>'bill_number',cache.bill->>'number','') as bill_number,"
+      + "coalesce(cache.bill->>'title','') as title,"
+      + "coalesce(cache.bill->>'url',cache.bill->>'state_link') as url,"
+      + "cache.bill->>'status' as status,cache.bill->>'status_date' as status_date,"
+      + "cache.bill->>'last_action' as last_action,cache.bill->>'last_action_date' as last_action_date,"
+      + "cache.bill->>'effective_date' as effective_date,"
+      + "coalesce(cache.bill #>> '{session,session_title}',"
+      + "cache.bill #>> '{session,session_name}',cache.bill->>'session_title') as session_title,"
+      + "cache.fetched_at,'detail_cache'::text as corpus_source,0 as match_rank "
+      + "from public.docket_bill_detail_cache cache where "
+      + scope + " order by cache.bill_id limit " + cap;
+    const count_query = state
+      ? "select (select count(*) from public.docket_bill_detail_cache) as total_preserved,"
+        + "(select count(*) from public.docket_bill_detail_cache where upper(bill->>'state')=$1) as state_total"
+      : "select count(*) as total_preserved,count(*) as state_total from public.docket_bill_detail_cache";
+    const [page,count] = await Promise.all([
+      query_with_diagnostics<docket_search_database_row>(
+        select,params,{label:"docket_preserved_archive_page",query_timeout_ms:5000}
+      ),
+      query_with_diagnostics<{total_preserved:string|number;state_total:string|number}>(
+        count_query,state?[state]:[],{label:"docket_preserved_archive_count",query_timeout_ms:5000}
+      )
+    ]);
+    const has_more = page.rows.length>limit;
+    const rows = page.rows.slice(0,limit);
+    const base_bills = rows.map(row=>({
+      bill_id:row.bill_id,
+      number:row.bill_number || "Bill "+row.bill_id,
+      title:row.title || undefined,
+      url:row.url ?? undefined,
+      status:nullable_number(row.status),
+      status_date:row.status_date??undefined,
+      last_action:row.last_action??undefined,
+      last_action_date:row.last_action_date??undefined
+    }));
+    const enriched = await enrich_bills_with_radar(base_bills);
+    const radar = new Map(enriched.map(bill=>[bill.bill_id,bill.radar]));
+    return res.json({
+      ok:true,contract:"docket-preserved-archive-v1",
+      source:"public.docket_bill_detail_cache",state_scope:state,
+      total_preserved:Number(count.rows[0]?.total_preserved??0),
+      state_total:Number(count.rows[0]?.state_total??0),
+      after,limit,has_more,
+      next_cursor:has_more ? rows[rows.length-1]?.bill_id??null : null,
+      results:rows.map(row=>({
+        state:row.state,session_title:row.session_title,
+        fetched_at:normalize_fetched_at(row.fetched_at),
+        corpus_source:"detail_cache",
+        bill:{
+          bill_id:row.bill_id,number:row.bill_number||"Bill "+row.bill_id,
+          title:row.title||undefined,url:row.url??undefined,
+          source_url:row.url??undefined,
+          status:nullable_number(row.status),
+          status_date:row.status_date??undefined,
+          last_action:row.last_action??undefined,
+          last_action_date:row.last_action_date??undefined,
+          effective_date:row.effective_date??undefined,
+          radar:radar.get(row.bill_id)??unavailable_radar()
+        }
+      }))
+    });
+  } catch (error) {
+    return res.status(500).json({ok:false,message:serialize_error(error)});
+  }
+});
+
 docket_router.get("/search", async (req, res) => {
   try {
     const installed = await query_with_diagnostics<{ ready: boolean }>(
