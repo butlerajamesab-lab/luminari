@@ -131,8 +131,10 @@ try {
   assert.equal(await count("select count(*) from public.docket_legiscan_bulk_member_receipt"), 9);
   assert.equal(await count("select count(*) from public.docket_bill_processing_queue"), 6);
 
-  // Seed only the five exact allowlisted Genome identities in this disposable
-  // PostgreSQL database. The sixth eligible archive job is a negative control.
+  // Preseed five Genome identities solely to isolate archive queue claim,
+  // verified-receipt reads, and version registration in this disposable DB.
+  // This does not test new Genome projection/upsert or lifecycle-trigger behavior.
+  // The sixth eligible archive job is a negative control.
   const { canonical_docket_bill_uuid } = await import("../server/docket-canonical-bill-id");
   for (const source_bill_id of canaryBillIds) {
     const canonicalUuid = canonical_docket_bill_uuid(source_bill_id);
@@ -209,10 +211,12 @@ try {
     completed_cycle_rerun_no_change: true,
     chronology_holds: 1,
     duplicate_admission_created_jobs: 0,
-    completed_after_first_worker: true,
+    allowlisted_queue_jobs_completed: true,
+    genome_readiness_fixture: "five_preseeded_identities",
+    new_genome_projections: 0,
     identity_conflict_rejected: true,
     paid_provider_credentials_present: false,
-    downstream_function_implementations: "isolated_ci_stubs_not_production",
+    docket_registration_functions: "isolated_ci_stubs_not_production",
   }));
 } finally {
   await workerPool?.end();
