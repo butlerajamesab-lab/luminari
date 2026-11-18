@@ -825,18 +825,23 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
 
   // Changing jurisdiction or returning from search starts a fresh page.
   // Do not append a previously loaded cursor page twice after clearing search.
+  const archive_filters_initialized = useRef(false);
   useEffect(() => {
+    if (!archive_filters_initialized.current) {
+      archive_filters_initialized.current = true;
+      return;
+    }
     archive_reset_pending.current = true;
     set_archive_cursor(0);
     set_archive_rows([]);
     set_archive_data(null);
-  }, [selected_state, search_active]);
+  }, [selected_state, search_active, level]);
 
   useEffect(() => {
     if (search_active) return;
     if (archive_reset_pending.current) {
       archive_reset_pending.current = false;
-      return;
+      if (archive_cursor !== 0) return;
     }
     const controller = new AbortController();
     const load_archive = async () => {
@@ -871,7 +876,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
     };
     void load_archive();
     return () => controller.abort();
-  }, [archive_cursor, selected_state, search_active]);
+  }, [archive_cursor, selected_state, search_active, level]);
 
   const load_bill_detail = async (bill_id: number) => {
     set_selected_bill_id(bill_id);
