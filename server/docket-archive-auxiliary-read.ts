@@ -38,6 +38,7 @@ export async function get_docket_archive_auxiliary_receipts(
          and br.bill_id = c.bill_id
          and br.provider_record_id = c.bill_id
          and br.state = c.bill->>'state'
+         and br.disposition in ('inserted','held_chronology')
        where c.bill_id = $1
     ), linked as (
       select r.member_kind as kind, r.provider_record_id, r.state, r.payload_json,
