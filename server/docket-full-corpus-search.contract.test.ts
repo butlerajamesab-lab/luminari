@@ -42,6 +42,7 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(route).toContain("where cache.bill_id=$5::integer");
     expect(route).toContain("upper(regexp_replace(");
     expect(route).toContain("coalesce(cache.bill->>'title','') ilike");
+    expect(route).not.toContain("order by cache.bill_id\\n            limit $4)");
     expect(route).toContain("select cache.bill_id,0 as match_rank");
     expect(route).toContain("select cache.bill_id,1 as match_rank");
     expect(route).toContain("select cache.bill_id,2 as match_rank");
@@ -70,7 +71,9 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(page).toContain("curated entries (separate from official source bills)");
     expect(page).not.toContain("entries analyzed");
     expect(page).toContain("set_archive_cursor(0);");
-    expect(page).toContain("[selected_state, search_active]");
+    expect(page).toContain("[selected_state, search_active, level]");
+    expect(page).toContain("archive_reset_pending.current");
+    expect(page).toContain('params.set("jurisdiction_scope", "state")');
     expect(page).toContain('new URLSearchParams({ q: search_term, limit: "25" })');
   });
 
