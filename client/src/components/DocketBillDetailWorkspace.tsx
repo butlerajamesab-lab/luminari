@@ -164,6 +164,12 @@ export function DocketBillDetailWorkspace({
     { enabled: valid_bill_id, retry: false, refetchOnWindowFocus: false },
   );
   const disposition_conflicts = verified_enrichment.data?.amendment_disposition_conflicts ?? [];
+  const archive_auxiliary = trpc.civicGenome.get_docket_archive_auxiliary_receipts.useQuery(
+    { source_bill_id: numeric_bill_id ?? 0 },
+    { enabled: valid_bill_id, retry: false, refetchOnWindowFocus: false },
+  );
+  const archive_people = archive_auxiliary.data?.people ?? [];
+  const archive_roll_calls = archive_auxiliary.data?.roll_calls ?? [];
 
   const normalized = useMemo(() => ({
     bill_id: first_value(bill, ["bill_id", "id"]),
@@ -285,9 +291,11 @@ export function DocketBillDetailWorkspace({
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: "0.75rem" }}>
         <Section title="Legislative history" items={normalized.history} empty_text="No actions returned" default_open />
         <Section title="Sponsors" items={normalized.sponsors} empty_text="No sponsors returned" />
+        <Section title="LegiScan source-preserved people" items={archive_people.map(item => ({ ...item.payload, _source_receipt: item.provenance }))} empty_text="No exact source-linked people receipts returned" />
         <Section title="Committees and referrals" items={normalized.committees} empty_text="No committees returned" />
         <Section title="Bill texts and documents" items={normalized.texts} empty_text="No texts returned" />
-        <Section title="Votes" items={normalized.votes} empty_text="No votes returned" />
+        <Section title="Bill-detail vote fields · source response" items={normalized.votes} empty_text="No votes returned in the cached bill detail" />
+        <Section title="Source-preserved roll-call receipts · not validated/current" items={archive_roll_calls.map(item => ({ ...item.payload, _source_receipt: item.provenance }))} empty_text="No exact source-linked roll-call receipts returned" />
         <Section title="Amendments and supplements" items={normalized.amendments} empty_text="No amendments returned" />
         <Section title="Subjects" items={normalized.subjects} empty_text="No subjects returned" />
         <Section title="Calendar" items={normalized.calendar} empty_text="No calendar entries returned" />
@@ -295,7 +303,7 @@ export function DocketBillDetailWorkspace({
       </div>
 
       <div style={{ background: palette.copper_soft, border: `1px solid ${palette.copper}`, borderRadius: 8, padding: "0.75rem", fontFamily: font_sans, fontSize: "0.78rem", color: palette.cream, lineHeight: 1.45 }}>
-        Official bill detail is shown above exactly as returned by the cached LegiScan detail request. Verified Civic Genome / Prism enrichment, when present, is displayed separately and never overwrites raw provider metadata.
+        Official bill detail is shown above exactly as returned by the cached LegiScan detail request. Archive people and roll-call receipts below are source-preserved metadata linked by exact provider IDs, jurisdiction, archive, and receipt identity; roll-call receipts are not represented as validated or current votes. Verified Civic Genome / Prism enrichment remains separate.
       </div>
 
       <button type="button" onClick={() => set_show_raw(value => !value)} style={{ justifySelf: "start", background: palette.slate_mid, border: `1px solid ${palette.rule}`, borderRadius: 6, color: palette.muted, cursor: "pointer", fontFamily: font_mono, fontSize: "0.66rem", padding: "0.4rem 0.55rem" }}>
