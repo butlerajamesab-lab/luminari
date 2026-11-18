@@ -67,8 +67,8 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(literal).toBeDefined();
     const slash = literal!.lastIndexOf("/");
     const pattern = new RegExp(literal!.slice(1, slash), literal!.slice(slash + 1));
-    for (const input of ["PA HB1000", "PA: HB 1000", "PA-HB1000"]) {
-      expect(pattern.exec(input)?.slice(1)).toEqual(["PA", "HB1000"]);
+    for (const [input, billNumber] of [["PA HB1000", "HB1000"], ["PA: HB 1000", "HB 1000"], ["PA-HB1000", "HB1000"]]) {
+      expect(pattern.exec(input)?.slice(1)).toEqual(["PA", billNumber]);
     }
   });
 
@@ -76,7 +76,7 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(archiveRoute).toContain('jurisdiction_scope === "state"');
     expect(archiveRoute).toContain("upper(coalesce(cache.bill->>'state','')) <> 'US'");
     expect(searchRoute).toContain('exclude_federal: jurisdiction_scope === "state"');
-    expect(searchRoute).toContain("not $6::boolean or upper(coalesce(cache.bill->>'state','')) <> 'US'");
+    expect(route).toContain("not $6::boolean or upper(coalesce(cache.bill->>'state','')) <> 'US'");
     expect(page).toContain('level === "state" && preferred_state === "US" ? "ALL"');
   });
 
