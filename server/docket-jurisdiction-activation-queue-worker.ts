@@ -127,6 +127,18 @@ export function resolve_docket_archive_canary_queue_ids(
   return ids;
 }
 
+/**
+ * Dedicated archive worker hosts must always be bounded to an explicit,
+ * nonempty pilot allowlist. The shared worker may omit it for normal operation.
+ */
+export function require_docket_archive_canary_queue_ids(
+  environment: NodeJS.ProcessEnv = process.env,
+): string[] {
+  const ids = resolve_docket_archive_canary_queue_ids(environment);
+  if (!ids) throw new Error("docket_archive_runtime_canary_allowlist_required");
+  return ids;
+}
+
 function as_record(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
