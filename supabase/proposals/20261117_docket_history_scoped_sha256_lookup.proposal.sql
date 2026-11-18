@@ -55,7 +55,6 @@ AS $function$
                     ) as h
                   ) as source_identity_hash
                 )
-              )
       and public.civic_genome_source_bill_in_sync_scope_v3(
       source_cache.bill_id,
       p_source_bill_id
