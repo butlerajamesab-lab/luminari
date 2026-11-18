@@ -483,6 +483,12 @@ APPROVED_REPOSITORY_ONLY = {
         "20261118063000_docket_genome_trigger_indexed_scope.sql",
         "9dec655da0368ed382dd8c8941582d44a8b2d717",
     ),
+    # Public Docket corpus browse/read indexes, repository-only until
+    # explicitly reviewed and approved for production installation.
+    "20261118090000": (
+        "20261118090000_docket_corpus_indexed_public_read.sql",
+        "107543f8e8437c672b782d5fac1a2c29135a04aa",
+    ),
     # Restored production migration (legal authority catalog
     # materialized view). Applied in the live production ledger on
     # 2026-10-20 and verified there first-hand 2026-11-11, but absent
