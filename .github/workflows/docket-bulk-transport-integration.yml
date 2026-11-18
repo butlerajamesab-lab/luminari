@@ -73,4 +73,6 @@ jobs:
       - name: Verify real TypeScript ZIP admission, duplicate hold, and worker stale-lease recovery
         run: pnpm exec tsx scripts/docket-bulk-transport-integration-acceptance.ts
       - name: Verify five exact archive canary jobs, negative control, and idempotent rerun
+        env:
+          DOCKET_QUEUE_FIVE_JOB_TEST_ALLOW_RESET: "true"
         run: pnpm exec tsx scripts/docket-archive-five-job-acceptance.ts
