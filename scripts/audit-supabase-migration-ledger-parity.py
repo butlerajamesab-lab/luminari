@@ -474,6 +474,15 @@ APPROVED_REPOSITORY_ONLY = {
         "20261118010000_docket_history_sha256_scoped_lookup.sql",
         "5fd4e1c06571431c3ea8c321d716591fabe6d7fe",
     ),
+    # 2026-11-18 forward-only Docket -> Genome scoped trigger proposal.
+    # Repo-only until separately certified/approved production install.
+    # Pin the immutable Git blob, and DO NOT mark installed in the ledger.
+    # The live source trigger functions must also pass the distinct SHA256
+    # preflight in this SQL file before any production DDL is permitted.
+    "20261118063000": (
+        "20261118063000_docket_genome_trigger_indexed_scope.sql",
+        "9dec655da0368ed382dd8c8941582d44a8b2d717",
+    ),
     # Restored production migration (legal authority catalog
     # materialized view). Applied in the live production ledger on
     # 2026-10-20 and verified there first-hand 2026-11-11, but absent
