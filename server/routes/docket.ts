@@ -335,7 +335,7 @@ const search_docket_corpus = async (input: {
           (select cache.bill_id,1 as match_rank
             from public.docket_bill_detail_cache cache
             where upper(regexp_replace(
-                 coalesce(cache.bill->>'bill_number',cache.bill->>'number',''),
+                 upper(coalesce(cache.bill->>'bill_number',cache.bill->>'number','')),
                  '[^A-Z0-9]','','g'
               ))=$2
               and ($3::text is null or upper(cache.bill->>'state')=$3)
