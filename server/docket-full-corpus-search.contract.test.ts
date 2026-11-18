@@ -5,55 +5,86 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 const route = read("server/routes/docket.ts");
 const page = read("client/src/pages/DocketRoom.tsx");
+const migration = read("supabase/migrations/20261118090000_docket_corpus_indexed_public_read.sql");
 
-describe("Docket full preserved-corpus search contract", () => {
-  it("searches preserved detail and state caches without calling the provider", () => {
+const searchRoute = route.slice(
+  route.indexOf('docket_router.get("/search"'),
+  route.indexOf('docket_router.get("/state"'),
+);
+const archiveRoute = route.slice(
+  route.indexOf('docket_router.get("/archive"'),
+  route.indexOf('docket_router.get("/search"'),
+);
+
+describe("Docket complete preserved-source public browsing contract", () => {
+  it("lists canonical Docket source inventory using a bounded keyset cursor", () => {
+    expect(route).toContain('docket_router.get("/archive"');
+    expect(archiveRoute).toContain("public.docket_bill_detail_cache");
+    expect(archiveRoute).toContain("docket-preserved-archive-v1");
+    expect(archiveRoute).toContain("order by cache.bill_id");
+    expect(archiveRoute).toContain("cache.bill_id>$1");
+    expect(archiveRoute).toContain("total_preserved");
+    expect(archiveRoute).toContain("state_total");
+    expect(archiveRoute).toContain("next_cursor");
+    expect(archiveRoute).toContain("limit+1");
+    expect(archiveRoute).toContain('req.query.after === "0"');
+    expect(archiveRoute).toContain("docket_archive_state_index_not_installed");
+    expect(archiveRoute).not.toContain("get_master_list");
+    expect(archiveRoute).not.toContain("get_bill(");
+    expect(archiveRoute).not.toContain("register_docket");
+  });
+
+  it("searches source IDs, normal bill numbers and titles, rather than globally sorting JSON", () => {
     expect(route).toContain('docket_router.get("/search"');
-    expect(route).toContain('"docket-full-corpus-search-v1"');
-    expect(route).toContain("public.docket_bill_detail_cache");
-    expect(route).toContain("public.docket_bill_state_cache");
-    expect(route).toContain("jsonb_array_elements(cache.bills::jsonb)");
-    expect(route).toContain("select distinct on (bill_id)");
-    expect(route).toContain("detail_cache");
-    expect(route).toContain("state_cache");
-    const searchRoute = route.slice(
-      route.indexOf('docket_router.get("/search"'),
-      route.indexOf('docket_router.get("/state"'),
-    );
+    expect(searchRoute).toContain('"docket-full-corpus-search-v1"');
+    expect(searchRoute).toContain("docket_corpus_search_indexes_not_installed");
+    expect(route).toContain("with source_matches as (");
+    expect(route).toContain("where cache.bill_id=$5::integer");
+    expect(route).toContain("upper(regexp_replace(");
+    expect(route).toContain("coalesce(cache.bill->>'title','') ilike");
+    expect(route).toContain("select cache.bill_id,0 as match_rank");
+    expect(route).toContain("select cache.bill_id,1 as match_rank");
+    expect(route).toContain("select cache.bill_id,2 as match_rank");
+    expect(route).not.toContain("with detail as materialized");
     expect(searchRoute).not.toContain("get_master_list");
     expect(searchRoute).not.toContain("get_bill(");
   });
 
-  it("ranks exact provider bill identity before title and keyword matches", () => {
-    expect(route).toContain("corpus.bill_id::text = $1 then 0");
-    expect(route).toContain("regexp_replace(");
-    expect(route).toContain("upper(corpus.bill_number)");
-    expect(route).toContain("= $2 then 1");
-    expect(route).toContain("position(lower($1) in lower(corpus.title)) > 0");
+  it("accepts jurisdiction-prefixed searches such as PA HB1000", () => {
+    expect(searchRoute).toContain("const prefix = /^([A-Za-z]{2})");
+    expect(searchRoute).toContain("\\s*[: -]\\s*");
+    expect(searchRoute).toContain("\\d+[A-Za-z]?");
+    expect(searchRoute).toContain("const state = requested_state ?? prefix_state;");
+    expect(searchRoute).toContain("normalize_search_query(prefix[2])");
+    expect(searchRoute).not.toContain("\\\\s*[: -]");
   });
 
-  it("keeps older and completed laws searchable instead of applying live-feed eligibility", () => {
-    expect(route).toContain(
-      "Current-session visibility does not determine whether a preserved law is searchable.",
-    );
-    expect(page).toContain("Full preserved Docket corpus search");
-    expect(page).toContain("current-session visibility does not limit search");
-    expect(page).toContain(
-      "search_active || show_completed || resolution.live_feed_eligible",
-    );
+  it("defaults to the full preserved source list and keeps historical snapshots separate", () => {
+    expect(page).toContain("/api/docket/archive?");
+    expect(page).toContain("const candidate_bills = search_active ? search_bills : preserved_bills;");
+    expect(page).toContain("Preserved source corpus");
+    expect(page).toContain("Separate legacy session snapshot");
+    expect(page).toContain('useState("ALL")');
+    expect(page).toContain("Load more preserved bills");
+    expect(page).toContain("View in Civic Genome (source ID");
+    expect(page).toContain("curated entries (separate from official source bills)");
+    expect(page).not.toContain("entries analyzed");
+    expect(page).toContain("set_archive_cursor(0);");
+    expect(page).toContain("[selected_state, search_active]");
+    expect(page).toContain('new URLSearchParams({ q: search_term, limit: "25" })');
   });
 
-  it("switches the active Docket search to the server corpus while preserving normal browse mode", () => {
-    expect(page).toContain("/api/docket/search?");
-    expect(page).toContain('const candidate_bills = search_active ? search_bills : bills;');
-    expect(page).toContain('search_state_scope = level === "federal"');
-    expect(page).toContain('"all cached jurisdictions"');
-    expect(page).toContain("preserved Docket search");
-  });
-
-  it("caps user-visible corpus searches and rejects unbounded query text", () => {
+  it("caps searches and requires real SQL indexes without charging provider calls", () => {
     expect(route).toContain("return Math.min(parsed, 50)");
     expect(route).toContain("query.length < 2 || query.length > 160");
-    expect(page).toContain('new URLSearchParams({ q: search_term, limit: "25" })');
+    expect(migration).toContain("docket_bill_detail_cache_state_bill_id_public_idx");
+    expect(migration).toContain("docket_bill_detail_cache_normalized_number_public_idx");
+    expect(migration).toContain("docket_bill_detail_cache_title_trgm_public_idx");
+    expect(migration).toContain("FROM pg_extension e JOIN pg_namespace n");
+    expect(migration).not.toContain("extensions.gin_trgm_ops");
+    expect(archiveRoute).not.toContain("get_master_list");
+    expect(searchRoute).not.toContain("get_master_list");
+    expect(archiveRoute).not.toContain("get_bill(");
+    expect(searchRoute).not.toContain("get_bill(");
   });
 });
