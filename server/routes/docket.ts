@@ -320,6 +320,7 @@ const search_docket_corpus = async (input: {
   query: string;
   normalized_number: string;
   state: string | null;
+  exclude_federal: boolean;
   limit: number;
 }): Promise<docket_search_result[]> => {
   const result = await query_with_diagnostics<docket_search_database_row>(
@@ -330,6 +331,7 @@ const search_docket_corpus = async (input: {
             from public.docket_bill_detail_cache cache
             where cache.bill_id=$5::integer
               and ($3::text is null or upper(cache.bill->>'state')=$3)
+              and (not $6::boolean or upper(coalesce(cache.bill->>'state','')) <> 'US')
             limit $4)
           union all
           (select cache.bill_id,1 as match_rank
@@ -339,6 +341,7 @@ const search_docket_corpus = async (input: {
                  '[^A-Z0-9]','','g'
               ))=$2
               and ($3::text is null or upper(cache.bill->>'state')=$3)
+              and (not $6::boolean or upper(coalesce(cache.bill->>'state','')) <> 'US')
             limit $4)
           union all
           (select cache.bill_id,2 as match_rank
@@ -346,7 +349,7 @@ const search_docket_corpus = async (input: {
             where length($1::text)>=3
               and coalesce(cache.bill->>'title','') ilike '%'||$1||'%'
               and ($3::text is null or upper(cache.bill->>'state')=$3)
-            order by cache.bill_id
+              and (not $6::boolean or upper(coalesce(cache.bill->>'state','')) <> 'US')
             limit $4)
         ) candidates
         group by candidates.bill_id
@@ -373,7 +376,7 @@ const search_docket_corpus = async (input: {
       limit $4`,
     [input.query, input.normalized_number, input.state, input.limit,
      /^\d+$/.test(input.query) && Number.isSafeInteger(Number(input.query))
-       ? Number(input.query) : -1],
+       ? Number(input.query) : -1, input.exclude_federal],
     {
       label: "docket_full_corpus_search",
       pool_acquire_timeout_ms: 1_000,
@@ -846,6 +849,7 @@ docket_router.post("/warm-next-batch", async (req, res) => {
 docket_router.get("/archive", async (req, res) => {
   try {
     const state = normalize_optional_state_code(req.query.state);
+    const jurisdiction_scope = req.query.jurisdiction_scope === "state" ? "state" : null;
     const limit = normalize_search_limit(req.query.limit);
     // The first archive page uses cursor 0; later pages require an exact
     // positive provider bill ID, never an offset or arbitrary string.
@@ -863,7 +867,9 @@ docket_router.get("/archive", async (req, res) => {
     }
     const scope = state
       ? "upper(cache.bill->>'state')=$2 and cache.bill_id>$1"
-      : "cache.bill_id>$1";
+      : jurisdiction_scope === "state"
+        ? "upper(coalesce(cache.bill->>'state','')) <> 'US' and cache.bill_id>$1"
+        : "cache.bill_id>$1";
     const cap = state ? "$3" : "$2";
     const params = state ? [after,state,limit+1] : [after,limit+1];
     const select = "select cache.bill_id,upper(coalesce(cache.bill->>'state','')) as state,"
@@ -881,7 +887,10 @@ docket_router.get("/archive", async (req, res) => {
     const count_query = state
       ? "select (select count(*) from public.docket_bill_detail_cache) as total_preserved,"
         + "(select count(*) from public.docket_bill_detail_cache where upper(bill->>'state')=$1) as state_total"
-      : "select count(*) as total_preserved,count(*) as state_total from public.docket_bill_detail_cache";
+      : jurisdiction_scope === "state"
+        ? "select (select count(*) from public.docket_bill_detail_cache) as total_preserved,"
+          + "(select count(*) from public.docket_bill_detail_cache where upper(coalesce(bill->>'state','')) <> 'US') as state_total"
+        : "select count(*) as total_preserved,count(*) as state_total from public.docket_bill_detail_cache";
     const [page,count] = await Promise.all([
       query_with_diagnostics<docket_search_database_row>(
         select,params,{label:"docket_preserved_archive_page",query_timeout_ms:5000}
@@ -906,7 +915,7 @@ docket_router.get("/archive", async (req, res) => {
     const radar = new Map(enriched.map(bill=>[bill.bill_id,bill.radar]));
     return res.json({
       ok:true,contract:"docket-preserved-archive-v1",
-      source:"public.docket_bill_detail_cache",state_scope:state,
+      source:"public.docket_bill_detail_cache",state_scope:state,jurisdiction_scope,
       total_preserved:Number(count.rows[0]?.total_preserved??0),
       state_total:Number(count.rows[0]?.state_total??0),
       after,limit,has_more,
@@ -951,11 +960,13 @@ docket_router.get("/search", async (req, res) => {
     const prefix_state = prefix ? normalize_optional_state_code(prefix[1]) : null;
     const requested_state = normalize_optional_state_code(req.query.state);
     const state = requested_state ?? prefix_state;
+    const jurisdiction_scope = req.query.jurisdiction_scope === "state" ? "state" : null;
     const search_input = prefix ? normalize_search_query(prefix[2]) : normalized;
     const limit = normalize_search_limit(req.query.limit);
     const results = await search_docket_corpus({
       ...search_input,
       state,
+      exclude_federal: jurisdiction_scope === "state",
       limit,
     });
 
@@ -965,6 +976,7 @@ docket_router.get("/search", async (req, res) => {
       source: "preserved_docket_cache",
       query: normalized.query,
       state_scope: state,
+      jurisdiction_scope,
       result_count: results.length,
       limit,
       results,
