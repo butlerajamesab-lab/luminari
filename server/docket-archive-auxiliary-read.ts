@@ -53,8 +53,8 @@ export async function get_docket_archive_auxiliary_receipts(
              from jsonb_array_elements(
                case when jsonb_typeof(t.bill->'sponsors') = 'array'
                     then t.bill->'sponsors' else '[]'::jsonb end
-             ) sponsor
-            where sponsor->>'people_id' = r.payload_json->>'people_id'
+             ) as sponsor(value)
+            where sponsor.value->>'people_id' = r.payload_json->>'people_id'
          )
       union all
       select r.member_kind as kind, r.provider_record_id, r.state, r.payload_json,
