@@ -942,10 +942,17 @@ docket_router.get("/search", async (req, res) => {
       return res.status(503).json({ok:false,message:"docket_corpus_search_indexes_not_installed"});
     }
     const normalized = normalize_search_query(req.query.q);
-    const state = normalize_optional_state_code(req.query.state);
+    // Public users can type "PA HB1000" rather than a LegiScan source ID.
+    // Resolve only explicit two-letter jurisdiction prefixes, never silently
+    // infer which legislative session or substitute document they intended.
+    const prefix = /^([A-Za-z]{2})\\s*[: -]\\s*([A-Za-z]{1,4}[ .-]*\\d+[A-Za-z]?)$/.exec(normalized.query);
+    const prefix_state = prefix ? normalize_optional_state_code(prefix[1]) : null;
+    const requested_state = normalize_optional_state_code(req.query.state);
+    const state = requested_state ?? prefix_state;
+    const search_input = prefix ? normalize_search_query(prefix[2]) : normalized;
     const limit = normalize_search_limit(req.query.limit);
     const results = await search_docket_corpus({
-      ...normalized,
+      ...search_input,
       state,
       limit,
     });
