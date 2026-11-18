@@ -28,6 +28,7 @@ import {
   docket_bill_activation_retry_delay_seconds,
   process_docket_bill_activation_job,
   resolve_docket_activation_source_scope,
+  require_docket_archive_canary_queue_ids,
   resolve_docket_archive_canary_queue_ids,
   run_docket_bill_activation_queue_cycle,
 } from "./docket-jurisdiction-activation-queue-worker";
@@ -95,6 +96,25 @@ describe("Docket jurisdiction activation queue", () => {
       .toBe("legiscan_bulk_json");
   });
 
+  it("requires a nonempty bounded allowlist for the dedicated archive worker", () => {
+    const scope = { DOCKET_BILL_ACTIVATION_SOURCE_SCOPE: "legiscan_bulk_json" };
+    const ids = [
+      "11111111-1111-4111-8111-111111111111",
+      "22222222-2222-4222-8222-222222222222",
+      "33333333-3333-4333-8333-333333333333",
+      "44444444-4444-4444-8444-444444444444",
+      "55555555-5555-4555-8555-555555555555",
+    ];
+    expect(() => require_docket_archive_canary_queue_ids(scope))
+      .toThrow("docket_archive_runtime_canary_allowlist_required");
+    expect(require_docket_archive_canary_queue_ids({
+      ...scope, DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS: ids.join(","),
+    })).toEqual(ids);
+    expect(() => require_docket_archive_canary_queue_ids({
+      ...scope, DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS: [...ids, "66666666-6666-4666-8666-666666666666"].join(","),
+    })).toThrow("docket_archive_canary_invalid_queue_ids");
+  });
+
   it("rejects overbroad or malformed restart-safe pilot allowlists", () => {
     const scope = { DOCKET_BILL_ACTIVATION_SOURCE_SCOPE: "legiscan_bulk_json" };
     const a = "11111111-1111-4111-8111-111111111111";
@@ -119,6 +139,9 @@ describe("Docket jurisdiction activation queue", () => {
     const ids = [
       "11111111-1111-4111-8111-111111111111",
       "22222222-2222-4222-8222-222222222222",
+      "33333333-3333-4333-8333-333333333333",
+      "44444444-4444-4444-8444-444444444444",
+      "55555555-5555-4555-8555-555555555555",
     ];
     process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = "legiscan_bulk_json";
     process.env.DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS = ids.join(",");
