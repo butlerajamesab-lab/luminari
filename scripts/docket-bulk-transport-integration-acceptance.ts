@@ -129,6 +129,9 @@ try {
   // Read source-preserved archive people and roll calls using exact receipt,
   // archive, bill ID, and state identity. Missing/dangling/mismatched links fail closed.
   const { get_docket_archive_auxiliary_receipts } = await import("../server/docket-archive-auxiliary-read");
+  // A later live API detail refresh may replace the cache source while the exact
+  // archive bill receipt remains. Archive actors and votes must remain visible.
+  await pool.query("update public.docket_bill_detail_cache set source=$2 where bill_id=$1", [positiveBillId, "legiscan_get_bill_jurisdiction_activation"]);
   const archiveReceipts = await get_docket_archive_auxiliary_receipts(positiveBillId);
   assert.deepEqual(archiveReceipts.people.map(row => row.provider_record_id), [7855]);
   assert.deepEqual(archiveReceipts.roll_calls.map(row => row.provider_record_id), [1481116]);
@@ -162,6 +165,7 @@ try {
   const afterNegatives = await get_docket_archive_auxiliary_receipts(positiveBillId);
   assert.deepEqual(afterNegatives.roll_calls.map(row => row.provider_record_id), [1481116]);
   assert.deepEqual(afterNegatives.people.map(row => row.provider_record_id), [7855]);
+  await pool.query("update public.docket_bill_detail_cache set source=$2 where bill_id=$1", [positiveBillId, "legiscan_bulk_json"]);
 
   // Explicitly supplied downstream readiness; real Genome projection belongs
   // to an independent integration certification, not this Docket transport gate.
