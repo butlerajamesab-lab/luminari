@@ -61,7 +61,7 @@ try {
     status_date: "2026-06-01",
     texts: [{ doc_id: 10 + index, type: "Introduced", state_link: "https://example.invalid/source" }],
   }));
-  const acceptedBill = acceptedBills[0];
+  const acceptedBill = acceptedBills[0]!;
   const undatedBill = {
     bill_id: heldBillId, state: "MT", session_id: 2159,
     bill_number: "HB7", title: "Actual TypeScript Docket held bill",
@@ -104,7 +104,7 @@ try {
   });
 
   const first = reportAssertion(runApply(), report, "initial import");
-  // One activated bill and one separately preserved held bill.
+  // Six eligible archive bills and one separately preserved held bill.
   assert.equal(first.totals.inserted, 6);
   assert.equal(first.totals.activated, 6);
   const count = async (sql: string): Promise<number> =>
@@ -201,8 +201,8 @@ try {
     actual_zip_cli_process: true,
     actual_postgres_queries: true,
     actual_docket_queue_worker: true,
-    bill_details: 2,
-    immutable_source_receipts: 4,
+    bill_details: 7,
+    immutable_source_receipts: 9,
     jobs: 5,
     exact_queue_allowlist: true,
     sixth_eligible_control_untouched: true,
@@ -210,7 +210,6 @@ try {
     chronology_holds: 1,
     duplicate_admission_created_jobs: 0,
     completed_after_first_worker: true,
-    completed_after_stale_lease_reclaim: true,
     identity_conflict_rejected: true,
     paid_provider_credentials_present: false,
     downstream_function_implementations: "isolated_ci_stubs_not_production",
