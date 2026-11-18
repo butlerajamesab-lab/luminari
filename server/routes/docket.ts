@@ -320,97 +320,63 @@ const search_docket_corpus = async (input: {
   query: string;
   normalized_number: string;
   state: string | null;
+  exclude_federal: boolean;
   limit: number;
 }): Promise<docket_search_result[]> => {
   const result = await query_with_diagnostics<docket_search_database_row>(
-    `with detail as materialized (
-       select
-         cache.bill_id,
-         upper(coalesce(cache.bill ->> 'state', '')) as state,
-         coalesce(cache.bill ->> 'bill_number', cache.bill ->> 'number', '') as bill_number,
-         coalesce(cache.bill ->> 'title', '') as title,
-         coalesce(cache.bill ->> 'url', cache.bill ->> 'state_link') as url,
-         cache.bill ->> 'status' as status,
-         cache.bill ->> 'status_date' as status_date,
-         cache.bill ->> 'last_action' as last_action,
-         cache.bill ->> 'last_action_date' as last_action_date,
-         cache.bill ->> 'effective_date' as effective_date,
-         coalesce(
-           cache.bill #>> '{session,session_title}',
-           cache.bill #>> '{session,session_name}',
-           cache.bill ->> 'session_title'
-         ) as session_title,
-         cache.fetched_at,
-         0 as source_priority,
-         'detail_cache'::text as corpus_source
-       from public.docket_bill_detail_cache cache
-     ), snapshots as materialized (
-       select
-         (item.value ->> 'bill_id')::integer as bill_id,
-         cache.state,
-         coalesce(item.value ->> 'number', '') as bill_number,
-         coalesce(item.value ->> 'title', '') as title,
-         coalesce(item.value ->> 'url', item.value ->> 'state_link') as url,
-         item.value ->> 'status' as status,
-         item.value ->> 'status_date' as status_date,
-         item.value ->> 'last_action' as last_action,
-         item.value ->> 'last_action_date' as last_action_date,
-         null::text as effective_date,
-         cache.session_title,
-         cache.fetched_at,
-         1 as source_priority,
-         'state_cache'::text as corpus_source
-       from public.docket_bill_state_cache cache
-       cross join lateral jsonb_array_elements(cache.bills::jsonb) item(value)
-       where (item.value ->> 'bill_id') ~ '^[0-9]+$'
-     ), corpus as materialized (
-       select distinct on (bill_id)
-              bill_id, state, bill_number, title, url, status, status_date,
-              last_action, last_action_date, effective_date, session_title,
-              fetched_at, corpus_source
-       from (
-         select * from detail
-         union all
-         select * from snapshots
-       ) combined
-       order by bill_id, source_priority, fetched_at desc
-     ), matched as (
-       select corpus.*,
-              case
-                when corpus.bill_id::text = $1 then 0
-                when regexp_replace(
-                  upper(corpus.bill_number),
-                  '[^A-Z0-9]',
-                  '',
-                  'g'
-                ) = $2 then 1
-                when position(lower($1) in lower(corpus.bill_number)) > 0 then 2
-                when position(lower($1) in lower(corpus.title)) > 0 then 3
-                when upper(corpus.state) = upper($1) then 4
-                else 9
-              end as match_rank
-       from corpus
-       where ($3::text is null or corpus.state = $3)
-         and (
-           corpus.bill_id::text = $1
-           or regexp_replace(
-             upper(corpus.bill_number),
-             '[^A-Z0-9]',
-             '',
-             'g'
-           ) = $2
-           or position(lower($1) in lower(corpus.bill_number)) > 0
-           or position(lower($1) in lower(corpus.title)) > 0
-           or upper(corpus.state) = upper($1)
-         )
-     )
-     select bill_id, state, bill_number, title, url, status, status_date,
-            last_action, last_action_date, effective_date, session_title,
-            fetched_at, corpus_source, match_rank
-       from matched
-      order by match_rank, fetched_at desc, state, bill_number, bill_id
+    `with source_matches as (
+        select candidates.bill_id,min(candidates.match_rank) as match_rank
+        from (
+          (select cache.bill_id,0 as match_rank
+            from public.docket_bill_detail_cache cache
+            where cache.bill_id=$5::integer
+              and ($3::text is null or upper(cache.bill->>'state')=$3)
+              and (not $6::boolean or upper(coalesce(cache.bill->>'state','')) <> 'US')
+            limit $4)
+          union all
+          (select cache.bill_id,1 as match_rank
+            from public.docket_bill_detail_cache cache
+            where upper(regexp_replace(
+                 upper(coalesce(cache.bill->>'bill_number',cache.bill->>'number','')),
+                 '[^A-Z0-9]','','g'
+              ))=$2
+              and ($3::text is null or upper(cache.bill->>'state')=$3)
+              and (not $6::boolean or upper(coalesce(cache.bill->>'state','')) <> 'US')
+            limit $4)
+          union all
+          (select cache.bill_id,2 as match_rank
+            from public.docket_bill_detail_cache cache
+            where length($1::text)>=3
+              and coalesce(cache.bill->>'title','') ilike '%'||$1||'%'
+              and ($3::text is null or upper(cache.bill->>'state')=$3)
+              and (not $6::boolean or upper(coalesce(cache.bill->>'state','')) <> 'US')
+            limit $4)
+        ) candidates
+        group by candidates.bill_id
+      )
+      select cache.bill_id,
+             upper(coalesce(cache.bill->>'state','')) as state,
+             coalesce(cache.bill->>'bill_number',cache.bill->>'number','') as bill_number,
+             coalesce(cache.bill->>'title','') as title,
+             coalesce(cache.bill->>'url',cache.bill->>'state_link') as url,
+             cache.bill->>'status' as status,
+             cache.bill->>'status_date' as status_date,
+             cache.bill->>'last_action' as last_action,
+             cache.bill->>'last_action_date' as last_action_date,
+             cache.bill->>'effective_date' as effective_date,
+             coalesce(cache.bill #>> '{session,session_title}',
+                      cache.bill #>> '{session,session_name}',
+                      cache.bill->>'session_title') as session_title,
+             cache.fetched_at,
+             'detail_cache'::text as corpus_source,
+             source_matches.match_rank
+      from source_matches
+      join public.docket_bill_detail_cache cache on cache.bill_id=source_matches.bill_id
+      order by source_matches.match_rank,cache.bill_id
       limit $4`,
-    [input.query, input.normalized_number, input.state, input.limit],
+    [input.query, input.normalized_number, input.state, input.limit,
+     /^\d+$/.test(input.query) && Number.isSafeInteger(Number(input.query))
+       ? Number(input.query) : -1, input.exclude_federal],
     {
       label: "docket_full_corpus_search",
       pool_acquire_timeout_ms: 1_000,
@@ -878,14 +844,129 @@ docket_router.post("/warm-next-batch", async (req, res) => {
   }
 });
 
+// Canonical public Docket surface. Read ONLY the preserved provider corpus.
+// Historical state snapshots and curated docket_entries remain separate.
+docket_router.get("/archive", async (req, res) => {
+  try {
+    const state = normalize_optional_state_code(req.query.state);
+    const jurisdiction_scope = req.query.jurisdiction_scope === "state" ? "state" : null;
+    const limit = normalize_search_limit(req.query.limit);
+    // The first archive page uses cursor 0; later pages require an exact
+    // positive provider bill ID, never an offset or arbitrary string.
+    const after = req.query.after == null || req.query.after === "" || req.query.after === "0"
+      ? 0 : normalize_bill_id(String(req.query.after));
+    // A state-specific query without this index can scan 100k+ JSON rows.
+    if (state) {
+      const index = await query_with_diagnostics<{ ready: boolean }>(
+        "select to_regclass('public.docket_bill_detail_cache_state_bill_id_public_idx') is not null as ready",
+        [], {label:"docket_archive_index_contract",query_timeout_ms:1000}
+      );
+      if (!index.rows[0]?.ready) {
+        return res.status(503).json({ok:false,message:"docket_archive_state_index_not_installed"});
+      }
+    }
+    const scope = state
+      ? "upper(cache.bill->>'state')=$2 and cache.bill_id>$1"
+      : jurisdiction_scope === "state"
+        ? "upper(coalesce(cache.bill->>'state','')) <> 'US' and cache.bill_id>$1"
+        : "cache.bill_id>$1";
+    const cap = state ? "$3" : "$2";
+    const params = state ? [after,state,limit+1] : [after,limit+1];
+    const select = "select cache.bill_id,upper(coalesce(cache.bill->>'state','')) as state,"
+      + "coalesce(cache.bill->>'bill_number',cache.bill->>'number','') as bill_number,"
+      + "coalesce(cache.bill->>'title','') as title,"
+      + "coalesce(cache.bill->>'url',cache.bill->>'state_link') as url,"
+      + "cache.bill->>'status' as status,cache.bill->>'status_date' as status_date,"
+      + "cache.bill->>'last_action' as last_action,cache.bill->>'last_action_date' as last_action_date,"
+      + "cache.bill->>'effective_date' as effective_date,"
+      + "coalesce(cache.bill #>> '{session,session_title}',"
+      + "cache.bill #>> '{session,session_name}',cache.bill->>'session_title') as session_title,"
+      + "cache.fetched_at,'detail_cache'::text as corpus_source,0 as match_rank "
+      + "from public.docket_bill_detail_cache cache where "
+      + scope + " order by cache.bill_id limit " + cap;
+    const count_query = state
+      ? "select (select count(*) from public.docket_bill_detail_cache) as total_preserved,"
+        + "(select count(*) from public.docket_bill_detail_cache where upper(bill->>'state')=$1) as state_total"
+      : jurisdiction_scope === "state"
+        ? "select (select count(*) from public.docket_bill_detail_cache) as total_preserved,"
+          + "(select count(*) from public.docket_bill_detail_cache where upper(coalesce(bill->>'state','')) <> 'US') as state_total"
+        : "select count(*) as total_preserved,count(*) as state_total from public.docket_bill_detail_cache";
+    const [page,count] = await Promise.all([
+      query_with_diagnostics<docket_search_database_row>(
+        select,params,{label:"docket_preserved_archive_page",query_timeout_ms:5000}
+      ),
+      query_with_diagnostics<{total_preserved:string|number;state_total:string|number}>(
+        count_query,state?[state]:[],{label:"docket_preserved_archive_count",query_timeout_ms:5000}
+      )
+    ]);
+    const has_more = page.rows.length>limit;
+    const rows = page.rows.slice(0,limit);
+    const base_bills = rows.map(row=>({
+      bill_id:row.bill_id,
+      number:row.bill_number || "Bill "+row.bill_id,
+      title:row.title || undefined,
+      url:row.url ?? undefined,
+      status:nullable_number(row.status),
+      status_date:row.status_date??undefined,
+      last_action:row.last_action??undefined,
+      last_action_date:row.last_action_date??undefined
+    }));
+    const enriched = await enrich_bills_with_radar(base_bills);
+    const radar = new Map(enriched.map(bill=>[bill.bill_id,bill.radar]));
+    return res.json({
+      ok:true,contract:"docket-preserved-archive-v1",
+      source:"public.docket_bill_detail_cache",state_scope:state,jurisdiction_scope,
+      total_preserved:Number(count.rows[0]?.total_preserved??0),
+      state_total:Number(count.rows[0]?.state_total??0),
+      after,limit,has_more,
+      next_cursor:has_more ? rows[rows.length-1]?.bill_id??null : null,
+      results:rows.map(row=>({
+        state:row.state,session_title:row.session_title,
+        fetched_at:normalize_fetched_at(row.fetched_at),
+        corpus_source:"detail_cache",
+        bill:{
+          bill_id:row.bill_id,number:row.bill_number||"Bill "+row.bill_id,
+          title:row.title||undefined,url:row.url??undefined,
+          source_url:row.url??undefined,
+          status:nullable_number(row.status),
+          status_date:row.status_date??undefined,
+          last_action:row.last_action??undefined,
+          last_action_date:row.last_action_date??undefined,
+          effective_date:row.effective_date??undefined,
+          radar:radar.get(row.bill_id)??unavailable_radar()
+        }
+      }))
+    });
+  } catch (error) {
+    return res.status(500).json({ok:false,message:serialize_error(error)});
+  }
+});
+
 docket_router.get("/search", async (req, res) => {
   try {
+    const installed = await query_with_diagnostics<{ ready: boolean }>(
+      "select to_regclass('public.docket_bill_detail_cache_normalized_number_public_idx') is not null and to_regclass('public.docket_bill_detail_cache_title_trgm_public_idx') is not null as ready",
+      [],
+      {label:"docket_public_search_indexes_verified",query_timeout_ms:1000}
+    );
+    if (!installed.rows[0]?.ready) {
+      return res.status(503).json({ok:false,message:"docket_corpus_search_indexes_not_installed"});
+    }
     const normalized = normalize_search_query(req.query.q);
-    const state = normalize_optional_state_code(req.query.state);
+    // Public users can type "PA HB1000" rather than a LegiScan source ID.
+    // Resolve only explicit two-letter jurisdiction prefixes, never silently
+    // infer which legislative session or substitute document they intended.
+    const prefix = /^([A-Za-z]{2})\s*[: -]\s*([A-Za-z]{1,4}[ .-]*\d+[A-Za-z]?)$/.exec(normalized.query);
+    const prefix_state = prefix ? normalize_optional_state_code(prefix[1]) : null;
+    const requested_state = normalize_optional_state_code(req.query.state);
+    const state = requested_state ?? prefix_state;
+    const jurisdiction_scope = req.query.jurisdiction_scope === "state" ? "state" : null;
+    const search_input = prefix ? normalize_search_query(prefix[2]) : normalized;
     const limit = normalize_search_limit(req.query.limit);
     const results = await search_docket_corpus({
-      ...normalized,
+      ...search_input,
       state,
+      exclude_federal: jurisdiction_scope === "state",
       limit,
     });
 
@@ -895,6 +976,7 @@ docket_router.get("/search", async (req, res) => {
       source: "preserved_docket_cache",
       query: normalized.query,
       state_scope: state,
+      jurisdiction_scope,
       result_count: results.length,
       limit,
       results,
