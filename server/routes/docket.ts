@@ -847,7 +847,9 @@ docket_router.get("/archive", async (req, res) => {
   try {
     const state = normalize_optional_state_code(req.query.state);
     const limit = normalize_search_limit(req.query.limit);
-    const after = req.query.after == null || req.query.after === ""
+    // The first archive page uses cursor 0; later pages require an exact
+    // positive provider bill ID, never an offset or arbitrary string.
+    const after = req.query.after == null || req.query.after === "" || req.query.after === "0"
       ? 0 : normalize_bill_id(String(req.query.after));
     // A state-specific query without this index can scan 100k+ JSON rows.
     if (state) {
@@ -945,7 +947,7 @@ docket_router.get("/search", async (req, res) => {
     // Public users can type "PA HB1000" rather than a LegiScan source ID.
     // Resolve only explicit two-letter jurisdiction prefixes, never silently
     // infer which legislative session or substitute document they intended.
-    const prefix = /^([A-Za-z]{2})\\s*[: -]\\s*([A-Za-z]{1,4}[ .-]*\\d+[A-Za-z]?)$/.exec(normalized.query);
+    const prefix = /^([A-Za-z]{2})\s*[: -]\s*([A-Za-z]{1,4}[ .-]*\d+[A-Za-z]?)$/.exec(normalized.query);
     const prefix_state = prefix ? normalize_optional_state_code(prefix[1]) : null;
     const requested_state = normalize_optional_state_code(req.query.state);
     const state = requested_state ?? prefix_state;
