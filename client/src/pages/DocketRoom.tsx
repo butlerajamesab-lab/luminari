@@ -717,6 +717,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
   const [archive_cursor, set_archive_cursor] = useState(0);
   const [archive_loading, set_archive_loading] = useState(false);
   const [archive_error, set_archive_error] = useState<string | null>(null);
+  const archive_reset_pending = useRef(false);
   const [search_data, set_search_data] = useState<docket_search_payload | null>(null);
   const [search_error, set_search_error] = useState<string | null>(null);
   const [search_loading, set_search_loading] = useState(false);
@@ -825,6 +826,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
   // Changing jurisdiction or returning from search starts a fresh page.
   // Do not append a previously loaded cursor page twice after clearing search.
   useEffect(() => {
+    archive_reset_pending.current = true;
     set_archive_cursor(0);
     set_archive_rows([]);
     set_archive_data(null);
@@ -832,6 +834,10 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
 
   useEffect(() => {
     if (search_active) return;
+    if (archive_reset_pending.current) {
+      archive_reset_pending.current = false;
+      return;
+    }
     const controller = new AbortController();
     const load_archive = async () => {
       set_archive_loading(true);
