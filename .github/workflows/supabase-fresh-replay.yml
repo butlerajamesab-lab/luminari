@@ -81,9 +81,8 @@ jobs:
           psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --set=ON_ERROR_STOP=1 --file=supabase/verification/20261117_docket_history_canonical_sha256_3_21_53_66.verify.sql
           psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --set=ON_ERROR_STOP=1 --file=supabase/verification/20261117_docket_history_generic_function_plan.verify.sql
 
-      - name: Verify proposed indexed Genome upsert trigger source reads (disposable only)
+      - name: Verify installed forward-only indexed Genome upsert trigger source reads (disposable only)
         run: |
-          psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --set=ON_ERROR_STOP=1 --file=supabase/proposals/20261118_docket_genome_trigger_indexed_scopes.proposal.sql
           psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --set=ON_ERROR_STOP=1 --file=supabase/verification/20261118_docket_genome_trigger_scoped_reads.verify.sql
           psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --set=ON_ERROR_STOP=1 --file=supabase/verification/20261116_docket_genome_real_lifecycle_trigger_3_21_53_66.verify.sql
           psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --set=ON_ERROR_STOP=1 --file=supabase/verification/20261117_docket_history_canonical_sha256_3_21_53_66.verify.sql
