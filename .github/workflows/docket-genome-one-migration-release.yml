@@ -1,0 +1,121 @@
+# Manual, one-migration-only release; no push/PR trigger.
+# The official Supabase CLI writes its own exact versioned migration receipt.
+# Prerequisite: authorized direct Postgres URL in repository secret
+# LIGHTHOUSE_SUPABASE_DB_URL. Never print or request the secret in chat.
+name: Docket Genome single-version migration release
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Verify only, or install exactly one migration"
+        type: choice
+        required: true
+        default: verify
+        options:
+          - verify
+          - install
+      confirm_version:
+        description: "For install, type 20261118063000 exactly; leave blank for verify"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lighthouse-docket-genome-one-migration
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Docket one-version release
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Pin exactly one reviewed migration and enforce manual intent
+        shell: bash
+        env:
+          RELEASE_MODE: ${{ inputs.mode }}
+          CONFIRM_VERSION: ${{ inputs.confirm_version }}
+        run: |
+          set -euo pipefail
+          V=20261118063000
+          SRC=supabase/migrations/20261118063000_docket_genome_trigger_indexed_scope.sql
+          EXPECTED_GIT_BLOB=9dec655da0368ed382dd8c8941582d44a8b2d717
+          test "$GITHUB_REF" = 'refs/heads/main'
+          test -f "$SRC"
+          test "$(git hash-object "$SRC")" = "$EXPECTED_GIT_BLOB"
+          case "$RELEASE_MODE" in
+            verify) test -z "$CONFIRM_VERSION" ;;
+            install) test "$CONFIRM_VERSION" = "$V" ;;
+            *) exit 1 ;;
+          esac
+          mkdir -p "$RUNNER_TEMP/docket-single-release/supabase/migrations"
+          cp "$SRC" "$RUNNER_TEMP/docket-single-release/supabase/migrations/"
+          cp supabase/config.toml "$RUNNER_TEMP/docket-single-release/supabase/config.toml"
+          test "$(find "$RUNNER_TEMP/docket-single-release/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | wc -l)" -eq 1
+          test "$(basename "$(find "$RUNNER_TEMP/docket-single-release/supabase/migrations" -type f -name '*.sql')")" = "$(basename "$SRC")"
+          echo "ONE_FILE_MIGRATION_PIN=PASS version=$V mode=$RELEASE_MODE"
+
+      - name: Setup version-pinned Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.116.0
+
+      - name: Preflight actual Lighthouse database and archive queue (read-only)
+        shell: bash
+        env:
+          LIGHTHOUSE_DB_URL: ${{ secrets.LIGHTHOUSE_SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          if test -z "$LIGHTHOUSE_DB_URL"; then
+            echo "::error::GitHub secret LIGHTHOUSE_SUPABASE_DB_URL is not configured."
+            exit 1
+          fi
+          PGSSLMODE=require psql --no-psqlrc --set ON_ERROR_STOP=1 --dbname "$LIGHTHOUSE_DB_URL" --file scripts/docket-genome-one-migration-preflight.sql
+          echo "PRE_PRODUCTION_MIGRATION_GATE=PASS"
+
+      - name: Check remote migration list without applying (read-only)
+        shell: bash
+        env:
+          LIGHTHOUSE_DB_URL: ${{ secrets.LIGHTHOUSE_SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/docket-single-release"
+          supabase migration list --db-url "$LIGHTHOUSE_DB_URL" > "$RUNNER_TEMP/docket-migration-list.txt"
+          echo "REMOTE_MIGRATION_LIST_READ=PASS"
+          # Do not print the connection string, legacy migration list or secrets.
+
+      - name: Install only reviewed 20261118063000 via version-preserving CLI
+        if: inputs.mode == 'install'
+        shell: bash
+        env:
+          LIGHTHOUSE_DB_URL: ${{ secrets.LIGHTHOUSE_SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/docket-single-release"
+          # Exactly one SQL file exists; deliberately omit --include-all.
+          # CLI records the exact 14-digit filename version in its own ledger.
+          supabase migration up --db-url "$LIGHTHOUSE_DB_URL"
+          echo "OFFICIAL_SINGLE_FILE_MIGRATION_UP=COMPLETE"
+
+      - name: Verify exact installed ledger version and unchanged queue (read-only)
+        if: inputs.mode == 'install'
+        shell: bash
+        env:
+          LIGHTHOUSE_DB_URL: ${{ secrets.LIGHTHOUSE_SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          PGSSLMODE=require psql --no-psqlrc --set ON_ERROR_STOP=1 --dbname "$LIGHTHOUSE_DB_URL" --file scripts/docket-genome-one-migration-postflight.sql
+          echo "VERSION_PRESERVING_RELEASE_RECEIPT=PASS"
+
+      - name: Verify-only completed without any production write
+        if: inputs.mode == 'verify'
+        run: echo "VERIFY_ONLY_COMPLETE no SQL applied, workers unchanged"
