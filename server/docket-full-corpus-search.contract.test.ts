@@ -42,7 +42,9 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(route).toContain("where cache.bill_id=$5::integer");
     expect(route).toContain("upper(regexp_replace(");
     expect(route).toContain("coalesce(cache.bill->>'title','') ilike");
-    expect(route).not.toContain("order by cache.bill_id\\n            limit $4)");
+    const titleBranch = route.match(/select cache\\.bill_id,2 as match_rank([\\s\\S]*?)\\)\\s*candidates/)?.[1];
+    expect(titleBranch).toBeDefined();
+    expect(titleBranch).not.toMatch(/order by cache\\.bill_id/);
     expect(route).toContain("select cache.bill_id,0 as match_rank");
     expect(route).toContain("select cache.bill_id,1 as match_rank");
     expect(route).toContain("select cache.bill_id,2 as match_rank");
@@ -65,6 +67,14 @@ describe("Docket complete preserved-source public browsing contract", () => {
     for (const input of ["PA HB1000", "PA: HB 1000", "PA-HB1000"]) {
       expect(pattern.exec(input)?.slice(1)).toEqual(["PA", "HB1000"]);
     }
+  });
+
+  it("keeps federal bills out of the state scope", () => {
+    expect(archiveRoute).toContain('jurisdiction_scope === "state"');
+    expect(archiveRoute).toContain("upper(coalesce(cache.bill->>'state','')) <> 'US'");
+    expect(searchRoute).toContain('exclude_federal: jurisdiction_scope === "state"');
+    expect(searchRoute).toContain("not $6::boolean or upper(coalesce(cache.bill->>'state','')) <> 'US'");
+    expect(page).toContain('level === "state" && preferred_state === "US" ? "ALL"');
   });
 
   it("defaults to the full preserved source list and keeps historical snapshots separate", () => {
