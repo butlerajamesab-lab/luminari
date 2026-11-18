@@ -44,6 +44,10 @@ create temp table trigger_probe_event(
  source_event_key text not null, event_type text not null
 ) on commit drop;
 create index trigger_probe_event_source_idx on trigger_probe_event(source_bill_id);
+-- Mirror BOTH live event join access paths, not only source-ID fallback.
+-- Production has unique source_event_key and Genome-leading indexes.
+create unique index trigger_probe_event_key_unique on trigger_probe_event(source_event_key);
+create index trigger_probe_event_genome_idx on trigger_probe_event(genome_bill_id);
 
 create temp table trigger_probe_genome(
  bill_id uuid not null, genome_bill_id uuid not null,
@@ -99,6 +103,10 @@ begin
    ' SELECT count(*) FROM prior_active' into plan;
  if position('"Index Name": "trigger_probe_revision_source_idx"' in plan)=0
     or position('"Index Name": "trigger_probe_event_source_idx"' in plan)=0
+    or (
+      position('"Index Name": "trigger_probe_event_key_unique"' in plan)=0
+      and position('"Index Name": "trigger_probe_event_genome_idx"' in plan)=0
+    )
     or position('"One-Time Filter": "($1 IS NOT NULL)"' in plan)=0 then
    raise exception 'actual_prior_event_generic_plan_not_bounded %',left(plan,5000);
  end if;
@@ -139,7 +147,7 @@ begin
    raise exception 'actual_version_spine_generic_plan_not_bounded %',left(plan,5000);
  end if;
 
- raise notice 'actual_trigger_function_generic_plans_pass revisions_and_events=true targets_with_cache=true version_spine=true fixture=39410';
+ raise notice 'actual_trigger_function_generic_plans_pass revision_source_index=true event_source_and_event_join_indexes=true targets_with_cache=true version_spine=true fixture=39410';
 end;
 $verify_actual_function_generic_plans$;
 rollback;
