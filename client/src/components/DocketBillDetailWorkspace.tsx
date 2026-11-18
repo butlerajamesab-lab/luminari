@@ -229,6 +229,10 @@ export function DocketBillDetailWorkspace({
           <span>member_path {display_value(provenance.member_path)}</span>
           <span>member_sha256 {display_value(provenance.member_sha256)}</span>
         </div>
+        <details style={{ marginTop: "0.45rem" }}>
+          <summary style={{ cursor: "pointer", fontFamily: font_mono, fontSize: "0.62rem", color: palette.steel }}>Show preserved provider payload</summary>
+          <pre style={{ whiteSpace: "pre-wrap", margin: "0.35rem 0 0", color: palette.cream, fontFamily: font_mono, fontSize: "0.62rem", overflowWrap: "anywhere" }}>{JSON.stringify(payload, null, 2)}</pre>
+        </details>
       </div>
     );
   };
