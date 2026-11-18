@@ -466,6 +466,14 @@ APPROVED_REPOSITORY_ONLY = {
         "20261110290000_bundle_decomposition_shape_needs_judgment_v1.sql",
         "97cb44457cbc3e3dc1e3aa19419663fdda3be237",
     ),
+    # 2026-11-18 user-approved forward-only Docket lifecycle-history lookup
+    # correction. Exact Git blob is locked here so pending SQL cannot drift
+    # before independently reviewed/receipt-bound production installation.
+    # This entry does not waive the migration install or acceptance gate.
+    "20261118010000": (
+        "20261118010000_docket_history_sha256_scoped_lookup.sql",
+        "5fd4e1c06571431c3ea8c321d716591fabe6d7fe",
+    ),
     # Restored production migration (legal authority catalog
     # materialized view). Applied in the live production ledger on
     # 2026-10-20 and verified there first-hand 2026-11-11, but absent
