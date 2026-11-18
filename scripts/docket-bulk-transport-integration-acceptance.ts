@@ -142,6 +142,8 @@ try {
     { id: 2001, path: root + "/vote/missing-bill-id.json", state: "MT", payload: { roll_call_id: 2001 } },
     { id: 2002, path: root + "/vote/dangling-bill-id.json", state: "MT", payload: { roll_call_id: 2002, bill_id: 9999999 } },
     { id: 2003, path: root + "/vote/wrong-state.json", state: "NV", payload: { roll_call_id: 2003, bill_id: positiveBillId } },
+    { id: 2005, path: root + "/vote/mismatched-bill-id.json", state: "MT", payload: { roll_call_id: 2005, bill_id: heldBillId } },
+    { id: 2006, path: root + "/vote/mismatched-provider-id.json", state: "MT", payload: { roll_call_id: 9999, bill_id: positiveBillId } },
   ];
   for (const receipt of negativeReceipts) {
     await pool.query(
