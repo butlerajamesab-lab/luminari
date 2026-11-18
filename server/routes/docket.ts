@@ -323,94 +323,57 @@ const search_docket_corpus = async (input: {
   limit: number;
 }): Promise<docket_search_result[]> => {
   const result = await query_with_diagnostics<docket_search_database_row>(
-    `with detail as materialized (
-       select
-         cache.bill_id,
-         upper(coalesce(cache.bill ->> 'state', '')) as state,
-         coalesce(cache.bill ->> 'bill_number', cache.bill ->> 'number', '') as bill_number,
-         coalesce(cache.bill ->> 'title', '') as title,
-         coalesce(cache.bill ->> 'url', cache.bill ->> 'state_link') as url,
-         cache.bill ->> 'status' as status,
-         cache.bill ->> 'status_date' as status_date,
-         cache.bill ->> 'last_action' as last_action,
-         cache.bill ->> 'last_action_date' as last_action_date,
-         cache.bill ->> 'effective_date' as effective_date,
-         coalesce(
-           cache.bill #>> '{session,session_title}',
-           cache.bill #>> '{session,session_name}',
-           cache.bill ->> 'session_title'
-         ) as session_title,
-         cache.fetched_at,
-         0 as source_priority,
-         'detail_cache'::text as corpus_source
-       from public.docket_bill_detail_cache cache
-     ), snapshots as materialized (
-       select
-         (item.value ->> 'bill_id')::integer as bill_id,
-         cache.state,
-         coalesce(item.value ->> 'number', '') as bill_number,
-         coalesce(item.value ->> 'title', '') as title,
-         coalesce(item.value ->> 'url', item.value ->> 'state_link') as url,
-         item.value ->> 'status' as status,
-         item.value ->> 'status_date' as status_date,
-         item.value ->> 'last_action' as last_action,
-         item.value ->> 'last_action_date' as last_action_date,
-         null::text as effective_date,
-         cache.session_title,
-         cache.fetched_at,
-         1 as source_priority,
-         'state_cache'::text as corpus_source
-       from public.docket_bill_state_cache cache
-       cross join lateral jsonb_array_elements(cache.bills::jsonb) item(value)
-       where (item.value ->> 'bill_id') ~ '^[0-9]+$'
-     ), corpus as materialized (
-       select distinct on (bill_id)
-              bill_id, state, bill_number, title, url, status, status_date,
-              last_action, last_action_date, effective_date, session_title,
-              fetched_at, corpus_source
-       from (
-         select * from detail
-         union all
-         select * from snapshots
-       ) combined
-       order by bill_id, source_priority, fetched_at desc
-     ), matched as (
-       select corpus.*,
-              case
-                when corpus.bill_id::text = $1 then 0
-                when regexp_replace(
-                  upper(corpus.bill_number),
-                  '[^A-Z0-9]',
-                  '',
-                  'g'
-                ) = $2 then 1
-                when position(lower($1) in lower(corpus.bill_number)) > 0 then 2
-                when position(lower($1) in lower(corpus.title)) > 0 then 3
-                when upper(corpus.state) = upper($1) then 4
-                else 9
-              end as match_rank
-       from corpus
-       where ($3::text is null or corpus.state = $3)
-         and (
-           corpus.bill_id::text = $1
-           or regexp_replace(
-             upper(corpus.bill_number),
-             '[^A-Z0-9]',
-             '',
-             'g'
-           ) = $2
-           or position(lower($1) in lower(corpus.bill_number)) > 0
-           or position(lower($1) in lower(corpus.title)) > 0
-           or upper(corpus.state) = upper($1)
-         )
-     )
-     select bill_id, state, bill_number, title, url, status, status_date,
-            last_action, last_action_date, effective_date, session_title,
-            fetched_at, corpus_source, match_rank
-       from matched
-      order by match_rank, fetched_at desc, state, bill_number, bill_id
+    `with source_matches as (
+        select candidates.bill_id,min(candidates.match_rank) as match_rank
+        from (
+          (select cache.bill_id,0 as match_rank
+            from public.docket_bill_detail_cache cache
+            where cache.bill_id=$5::integer
+              and ($3::text is null or upper(cache.bill->>'state')=$3)
+            limit $4)
+          union all
+          (select cache.bill_id,1 as match_rank
+            from public.docket_bill_detail_cache cache
+            where upper(regexp_replace(
+                 coalesce(cache.bill->>'bill_number',cache.bill->>'number',''),
+                 '[^A-Z0-9]','','g'
+              ))=$2
+              and ($3::text is null or upper(cache.bill->>'state')=$3)
+            limit $4)
+          union all
+          (select cache.bill_id,2 as match_rank
+            from public.docket_bill_detail_cache cache
+            where length($1::text)>=3
+              and coalesce(cache.bill->>'title','') ilike '%'||$1||'%'
+              and ($3::text is null or upper(cache.bill->>'state')=$3)
+            order by cache.bill_id
+            limit $4)
+        ) candidates
+        group by candidates.bill_id
+      )
+      select cache.bill_id,
+             upper(coalesce(cache.bill->>'state','')) as state,
+             coalesce(cache.bill->>'bill_number',cache.bill->>'number','') as bill_number,
+             coalesce(cache.bill->>'title','') as title,
+             coalesce(cache.bill->>'url',cache.bill->>'state_link') as url,
+             cache.bill->>'status' as status,
+             cache.bill->>'status_date' as status_date,
+             cache.bill->>'last_action' as last_action,
+             cache.bill->>'last_action_date' as last_action_date,
+             cache.bill->>'effective_date' as effective_date,
+             coalesce(cache.bill #>> '{session,session_title}',
+                      cache.bill #>> '{session,session_name}',
+                      cache.bill->>'session_title') as session_title,
+             cache.fetched_at,
+             'detail_cache'::text as corpus_source,
+             source_matches.match_rank
+      from source_matches
+      join public.docket_bill_detail_cache cache on cache.bill_id=source_matches.bill_id
+      order by source_matches.match_rank,cache.bill_id
       limit $4`,
-    [input.query, input.normalized_number, input.state, input.limit],
+    [input.query, input.normalized_number, input.state, input.limit,
+     /^\d+$/.test(input.query) && Number.isSafeInteger(Number(input.query))
+       ? Number(input.query) : -1],
     {
       label: "docket_full_corpus_search",
       pool_acquire_timeout_ms: 1_000,
@@ -880,6 +843,14 @@ docket_router.post("/warm-next-batch", async (req, res) => {
 
 docket_router.get("/search", async (req, res) => {
   try {
+    const installed = await query_with_diagnostics<{ ready: boolean }>(
+      "select to_regclass('public.docket_bill_detail_cache_normalized_number_public_idx') is not null and to_regclass('public.docket_bill_detail_cache_title_trgm_public_idx') is not null as ready",
+      [],
+      {label:"docket_public_search_indexes_verified",query_timeout_ms:1000}
+    );
+    if (!installed.rows[0]?.ready) {
+      return res.status(503).json({ok:false,message:"docket_corpus_search_indexes_not_installed"});
+    }
     const normalized = normalize_search_query(req.query.q);
     const state = normalize_optional_state_code(req.query.state);
     const limit = normalize_search_limit(req.query.limit);
