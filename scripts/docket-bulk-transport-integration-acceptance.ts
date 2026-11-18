@@ -162,6 +162,27 @@ try {
      values($1,$2,$3,'roll_call',2004,'MT',$4::jsonb,'source_preserved')`,
     ["d".repeat(64), root + "/vote/wrong-archive.json", "e".repeat(64), JSON.stringify({ roll_call_id: 2004, bill_id: positiveBillId })],
   );
+  // A different archive may preserve a same-ID bill as existing_preserved;
+  // its auxiliary receipts must not be attributed to the cached snapshot.
+  const secondArchiveHash = "f".repeat(64);
+  await pool.query(
+    `insert into public.docket_legiscan_bulk_member_receipt
+     (archive_sha256,member_path,member_sha256,member_kind,provider_record_id,bill_id,session_id,state,disposition)
+     values($1,$2,$3,'bill',$4,$4,2159,'MT','existing_preserved')`,
+    [secondArchiveHash, root + "/bill/HB1_from_second_archive.json", "a".repeat(64), positiveBillId],
+  );
+  await pool.query(
+    `insert into public.docket_legiscan_bulk_member_receipt
+     (archive_sha256,member_path,member_sha256,member_kind,provider_record_id,state,payload_json,disposition)
+     values($1,$2,$3,'person',7855,'MT',$4::jsonb,'source_preserved')`,
+    [secondArchiveHash, root + "/people/7855.json", "b".repeat(64), JSON.stringify({ people_id: 7855, name: "Person from unselected archive" })],
+  );
+  await pool.query(
+    `insert into public.docket_legiscan_bulk_member_receipt
+     (archive_sha256,member_path,member_sha256,member_kind,provider_record_id,state,payload_json,disposition)
+     values($1,$2,$3,'roll_call',1481117,'MT',$4::jsonb,'source_preserved')`,
+    [secondArchiveHash, root + "/vote/1481117.json", "c".repeat(64), JSON.stringify({ roll_call_id: 1481117, bill_id: positiveBillId })],
+  );
   const afterNegatives = await get_docket_archive_auxiliary_receipts(positiveBillId);
   assert.deepEqual(afterNegatives.roll_calls.map(row => row.provider_record_id), [1481116]);
   assert.deepEqual(afterNegatives.people.map(row => row.provider_record_id), [7855]);
