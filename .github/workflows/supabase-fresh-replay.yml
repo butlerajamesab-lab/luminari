@@ -87,6 +87,13 @@ jobs:
           psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --set=ON_ERROR_STOP=1 --file=supabase/verification/20261116_docket_genome_real_lifecycle_trigger_3_21_53_66.verify.sql
           psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --set=ON_ERROR_STOP=1 --file=supabase/verification/20261117_docket_history_canonical_sha256_3_21_53_66.verify.sql
 
+      - name: Verify source-scoped Docket lifecycle trigger candidate (disposable only)
+        run: |
+          psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --set=ON_ERROR_STOP=1 --file=supabase/proposals/20261118_docket_lifecycle_full_source_scope.proposal.sql
+          psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --set=ON_ERROR_STOP=1 --file=supabase/verification/20261117_docket_history_canonical_sha256_3_21_53_66.verify.sql
+          psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --set=ON_ERROR_STOP=1 --file=supabase/verification/20261118_docket_lifecycle_full_scope_generic_plan.verify.sql
+          psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --set=ON_ERROR_STOP=1 --file=supabase/verification/20261118_docket_genome_trigger_scoped_reads.verify.sql
+
       - name: Verify retired Atlas bridge is fail-closed
         run: >-
           psql
