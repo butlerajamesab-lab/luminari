@@ -1,4 +1,5 @@
 # PROPOSAL ONLY: no service is created or started by merging this file.
+# Before provisioning, set DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS from a freshly rechecked queue set (1-5 IDs); the worker fails closed without it.
 # Runs the EXISTING Docket activation worker, with source claim restricted to
 # archive-backed jobs. No LegiScan API key, Rosetta credentials, cache warmer,
 # or unrelated Prism worker startup is configured.
