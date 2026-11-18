@@ -24,7 +24,7 @@ ON public.docket_bill_detail_cache (
 CREATE INDEX docket_bill_detail_cache_normalized_number_public_idx
 ON public.docket_bill_detail_cache (
   (upper(regexp_replace(
-    coalesce(bill ->> 'bill_number', bill ->> 'number', ''),
+    upper(coalesce(bill ->> 'bill_number', bill ->> 'number', '')),
     '[^A-Z0-9]', '', 'g'
   )))
 );
