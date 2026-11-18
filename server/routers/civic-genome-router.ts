@@ -39,6 +39,7 @@ import {
   get_civic_genome_rosetta_pipeline_status,
 } from "../civic-genome-operating-contracts";
 import { get_docket_verified_enrichment } from "../docket-verified-enrichment";
+import { get_docket_archive_auxiliary_receipts } from "../docket-archive-auxiliary-read";
 import { background_workers_allowed } from "../runtime-role";
 import { orchestrate_civic_genome_rosetta_complete } from "../civic-genome-rosetta-complete-orchestration";
 
@@ -193,6 +194,10 @@ export const civicGenomeRouter = router({
   get_docket_verified_enrichment: publicProcedure
     .input(z.object({ source_bill_id: source_bill_id_param }))
     .query(async ({ input }) => get_docket_verified_enrichment(input.source_bill_id)),
+
+  get_docket_archive_auxiliary_receipts: publicProcedure
+    .input(z.object({ source_bill_id: source_bill_id_param }))
+    .query(async ({ input }) => get_docket_archive_auxiliary_receipts(input.source_bill_id)),
 
   list_events: publicProcedure
     .input(z.object({

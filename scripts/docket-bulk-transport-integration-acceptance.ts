@@ -54,7 +54,7 @@ try {
   const zip = new JSZip();
   const acceptedBill = {
     bill_id: positiveBillId, state: "MT", session_id: 2159,
-    bill_number: "HB1", title: "Actual TypeScript Docket CI bill",
+    bill_number: "HB1", title: "Actual TypeScript Docket CI bill", sponsors: [{ people_id: 7855 }],
     status_date: "2026-06-01", texts: [{ doc_id: 10, type: "Introduced", state_link: "https://example.invalid/source" }],
   };
   const undatedBill = {
@@ -107,6 +107,8 @@ try {
   assert.equal(await count("select count(*) from public.docket_legiscan_bulk_member_receipt"), 4);
   assert.equal(await count("select count(*) from public.docket_jurisdiction_activation_bill"), 1);
   assert.equal(await count("select count(*) from public.docket_bill_processing_queue"), 1);
+
+
   // The held bill is source-preserved, not silently queued for activation.
   assert.equal(await count("select count(*) from public.docket_jurisdiction_activation_bill where source_bill_id=" + heldBillId), 0);
   assert.equal(await count("select count(*) from public.docket_bill_processing_queue where source_bill_id=" + heldBillId), 0);
@@ -123,6 +125,68 @@ try {
   assert.equal(await count("select count(*) from public.docket_bill_detail_cache"), 2);
   assert.equal(await count("select count(*) from public.docket_legiscan_bulk_member_receipt"), 4);
   assert.equal(await count("select count(*) from public.docket_bill_processing_queue"), 1);
+
+  // Read source-preserved archive people and roll calls using exact receipt,
+  // archive, bill ID, and state identity. Missing/dangling/mismatched links fail closed.
+  const { get_docket_archive_auxiliary_receipts } = await import("../server/docket-archive-auxiliary-read");
+  // A later live API detail refresh may replace the cache source while the exact
+  // archive bill receipt remains. Archive actors and votes must remain visible.
+  await pool.query("update public.docket_bill_detail_cache set source=$2 where bill_id=$1", [positiveBillId, "legiscan_get_bill_jurisdiction_activation"]);
+  const archiveReceipts = await get_docket_archive_auxiliary_receipts(positiveBillId);
+  assert.deepEqual(archiveReceipts.people.map(row => row.provider_record_id), [7855]);
+  assert.deepEqual(archiveReceipts.roll_calls.map(row => row.provider_record_id), [1481116]);
+  assert.equal(archiveReceipts.roll_calls[0]?.provenance.archive_sha256, sha256(bytes));
+  assert.equal(archiveReceipts.roll_calls[0]?.provenance.member_path, root + "/vote/1481116.json");
+  assert.equal(archiveReceipts.roll_calls[0]?.provenance.member_sha256, sha256(Buffer.from(JSON.stringify({ roll_call: { roll_call_id: 1481116, bill_id: positiveBillId } }))));
+
+  // Negative controls: missing bill_id, dangling bill ID, wrong state, and a
+  // valid bill ID carried by a different archive receipt must never link.
+  const negativeReceipts = [
+    { id: 2001, path: root + "/vote/missing-bill-id.json", state: "MT", payload: { roll_call_id: 2001 } },
+    { id: 2002, path: root + "/vote/dangling-bill-id.json", state: "MT", payload: { roll_call_id: 2002, bill_id: 9999999 } },
+    { id: 2003, path: root + "/vote/wrong-state.json", state: "NV", payload: { roll_call_id: 2003, bill_id: positiveBillId } },
+    { id: 2005, path: root + "/vote/mismatched-bill-id.json", state: "MT", payload: { roll_call_id: 2005, bill_id: heldBillId } },
+    { id: 2006, path: root + "/vote/mismatched-provider-id.json", state: "MT", payload: { roll_call_id: 9999, bill_id: positiveBillId } },
+  ];
+  for (const receipt of negativeReceipts) {
+    await pool.query(
+      `insert into public.docket_legiscan_bulk_member_receipt
+       (archive_sha256,member_path,member_sha256,member_kind,provider_record_id,state,payload_json,disposition)
+       values($1,$2,$3,'roll_call',$4,$5,$6::jsonb,'source_preserved')`,
+      [sha256(bytes), receipt.path, sha256(Buffer.from(receipt.path)), receipt.id, receipt.state, JSON.stringify(receipt.payload)],
+    );
+  }
+  await pool.query(
+    `insert into public.docket_legiscan_bulk_member_receipt
+     (archive_sha256,member_path,member_sha256,member_kind,provider_record_id,state,payload_json,disposition)
+     values($1,$2,$3,'roll_call',2004,'MT',$4::jsonb,'source_preserved')`,
+    ["d".repeat(64), root + "/vote/wrong-archive.json", "e".repeat(64), JSON.stringify({ roll_call_id: 2004, bill_id: positiveBillId })],
+  );
+  // A different archive may preserve a same-ID bill as existing_preserved;
+  // its auxiliary receipts must not be attributed to the cached snapshot.
+  const secondArchiveHash = "f".repeat(64);
+  await pool.query(
+    `insert into public.docket_legiscan_bulk_member_receipt
+     (archive_sha256,member_path,member_sha256,member_kind,provider_record_id,bill_id,session_id,state,disposition)
+     values($1,$2,$3,'bill',$4::bigint,$4::integer,2159,'MT','existing_preserved')`,
+    [secondArchiveHash, root + "/bill/HB1_from_second_archive.json", "a".repeat(64), positiveBillId],
+  );
+  await pool.query(
+    `insert into public.docket_legiscan_bulk_member_receipt
+     (archive_sha256,member_path,member_sha256,member_kind,provider_record_id,state,payload_json,disposition)
+     values($1,$2,$3,'person',7855,'MT',$4::jsonb,'source_preserved')`,
+    [secondArchiveHash, root + "/people/7855.json", "b".repeat(64), JSON.stringify({ people_id: 7855, name: "Person from unselected archive" })],
+  );
+  await pool.query(
+    `insert into public.docket_legiscan_bulk_member_receipt
+     (archive_sha256,member_path,member_sha256,member_kind,provider_record_id,state,payload_json,disposition)
+     values($1,$2,$3,'roll_call',1481117,'MT',$4::jsonb,'source_preserved')`,
+    [secondArchiveHash, root + "/vote/1481117.json", "c".repeat(64), JSON.stringify({ roll_call_id: 1481117, bill_id: positiveBillId })],
+  );
+  const afterNegatives = await get_docket_archive_auxiliary_receipts(positiveBillId);
+  assert.deepEqual(afterNegatives.roll_calls.map(row => row.provider_record_id), [1481116]);
+  assert.deepEqual(afterNegatives.people.map(row => row.provider_record_id), [7855]);
+  await pool.query("update public.docket_bill_detail_cache set source=$2 where bill_id=$1", [positiveBillId, "legiscan_bulk_json"]);
 
   // Explicitly supplied downstream readiness; real Genome projection belongs
   // to an independent integration certification, not this Docket transport gate.

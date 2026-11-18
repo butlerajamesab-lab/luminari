@@ -7,6 +7,7 @@ vi.mock("@/lib/trpc", () => ({
   trpc: {
     civicGenome: {
       get_docket_verified_enrichment: { useQuery: use_query },
+      get_docket_archive_auxiliary_receipts: { useQuery: use_query },
     },
   },
 }));
@@ -18,7 +19,7 @@ describe("Docket bill detail workspace", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-17T12:00:00Z"));
     vi.resetAllMocks();
-    use_query.mockReturnValue({ data: { amendment_disposition_conflicts: [] }, isLoading: false, isError: false });
+    use_query.mockReturnValue({ data: { amendment_disposition_conflicts: [], people: [], roll_calls: [] }, isLoading: false, isError: false });
   });
 
   afterEach(() => {
@@ -80,6 +81,19 @@ describe("Docket bill detail workspace", () => {
     expect(html).toContain("Source freshness");
     expect(html).toContain("Refresh paused");
     expect(html).not.toContain("Stalled / inactive");
+  });
+
+  it("labels source-preserved roll calls as unvalidated and renders their receipt provenance", () => {
+    use_query.mockReturnValueOnce({ data: { amendment_disposition_conflicts: [] }, isLoading: false, isError: false });
+    use_query.mockReturnValueOnce({ data: {
+      people: [{ payload: { people_id: 7855, name: "Source Person" }, provenance: { archive_sha256: "a".repeat(64), member_path: "MT/session/people/7855.json", member_sha256: "b".repeat(64), state: "MT", provider_record_id: 7855 } }],
+      roll_calls: [{ payload: { roll_call_id: 1481116, bill_id: 101, yea: 12 }, provenance: { archive_sha256: "a".repeat(64), member_path: "MT/session/vote/1481116.json", member_sha256: "c".repeat(64), state: "MT", provider_record_id: 1481116 } }],
+    }, isLoading: false, isError: false });
+    const html = renderToStaticMarkup(<DocketBillDetailWorkspace payload={{ source: "legiscan_bulk_json", bill: { bill_id: 101, state: "MT", sponsors: [{ people_id: 7855 }] } }} />);
+    expect(html).toContain("LegiScan source-preserved people");
+    expect(html).toContain("Source-preserved roll-call receipts · not validated/current");
+    expect(html).toContain("member_path MT/session/vote/1481116.json");
+    expect(html).toContain("archive_sha256");
   });
 
   it("uses the canonical unknown classification when currentness is missing", () => {
