@@ -940,7 +940,16 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
     },
   }));
 
-  const candidate_bills = search_active ? search_bills : bills;
+  const preserved_bills = archive_rows.map(result => ({
+    ...result.bill,
+    search_context: {
+      state: result.state,
+      session_title: result.session_title,
+      fetched_at: result.fetched_at,
+      corpus_source: result.corpus_source,
+    },
+  }));
+  const candidate_bills = search_active ? search_bills : preserved_bills;
   const resolved_bills = candidate_bills
     .map(bill => {
       const search_context = bill.search_context;
@@ -969,17 +978,11 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
     .filter(({ resolution }) =>
       search_active || show_completed || resolution.live_feed_eligible
     )
-    .sort((left, right) => {
-      if (search_active) return 0;
-      const velocity_delta = (right.bill.radar?.velocity_score ?? 0) - (left.bill.radar?.velocity_score ?? 0);
-      if (velocity_delta !== 0) return velocity_delta;
-      return (valid_date(right.bill.last_action_date)?.getTime() ?? 0)
-        - (valid_date(left.bill.last_action_date)?.getTime() ?? 0);
-    });
+; // Keep indexed keyset/page order; don't re-sort partial pages.
 
-  const active_loading = search_active ? search_loading : state_loading;
-  const active_error = search_active ? search_error : state_error;
-  const active_ready = search_active ? search_data !== null : state_data !== null;
+  const active_loading = search_active ? search_loading : archive_loading && archive_rows.length === 0;
+  const active_error = search_active ? search_error : archive_error;
+  const active_ready = search_active ? search_data !== null : archive_data !== null;
 
   return (
     <div style={{ background: dk.sectionBg, border: `1px solid ${dk.steelBorder}`, borderRadius: "8px", padding: "1rem 1.25rem", marginBottom: "1.5rem" }}>
@@ -999,13 +1002,13 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
         <div>
-          <div style={{ fontFamily: fontMono, fontSize: "0.75rem", color: dk.steelBright, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}>{selected_state === "US" ? "Federal legislation" : "State legislation"}</div>
-          <p style={{ fontFamily: fontSans, fontSize: "0.82rem", color: dk.muted, margin: "0.25rem 0 0" }}>Current procedural status, movement, and upcoming action from cached official-provider records.</p>
+          <div style={{ fontFamily: fontMono, fontSize: "0.75rem", color: dk.steelBright, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}>{selected_state === "US" ? "Federal legislation" : "Preserved Docket legislation"}</div>
+          <p style={{ fontFamily: fontSans, fontSize: "0.82rem", color: dk.muted, margin: "0.25rem 0 0" }}>Browse preserved official-provider bill records, including those awaiting Genome projection or Rosetta analysis.</p>
         </div>
         <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>
           Jurisdiction
           <select value={selected_state} onChange={event => set_selected_state(event.target.value)} style={{ background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "6px", color: dk.paper, fontFamily: fontMono, fontSize: "0.78rem", padding: "0.35rem 0.5rem" }}>
-            {docket_states.filter(state => level === "federal" ? state === "US" : level === "state" ? state !== "US" : true).map(state => <option key={state} value={state}>{state}</option>)}
+            {(level === "federal" ? ["US"] : ["ALL", ...docket_states.filter(state => level === "state" ? state !== "US" : true)]).map(state => <option key={state} value={state}>{state === "ALL" ? "All jurisdictions" : state}</option>)}
           </select>
         </label>
       </div>
@@ -1017,6 +1020,15 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
             <span>{search_data?.result_count ?? 0} result{(search_data?.result_count ?? 0) === 1 ? "" : "s"}</span>
             <span>{search_state_scope ? `jurisdiction ${search_state_scope}` : "all cached jurisdictions"}</span>
             <span>current-session visibility does not limit search</span>
+          </div>
+        ) : archive_data ? (
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>
+            <span style={{ color: dk.teal }}>Preserved source corpus</span>
+            <span>{archive_data.total_preserved?.toLocaleString() ?? "—"} source bills in database</span>
+            <span>{archive_data.state_total?.toLocaleString() ?? "—"} in this jurisdiction</span>
+            <span>{archive_rows.length} loaded in pages</span>
+            {displayed_cache_status && selected_state !== "ALL" &&
+              <span style={{ color: dk.amber }}>Separate legacy session snapshot: {displayed_cache_status.bill_count} bills, last observed {readable_date(displayed_cache_status.fetched_at)}</span>}
           </div>
         ) : displayed_cache_status ? (
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>
@@ -1034,7 +1046,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
       </div>
 
       {active_loading ? (
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: dk.muted, fontFamily: fontMono, fontSize: "0.75rem" }}><Loader2 size={14} className="animate-spin" /> {search_active ? "searching_preserved_docket_corpus" : "loading_state_bills"}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: dk.muted, fontFamily: fontMono, fontSize: "0.75rem" }}><Loader2 size={14} className="animate-spin" /> {search_active ? "searching_preserved_docket_corpus" : "loading_preserved_docket_bills"}</div>
       ) : active_error ? (
         <div style={{ color: dk.red, fontFamily: fontMono, fontSize: "0.75rem" }}>error {active_error}</div>
       ) : active_ready ? (
