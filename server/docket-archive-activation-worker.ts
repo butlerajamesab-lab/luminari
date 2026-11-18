@@ -5,6 +5,7 @@ import {
 } from "./runtime-role";
 import {
   resolve_docket_activation_source_scope,
+  require_docket_archive_canary_queue_ids,
   start_docket_bill_activation_queue_worker,
   stop_docket_bill_activation_queue_worker,
 } from "./docket-jurisdiction-activation-queue-worker";
@@ -25,10 +26,12 @@ if (resolve_docket_activation_source_scope() !== "legiscan_bulk_json") {
 if (!background_feature_enabled("DOCKET_BILL_ACTIVATION_QUEUE_ENABLED")) {
   throw new Error("docket_archive_runtime_activation_grant_required");
 }
+const canary_queue_ids = require_docket_archive_canary_queue_ids();
 
 start_docket_bill_activation_queue_worker();
 console.log("[DocketArchiveWorker] started", {
   source_scope: "legiscan_bulk_json",
+  canary_queue_ids_configured: canary_queue_ids.length,
   provider_api_requests_authorized: false,
   rosetta_execution_authorized: false,
   service_id: process.env.RENDER_SERVICE_ID ?? null,
