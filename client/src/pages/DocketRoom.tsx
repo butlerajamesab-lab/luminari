@@ -614,6 +614,18 @@ type docket_search_payload = {
   message?: string;
 };
 
+type docket_archive_payload = {
+  ok: boolean;
+  contract?: "docket-preserved-archive-v1";
+  source?: "public.docket_bill_detail_cache";
+  total_preserved?: number;
+  state_total?: number;
+  has_more?: boolean;
+  next_cursor?: number | null;
+  results?: NonNullable<docket_search_payload["results"]>;
+  message?: string;
+};
+
 type docket_bill_detail_payload = {
   ok: boolean;
   source?: string;
@@ -687,8 +699,8 @@ const snapshot_is_fresh = (fetched_at?: string | null): boolean => {
 };
 
 function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?: string }) {
-  const [preferred_state, set_selected_state] = useState("WA");
-  const selected_state = level === "federal" ? "US" : level === "state" && preferred_state === "US" ? "WA" : preferred_state;
+  const [preferred_state, set_selected_state] = useState("ALL");
+  const selected_state = level === "federal" ? "US" : preferred_state;
   const [state_data, set_state_data] = useState<docket_state_payload | null>(null);
   const [state_error, set_state_error] = useState<string | null>(null);
   const [state_loading, set_state_loading] = useState(false);
@@ -699,7 +711,12 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
   const [cache_statuses, set_cache_statuses] = useState<docket_cache_status[]>([]);
   const [cache_status_error, set_cache_status_error] = useState<string | null>(null);
   const [cache_status_loading, set_cache_status_loading] = useState(false);
-  const [show_completed, set_show_completed] = useState(false);
+  const [show_completed, set_show_completed] = useState(true);
+  const [archive_data, set_archive_data] = useState<docket_archive_payload | null>(null);
+  const [archive_rows, set_archive_rows] = useState<NonNullable<docket_search_payload["results"]>>([]);
+  const [archive_cursor, set_archive_cursor] = useState(0);
+  const [archive_loading, set_archive_loading] = useState(false);
+  const [archive_error, set_archive_error] = useState<string | null>(null);
   const [search_data, set_search_data] = useState<docket_search_payload | null>(null);
   const [search_error, set_search_error] = useState<string | null>(null);
   const [search_loading, set_search_loading] = useState(false);
@@ -708,13 +725,19 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
   const search_state_scope = level === "federal"
     ? "US"
     : level === "state"
-      ? selected_state
+      ? (selected_state === "ALL" ? null : selected_state)
       : null;
 
   useEffect(() => {
     const controller = new AbortController();
 
     const load_state = async () => {
+      if (selected_state === "ALL") {
+        set_state_data(null);
+        set_state_error(null);
+        set_state_loading(false);
+        return;
+      }
       set_state_loading(true);
       set_state_error(null);
       set_state_data(null);
@@ -797,6 +820,45 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
     void load_search();
     return () => controller.abort();
   }, [search_active, search_term, search_state_scope]);
+
+  // A jurisdiction change restarts the canonical keyset walk.
+  useEffect(() => { set_archive_cursor(0); set_archive_rows([]); }, [selected_state]);
+
+  useEffect(() => {
+    if (search_active) return;
+    const controller = new AbortController();
+    const load_archive = async () => {
+      set_archive_loading(true);
+      set_archive_error(null);
+      if (archive_cursor === 0) {
+        set_archive_rows([]);
+        set_archive_data(null);
+        set_selected_bill_id(null);
+        set_bill_detail(null);
+      }
+      try {
+        const params = new URLSearchParams({limit:"25", after:String(archive_cursor)});
+        if (selected_state !== "ALL") params.set("state",selected_state);
+        const response = await fetch(`/api/docket/archive?${params.toString()}`, {signal: controller.signal});
+        const payload = await response.json().catch(() => ({
+          ok:false,message:`api_docket_archive_failed_http_${response.status}`
+        })) as docket_archive_payload;
+        if (!response.ok || !payload.ok) throw new Error(payload.message || "api_docket_archive_failed");
+        if (!controller.signal.aborted) {
+          set_archive_data(payload);
+          set_archive_rows(previous => archive_cursor === 0
+            ? (payload.results ?? [])
+            : [...previous, ...(payload.results ?? [])]);
+        }
+      } catch (error: any) {
+        if (error?.name !== "AbortError") set_archive_error(error?.message || "api_docket_archive_failed");
+      } finally {
+        if (!controller.signal.aborted) set_archive_loading(false);
+      }
+    };
+    void load_archive();
+    return () => controller.abort();
+  }, [archive_cursor, selected_state, search_active]);
 
   const load_bill_detail = async (bill_id: number) => {
     set_selected_bill_id(bill_id);
