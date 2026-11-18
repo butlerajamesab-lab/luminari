@@ -12,10 +12,11 @@ export type amendment_base_candidate = {
 
 export type amendment_target_reference = {
   exact_phrase: string;
-  target_form: "original" | "engrossed" | "reengrossed" | "enrolled" | "reenrolled";
+  target_form: "original" | "engrossed" | "reengrossed" | "enrolled" | "reenrolled" | "substitute";
   chamber: "H" | "S";
   bill_number: string;
-  expected_version_type: "introduced" | "engrossed" | "enrolled";
+  expected_version_type: "introduced" | "engrossed" | "enrolled" | "committee_substitute";
+  evidence_method?: "washington_amendment_header_v1";
 };
 
 export type amendment_base_resolution =
@@ -24,7 +25,7 @@ export type amendment_base_resolution =
       target: amendment_target_reference;
       base: amendment_base_candidate & { source_content_hash: string };
       relationship_basis: "official_explicit_reference";
-      evidence_method: "unique_explicit_target_version_v1" | "louisiana_official_document_sequence_v1";
+      evidence_method: "unique_explicit_target_version_v1" | "louisiana_official_document_sequence_v1" | "washington_amendment_header_v1";
       attachment_evidence_hash: string;
       evidence: Record<string, unknown>;
     }
@@ -69,22 +70,72 @@ function expected_version_type(
   return "engrossed";
 }
 
-export function parse_amendment_target_reference(
+/**
+ * Washington amendment-cover headings. The target must explicitly read
+ * SHB / ESHB <number> - H|S [COMM] AMD. A filename stem alone is not proof.
+ * Identical repeated headings are tolerated; conflicting headings are not.
+ */
+const WASHINGTON_AMENDMENT_HEADER =
+  /\b(ESHB|SHB)\s+([1-9]\d{0,5})\s*-\s*(?:H|S)\s+(?:COMM\s+)?AMD\b/gi;
+
+function parse_washington_amendment_header(
   source_text: string,
 ): amendment_target_reference | null {
-  const match = source_text.slice(0, 12_000).match(TARGET);
-  if (!match) return null;
-  const form = target_form(match[1]);
-  const chamber: "H" | "S" = match[2].toLowerCase() === "house" ? "H" : "S";
-  const numeric = String(Number.parseInt(match[3], 10));
-  if (!/^\d+$/.test(numeric) || numeric === "NaN") return null;
+  const headers = [...source_text.slice(0, 12_000).matchAll(WASHINGTON_AMENDMENT_HEADER)];
+  if (headers.length === 0) return null;
+  const distinct = new Set(headers.map(match =>
+    [match[1].toUpperCase(), String(Number(match[2]))].join(":"),
+  ));
+  if (distinct.size !== 1) return null;
+
+  const match = headers[0];
+  const engrossed = match[1].toUpperCase() === "ESHB";
   return {
     exact_phrase: match[0],
-    target_form: form,
-    chamber,
-    bill_number: `${chamber}B${numeric}`,
-    expected_version_type: expected_version_type(form),
+    target_form: engrossed ? "engrossed" : "substitute",
+    chamber: "H",
+    bill_number: "HB" + Number(match[2]),
+    expected_version_type: engrossed ? "engrossed" : "committee_substitute",
+    evidence_method: "washington_amendment_header_v1",
   };
+}
+
+export function parse_amendment_target_reference(
+  source_text: string,
+  state_code?: string | null,
+): amendment_target_reference | null {
+  const match = source_text.slice(0, 12_000).match(TARGET);
+  let explicit: amendment_target_reference | null = null;
+  if (match) {
+    const form = target_form(match[1]);
+    const chamber: "H" | "S" = match[2].toLowerCase() === "house" ? "H" : "S";
+    const numeric = String(Number.parseInt(match[3], 10));
+    if (!/^\d+$/.test(numeric) || numeric === "NaN") return null;
+    explicit = {
+      exact_phrase: match[0],
+      target_form: form,
+      chamber,
+      bill_number: chamber + "B" + numeric,
+      expected_version_type: expected_version_type(form),
+    };
+  }
+
+  if (String(state_code ?? "").toUpperCase() !== "WA") return explicit;
+  // Fail closed even when an expanded target is also present: otherwise a
+  // conflicting pair of WA printed covers could be silently ignored.
+  const covers = [...source_text.slice(0, 12_000).matchAll(WASHINGTON_AMENDMENT_HEADER)];
+  if (new Set(covers.map(match =>
+    [match[1].toUpperCase(), String(Number(match[2]))].join(":"),
+  )).size > 1) return null;
+  const cover = parse_washington_amendment_header(source_text);
+  if (!cover) return explicit;
+
+  // Conflicting source-stated target identities must be held, not guessed.
+  if (explicit && (
+    explicit.bill_number !== cover.bill_number
+    || explicit.expected_version_type !== cover.expected_version_type
+  )) return null;
+  return explicit ?? cover;
 }
 
 export function louisiana_official_document_sequence(url: string): number | null {
@@ -115,7 +166,7 @@ export function resolve_amendment_base(input: {
   amendment_source_url: string;
   candidates: amendment_base_candidate[];
 }): amendment_base_resolution {
-  const target = parse_amendment_target_reference(input.source_text);
+  const target = parse_amendment_target_reference(input.source_text, input.state_code);
   if (!target) {
     return { status: "unresolved", target: null, reason: "explicit_target_reference_missing" };
   }
@@ -131,11 +182,11 @@ export function resolve_amendment_base(input: {
   }
 
   let selected: amendment_base_candidate | null = null;
-  let evidence_method: "unique_explicit_target_version_v1" | "louisiana_official_document_sequence_v1";
+  let evidence_method: "unique_explicit_target_version_v1" | "louisiana_official_document_sequence_v1" | "washington_amendment_header_v1";
 
   if (matching.length === 1) {
     selected = matching[0];
-    evidence_method = "unique_explicit_target_version_v1";
+    evidence_method = target.evidence_method ?? "unique_explicit_target_version_v1";
   } else {
     const amendment_sequence = louisiana_official_document_sequence(input.amendment_source_url);
     const is_louisiana = String(input.state_code ?? "").toUpperCase() === "LA"
