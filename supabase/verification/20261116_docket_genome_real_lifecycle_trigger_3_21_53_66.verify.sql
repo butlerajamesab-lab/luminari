@@ -1,3 +1,6 @@
+-- Migration release: the Docket source-history reader now scopes by the canonical
+-- SHA-256 bill UUID; preserve every prior 3/21/53/66 assertion but use the same
+-- deterministic synthetic identity that production emits, never gen_random_uuid().
 -- Disposable Supabase replay acceptance only; NEVER run on production.
 -- This script uses the actual migrated lifecycle + registration triggers.
 -- All synthetic rows, source metadata, and derived ledger writes are rolled back.
@@ -123,7 +126,16 @@ begin
       source_bill_number, source_bill_title,
       structural_dna_hash, structural_dna_json
     ) values (
-      v_family_id, gen_random_uuid(), 'TX', '2160',
+      v_family_id, (
+         select (
+           substr(h,1,8)||'-'||substr(h,9,4)||'-4'||substr(h,14,3)||'-'
+           ||substr('89ab',((strpos('0123456789abcdef',substr(h,17,1))-1)%4)+1,1)
+           ||substr(h,18,3)||'-'||substr(h,21,12)
+         )::uuid
+         from (select encode(extensions.digest(
+             convert_to('docket_room:legiscan:'||v_source_bill_id::text,'UTF8'),
+             'sha256'), 'hex') as h) canonical_hash
+       ), 'TX', '2160',
       v_number, 'Synthetic CI bill for trigger replay',
       repeat('a', 64),
       jsonb_build_object(
