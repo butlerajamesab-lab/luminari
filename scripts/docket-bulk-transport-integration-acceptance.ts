@@ -54,7 +54,7 @@ try {
   const zip = new JSZip();
   const acceptedBill = {
     bill_id: positiveBillId, state: "MT", session_id: 2159,
-    bill_number: "HB1", title: "Actual TypeScript Docket CI bill",
+    bill_number: "HB1", title: "Actual TypeScript Docket CI bill", sponsors: [{ people_id: 7855 }],
     status_date: "2026-06-01", texts: [{ doc_id: 10, type: "Introduced", state_link: "https://example.invalid/source" }],
   };
   const undatedBill = {
