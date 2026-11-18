@@ -5,6 +5,8 @@
 -- Plan probe uses PostgreSQL 17 GENERIC_PLAN on the *actual scoped CTE*
 -- extracted from the installed SQL SECURITY DEFINER function body.
 -- Realistic 39,410-source cardinality is simulated in temporary indexed
+-- The source-ID adversarial pair checks the historical exact-text identity contract,
+-- not merely that both candidate rows produce an index-shaped plan.
 -- tables, without invoking production triggers or paid provider APIs.
 \set ON_ERROR_STOP on
 begin;
