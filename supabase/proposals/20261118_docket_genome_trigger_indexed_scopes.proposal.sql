@@ -199,31 +199,50 @@ begin
   affected_count := affected_count + step_count;
 
   with targets as materialized (
-    select
-      bill.genome_bill_id,
-      source_cache.bill_id as source_bill_id,
-      source_cache.bill as source_payload,
-      source_cache.fetched_at as observed_at
-    from (
-      select b.* from public.civic_genome_bill b
-      where p_source_bill_id > 0
-        and b.bill_id = (select (substr(h,1,8)||'-'||substr(h,9,4)||'-4'||substr(h,14,3)||'-'||substr('89ab',((strpos('0123456789abcdef',substr(h,17,1))-1)%4)+1,1)||substr(h,18,3)||'-'||substr(h,21,12))::uuid from (select encode(extensions.digest(convert_to('docket_room:legiscan:'||p_source_bill_id::text,'UTF8'),'sha256'),'hex') h) source_identity_hash)
-        and b.structural_dna_json->>'source_bill_id' = p_source_bill_id::text
-      union all
-      select b.* from public.civic_genome_bill b where p_source_bill_id is null
-      union all
-      select b.* from public.civic_genome_bill b where p_source_bill_id <= 0
-    ) bill
+    -- Scoped and unscoped branches include their own cache join. The generic
+    -- plan can use the Genome UUID unique index AND Docket cache PK for a
+    -- positive exact source, without building a full cache hash join.
+    select bill.genome_bill_id,source_cache.bill_id as source_bill_id,
+      source_cache.bill as source_payload,source_cache.fetched_at as observed_at
+    from public.civic_genome_bill bill
     join public.docket_bill_detail_cache source_cache
       on source_cache.bill_id = case
-        when coalesce(bill.structural_dna_json->>'source_bill_id', '') ~ '^[0-9]+$'
+        when coalesce(bill.structural_dna_json->>'source_bill_id','') ~ '^[0-9]+$'
           then (bill.structural_dna_json->>'source_bill_id')::integer
         else null
       end
-    where public.civic_genome_source_bill_in_sync_scope_v3(
-      source_cache.bill_id,
-      p_source_bill_id
-    )
+    where p_source_bill_id > 0
+      and bill.bill_id = (select (substr(h,1,8)||'-'||substr(h,9,4)||'-4'||substr(h,14,3)||'-'||substr('89ab',((strpos('0123456789abcdef',substr(h,17,1))-1)%4)+1,1)||substr(h,18,3)||'-'||substr(h,21,12))::uuid from (select encode(extensions.digest(convert_to('docket_room:legiscan:'||p_source_bill_id::text,'UTF8'),'sha256'),'hex') h) source_identity_hash)
+      and bill.structural_dna_json->>'source_bill_id' = p_source_bill_id::text
+      and public.civic_genome_source_bill_in_sync_scope_v3(source_cache.bill_id,p_source_bill_id)
+
+    union all
+
+    select bill.genome_bill_id,source_cache.bill_id as source_bill_id,
+      source_cache.bill as source_payload,source_cache.fetched_at as observed_at
+    from public.civic_genome_bill bill
+    join public.docket_bill_detail_cache source_cache
+      on source_cache.bill_id = case
+        when coalesce(bill.structural_dna_json->>'source_bill_id','') ~ '^[0-9]+$'
+          then (bill.structural_dna_json->>'source_bill_id')::integer
+        else null
+      end
+    where p_source_bill_id is null
+      and public.civic_genome_source_bill_in_sync_scope_v3(source_cache.bill_id,p_source_bill_id)
+
+    union all
+
+    select bill.genome_bill_id,source_cache.bill_id as source_bill_id,
+      source_cache.bill as source_payload,source_cache.fetched_at as observed_at
+    from public.civic_genome_bill bill
+    join public.docket_bill_detail_cache source_cache
+      on source_cache.bill_id = case
+        when coalesce(bill.structural_dna_json->>'source_bill_id','') ~ '^[0-9]+$'
+          then (bill.structural_dna_json->>'source_bill_id')::integer
+        else null
+      end
+    where p_source_bill_id <= 0
+      and public.civic_genome_source_bill_in_sync_scope_v3(source_cache.bill_id,p_source_bill_id)
   ), current_history as materialized (
     select *
     from public.civic_genome_normalized_source_history_v3(p_source_bill_id)
