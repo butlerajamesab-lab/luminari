@@ -127,6 +127,64 @@ jobs:
       - name: Full repository test suite
         run: pnpm exec vitest run
 
+      - name: Verify Docket title search uses trigram index under generic plans
+        run: |
+          node --input-type=module <<'JS'
+          import assert from "node:assert/strict";
+          import { readFileSync } from "node:fs";
+          import pg from "pg";
+
+          const route = readFileSync("server/routes/docket.ts", "utf8");
+          const branchStart = route.indexOf("(select cache.bill_id,2 as match_rank");
+          const limitEnd = route.indexOf("limit $4)", branchStart);
+          assert.ok(branchStart >= 0 && limitEnd > branchStart, "could not locate production title-search branch");
+          const branch = route.slice(branchStart + 1, limitEnd + "limit $4".length);
+          assert.ok(!branch.includes("order by cache.bill_id"), "title branch must not force an ordered primary-key scan");
+
+          const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+          await client.connect();
+          try {
+            await client.query("create extension if not exists pg_trgm");
+            await client.query("create temp table docket_bill_detail_cache (bill_id integer primary key, bill jsonb not null)");
+            await client.query(`
+              insert into docket_bill_detail_cache (bill_id, bill)
+              select bill_id,
+                     jsonb_build_object(
+                       'state', 'PA',
+                       'title', case when bill_id = 212765 then 'HB1000 title match'
+                                     else 'Synthetic legislation record ' || bill_id::text end
+                     )
+              from generate_series(1, 212765) as bill_id
+            `);
+            await client.query(`
+              create index docket_title_trgm_generic_plan_test
+              on docket_bill_detail_cache
+              using gin ((coalesce(bill ->> 'title', '')) gin_trgm_ops)
+            `);
+            await client.query("analyze docket_bill_detail_cache");
+            await client.query("set plan_cache_mode = force_generic_plan");
+            await client.query(`prepare docket_title_branch(text, text, text, integer, integer, boolean) as ${branch}`);
+            const result = await client.query(
+              "explain (format json) execute docket_title_branch('HB1000', 'HB1000', 'PA', 25, -1, false)",
+            );
+            const plan = result.rows[0]["QUERY PLAN"][0].Plan;
+            const nodes = [];
+            const visit = (node) => {
+              nodes.push(node);
+              for (const child of node.Plans ?? []) visit(child);
+            };
+            visit(plan);
+            assert.ok(
+              nodes.some((node) => node["Index Name"] === "docket_title_trgm_generic_plan_test"),
+              JSON.stringify(plan),
+            );
+            console.log("Verified generic title-search plan uses trigram index on 212,765 rows");
+          } finally {
+            await client.end();
+          }
+          JS
+
+
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
