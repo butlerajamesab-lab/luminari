@@ -58,6 +58,13 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(searchRoute).toContain("const state = requested_state ?? prefix_state;");
     expect(searchRoute).toContain("normalize_search_query(prefix[2])");
     expect(searchRoute).not.toContain("\\\\s*[: -]");
+    const literal = searchRoute.match(/const prefix = (\\/[^/]+\\/[a-z]*)\\.exec\\(normalized\\.query\\);/)?.[1];
+    expect(literal).toBeDefined();
+    const slash = literal!.lastIndexOf("/");
+    const pattern = new RegExp(literal!.slice(1, slash), literal!.slice(slash + 1));
+    for (const input of ["PA HB1000", "PA: HB 1000", "PA-HB1000"]) {
+      expect(pattern.exec(input)?.slice(1)).toEqual(["PA", "HB1000"]);
+    }
   });
 
   it("defaults to the full preserved source list and keeps historical snapshots separate", () => {
