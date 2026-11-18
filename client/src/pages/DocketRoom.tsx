@@ -821,8 +821,13 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
     return () => controller.abort();
   }, [search_active, search_term, search_state_scope]);
 
-  // A jurisdiction change restarts the canonical keyset walk.
-  useEffect(() => { set_archive_cursor(0); set_archive_rows([]); }, [selected_state]);
+  // Changing jurisdiction or returning from search starts a fresh page.
+  // Do not append a previously loaded cursor page twice after clearing search.
+  useEffect(() => {
+    set_archive_cursor(0);
+    set_archive_rows([]);
+    set_archive_data(null);
+  }, [selected_state, search_active]);
 
   useEffect(() => {
     if (search_active) return;
