@@ -32,7 +32,7 @@ begin
       and trigger_row.tgqual is not null
   ) into v_update_exists;
 
-  select pg_get_expr(trigger_row.tgqual, trigger_row.tgrelid)
+  select pg_get_triggerdef(trigger_row.oid)
     into v_update_guard
   from pg_trigger trigger_row
   join pg_class relation on relation.oid = trigger_row.tgrelid
