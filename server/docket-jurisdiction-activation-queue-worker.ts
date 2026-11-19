@@ -702,7 +702,7 @@ async function mark_job_failed(input: {
   });
 }
 
-export async function mark_job_live_update_skipped(input: {
+async function mark_job_live_update_skipped(input: {
   job: docket_bill_activation_job;
   reason: string;
 }): Promise<void> {
@@ -739,7 +739,7 @@ export async function mark_job_live_update_skipped(input: {
   });
 }
 
-async function process_docket_bill_activation_job(
+export async function process_docket_bill_activation_job(
   job: docket_bill_activation_job,
 ): Promise<void> {
   // Even if a caller bypasses claim_jobs, the archive-only host never makes
