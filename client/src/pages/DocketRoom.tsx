@@ -197,10 +197,10 @@ type docket_search_payload = {
 
 type docket_archive_payload = {
   ok: boolean;
-  contract?: "docket-preserved-archive-v2";
+  contract?: "docket-preserved-archive-v3";
   source?: "public.docket_bill_detail_cache";
-  total_preserved?: number;
-  state_total?: number;
+  matching_total?: number;
+  current_session_only?: boolean;
   has_more?: boolean;
   next_cursor?: { action_date: string | null; bill_id: number } | null;
   results?: NonNullable<docket_search_payload["results"]>;
@@ -304,7 +304,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
   const [cache_statuses, set_cache_statuses] = useState<docket_cache_status[]>([]);
   const [cache_status_error, set_cache_status_error] = useState<string | null>(null);
   const [cache_status_loading, set_cache_status_loading] = useState(false);
-  const [archive_view, set_archive_view] = useState<"all" | "under_deliberation" | "completed" | "past_sessions" | "unclassified">("all");
+  const [archive_view, set_archive_view] = useState<"undeliberated" | "deliberated">("undeliberated");
   const [selected_archive_session, set_selected_archive_session] = useState("");
   const [archive_sessions, set_archive_sessions] = useState<NonNullable<docket_archive_sessions_payload["results"]>>([]);
   const [archive_sessions_error, set_archive_sessions_error] = useState<string | null>(null);
@@ -431,7 +431,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
     set_archive_cursor(null);
     set_archive_rows([]);
     set_archive_data(null);
-  }, [selected_state, selected_archive_session, search_active, level]);
+  }, [selected_state, selected_archive_session, search_active, level, archive_view]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -630,15 +630,14 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
       };
     })
     .filter(({ bill, resolution }) => {
-      if (search_active || archive_view === "all") return true;
+      if (search_active) return true;
       const session_is_current = bill.search_context?.session_is_current ?? null;
-      if (archive_view === "under_deliberation") {
+      if (archive_view === "undeliberated") {
         return session_is_current === true && !resolution.is_terminal;
       }
-      if (archive_view === "completed") return resolution.is_terminal;
-      if (archive_view === "past_sessions") return session_is_current === false;
-      return session_is_current === null;
-    }); // Archive pages are globally ordered by latest source action date.
+      return resolution.is_terminal
+        && (selected_archive_session !== "" || session_is_current === true);
+    }); // Archive pages are server-scoped to current sessions or an explicit session.
 
   const unverified_current_session_rows = archive_rows.filter(row => row.session_is_current == null);
   const active_loading = search_active ? search_loading : archive_loading && archive_rows.length === 0;
@@ -677,11 +676,8 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
             <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>
               View
               <select value={archive_view} onChange={event => set_archive_view(event.target.value as typeof archive_view)} style={{ background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "6px", color: dk.paper, fontFamily: fontMono, fontSize: "0.78rem", padding: "0.35rem 0.5rem" }}>
-                <option value="all">All bills</option>
-                <option value="under_deliberation">Under deliberation · verified current session</option>
-                <option value="completed">Completed · terminal outcome</option>
-                <option value="past_sessions">Past sessions · currentness verified</option>
-                <option value="unclassified">Session currentness unknown</option>
+                <option value="undeliberated">Undeliberated · verified current session</option>
+                <option value="deliberated">Deliberated · terminal outcome</option>
               </select>
             </label>
             <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>
@@ -705,9 +701,8 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
           </div>
         ) : archive_data ? (
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>
-            <span style={{ color: dk.teal }}>Preserved source corpus</span>
-            <span>{archive_data.total_preserved?.toLocaleString() ?? "—"} source bills in database</span>
-            <span>{archive_data.state_total?.toLocaleString() ?? "—"} in this jurisdiction</span>
+            <span style={{ color: dk.teal }}>{selected_archive_session ? "Selected session" : "Verified current sessions"}</span>
+            <span>{archive_data.matching_total?.toLocaleString() ?? "—"} bills in this scoped session set</span>
             <span>{archive_rows.length} loaded in pages</span>
             {displayed_cache_status && selected_state !== "ALL" &&
               <span style={{ color: dk.amber }}>Separate legacy session snapshot: {displayed_cache_status.bill_count} bills, last observed {readable_date(displayed_cache_status.fetched_at)}</span>}
@@ -744,8 +739,8 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
               ? <span>preserved Docket search · {search_data?.contract ?? "docket-full-corpus-search-v1"}</span>
               : <>
                   <span>Preserved official-provider records · newest source action first</span>
-                  <span>{archive_data?.total_preserved?.toLocaleString() ?? "—"} source bills available</span>
-                  {archive_view !== "all" && <span>Filter applies to loaded pages; load more to continue through the ordered corpus.</span>}
+                  <span>{archive_data?.matching_total?.toLocaleString() ?? "—"} bills in the scoped session set</span>
+                  <span>Status filter applies to loaded pages; load more to continue through this session scope.</span>}
                 </>}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.75rem" }}>
