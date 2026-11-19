@@ -30,6 +30,16 @@ describe("Docket live update eligibility", () => {
     })).toEqual({ eligible: false, reason: "current_session_unverified" });
   });
 
+  it("keeps intermediate committee actions eligible for refresh", () => {
+    for (const last_action of ["Approved by committee", "Signed by Speaker"]) {
+      expect(resolve_docket_live_update_eligibility({
+        summary: { status: 2, last_action },
+        session_id: 2026,
+        sessions: active_session,
+      })).toEqual({ eligible: true, reason: "eligible" });
+    }
+  });
+
   it.each([
     { status: 5 },
     { status: 6 },
