@@ -178,7 +178,7 @@ export function DocketBillDetailWorkspace({
       ...history.map(item => is_record(item) ? item.date : null),
     ]
       .filter((value): value is string =>
-        typeof value === "string" && /^\\d{4}-\\d{2}-\\d{2}$/.test(value),
+        typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value),
       )
       .sort();
     const latest_action_date = action_dates.length > 0
