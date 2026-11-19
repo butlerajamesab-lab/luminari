@@ -507,7 +507,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
     };
     void load_archive();
     return () => controller.abort();
-  }, [archive_cursor, selected_state, selected_archive_session, search_active, level]);
+  }, [archive_cursor, selected_state, selected_archive_session, search_active, level, archive_view]);
 
   const load_bill_detail = async (bill_id: number) => {
     set_selected_bill_id(bill_id);
