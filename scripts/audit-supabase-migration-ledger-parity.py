@@ -496,6 +496,12 @@ APPROVED_REPOSITORY_ONLY = {
         "20261119010000_docket_history_session_ordering.sql",
         "efdea9e78157fb0299fe5111b35f0101bbe21a2b",
     ),
+    # Follow-up function search_path hardening, applied as a separate
+    # forward-only receipt after the post-install security advisor flagged it.
+    "20261119052953": (
+        "20261119052953_docket_history_action_date_search_path.sql",
+        "6f9a7827d362fad231b2f42b5649697d9688c9bb",
+    ),
     # Restored production migration (legal authority catalog
     # materialized view). Applied in the live production ledger on
     # 2026-10-20 and verified there first-hand 2026-11-11, but absent
