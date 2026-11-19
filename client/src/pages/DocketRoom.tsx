@@ -952,6 +952,7 @@ function DocketList({ onSelect }: { onSelect: (id: string) => void }) {
                 </button>
               )}
             </div>
+          </div>
         </div>
       </div>
 
