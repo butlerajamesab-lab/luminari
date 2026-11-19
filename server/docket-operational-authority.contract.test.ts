@@ -99,6 +99,9 @@ describe("Docket operational authority lock", () => {
     expect(activation_worker).toContain("cache.fetched_at >= now() - interval '24 hours'");
     expect(activation_worker).toContain("current_bill.ordinality <= 100");
     expect(activation_worker).toContain("binding.queue_id = queue.queue_id");
+    expect(activation_worker).toContain("queue.summary_json");
+    expect(activation_worker).toContain("cache.sessions as session_evidence");
+    expect(activation_worker).toContain("resolve_docket_live_update_eligibility");
   });
 
   it("reuses completed unchanged bill-detail generations instead of refetching for a newer cache timestamp", () => {

@@ -42,6 +42,8 @@ const job = {
   summary_fingerprint: "a".repeat(64),
   observed_change_hash: "change-1",
   attempt_count: 0,
+  summary_json: { bill_id: 2043400, status: 1, last_action: "Referred to committee" },
+  session_evidence: [{ session_id: 99, prior: 0, sine_die: 0 }],
 };
 
 const registration_receipt = {
@@ -87,6 +89,82 @@ describe("Docket jurisdiction activation queue", () => {
     expect(String(call?.[0])).toContain("bill.structural_dna_json ->> 'source_bill_id' = $2::text");
     expect(call?.[1]).toEqual([canonical_docket_bill_uuid(job.source_bill_id), String(job.source_bill_id)]);
     expect(String(call?.[0])).not.toContain("where bill.structural_dna_json ->> 'source_bill_id' = $1");
+  });
+
+  it("does not call getBill for a terminal bill in the current session", async () => {
+    await process_docket_bill_activation_job({
+      ...job,
+      summary_json: { bill_id: job.source_bill_id, status: 6, last_action: "Failed" },
+    });
+
+    expect(get_bill).not.toHaveBeenCalled();
+    expect(query.mock.calls.some(call => call[2]?.label === "docket_bill_activation_live_api_skipped")).toBe(true);
+    expect(query.mock.calls.some(call => call[2]?.label === "docket_bill_activation_register_version_spine")).toBe(false);
+  });
+
+  it("does not call getBill for a bill in an ended or unverified session", async () => {
+    for (const session_evidence of [
+      [{ session_id: job.session_id, prior: 1, sine_die: 1 }],
+      [{ session_id: job.session_id }],
+    ]) {
+      vi.clearAllMocks();
+      query.mockImplementation(async (sql: string) => {
+        if (sql.includes("select exists")) return { rows: [{ ready: true }] };
+        if (sql.includes("register_docket_legislative_version_spine")) {
+          return { rows: [{ receipt: registration_receipt }] };
+        }
+        return { rows: [] };
+      });
+
+      await process_docket_bill_activation_job({ ...job, session_evidence });
+
+      expect(get_bill).not.toHaveBeenCalled();
+      expect(query.mock.calls.some(call => call[2]?.label === "docket_bill_activation_live_api_skipped")).toBe(true);
+      expect(query.mock.calls.some(call =>
+        call[2]?.label === "docket_bill_activation_live_api_skipped"
+        && String(call[0]).includes("when $2::text = 'current_session_unverified' then 'degraded'")
+        && String(call[0]).includes("now() + interval '1 hour'"))).toBe(true);
+      expect(query.mock.calls.some(call => call[2]?.label === "docket_bill_activation_register_version_spine")).toBe(false);
+    }
+  });
+
+  it("keeps bulk archive activation on the preserved archive path", async () => {
+    const original_scope = process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+    delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+    let readiness_calls = 0;
+    query.mockImplementation(async (sql: string, _params: unknown[], options: { label?: string }) => {
+      if (options?.label === "docket_bill_activation_archive_source_read") {
+        return { rows: [{
+          bill: { bill_id: job.source_bill_id, state: job.state, session_id: job.session_id },
+          archive_sha256: "a".repeat(64),
+          member_path: "bill/2043400.json",
+        }] };
+      }
+      if (options?.label === "docket_bill_activation_genome_readiness") {
+        readiness_calls += 1;
+        return { rows: [{ ready: readiness_calls > 1 }] };
+      }
+      if (sql.includes("register_docket_legislative_version_spine")) {
+        return { rows: [{ receipt: registration_receipt }] };
+      }
+      return { rows: [] };
+    });
+
+    try {
+      await process_docket_bill_activation_job({
+        ...job,
+        activation_source: "legiscan_bulk_json",
+        summary_json: { status: 6, last_action: "Failed" },
+        session_evidence: [{ session_id: job.session_id, prior: 1, sine_die: 1 }],
+      });
+    } finally {
+      if (original_scope === undefined) delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+      else process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = original_scope;
+    }
+
+    expect(project_archive).toHaveBeenCalledTimes(1);
+    expect(get_bill).not.toHaveBeenCalled();
+    expect(query.mock.calls.some(call => call[2]?.label === "docket_bill_activation_live_api_skipped")).toBe(false);
   });
 
   it("fails closed for an invalid activation source scope", () => {

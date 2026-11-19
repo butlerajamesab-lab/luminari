@@ -14,8 +14,13 @@ const as_bool = (value: unknown): boolean | null => {
 const session_sort_key = (session: legiscan_session): number =>
   session.year_end ?? session.year_start ?? 0;
 
+export type legiscan_session_currentness_evidence = {
+  prior?: unknown;
+  sine_die?: unknown;
+};
+
 export const legiscan_session_is_current = (
-  session: legiscan_session | null | undefined,
+  session: legiscan_session_currentness_evidence | null | undefined,
 ): boolean | null => {
   if (!session) return null;
   const prior = as_bool(session.prior);
