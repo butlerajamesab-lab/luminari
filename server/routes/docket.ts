@@ -117,9 +117,9 @@ type docket_search_database_row = {
   last_action_date: string | null;
   effective_date: string | null;
   session_title: string | null;
-  session_id: number | null;
-  session_is_current: boolean | null;
-  current_session_fetched_at: string | Date | null;
+  session_id?: number | null;
+  session_is_current?: boolean | null;
+  current_session_fetched_at?: string | Date | null;
   fetched_at: string | Date;
   corpus_source: "detail_cache" | "state_cache";
   match_rank: number;
@@ -977,7 +977,7 @@ docket_router.get("/archive", async (req, res) => {
             coalesce(cache.bill->>'url',cache.bill->>'state_link') as url,
             cache.bill->>'status' as status,
             cache.bill->>'status_date' as status_date,
-            coalesce(cache.bill->>'last_action',
+            coalesce(
               (select history_item->>'action'
                  from jsonb_array_elements(
                    case when jsonb_typeof(cache.bill->'history')='array'
@@ -986,7 +986,8 @@ docket_router.get("/archive", async (req, res) => {
                 where history_item->>'date'=${action_date_expr}
                 order by case when history_item->>'importance'='1' then 1 else 0 end desc,
                          position desc
-                limit 1)
+                limit 1),
+              cache.bill->>'last_action'
             ) as last_action,
             ${action_date_expr} as last_action_date,
             cache.bill->>'effective_date' as effective_date,
