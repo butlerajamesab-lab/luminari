@@ -10,6 +10,7 @@ import {
 import { accept_docket_bill_detail } from "./docket-bill-detail-acceptance";
 import { get_bill, type legiscan_bill_detail } from "./services/legiscan";
 import { background_feature_enabled } from "./runtime-role";
+import { resolve_docket_live_update_eligibility } from "./docket-live-update-eligibility";
 
 const DEFAULT_POLL_INTERVAL_MS = 5_000;
 const MIN_POLL_INTERVAL_MS = 250;
@@ -28,6 +29,8 @@ export type docket_bill_activation_job = {
   summary_fingerprint: string;
   observed_change_hash: string | null;
   attempt_count: number;
+  summary_json?: Record<string, unknown> | null;
+  session_evidence?: unknown;
 };
 
 export type docket_bill_activation_receipt = {
@@ -352,7 +355,9 @@ export const DOCKET_ARCHIVE_ONLY_CLAIM_SQL = `
               candidate.activation_source,
               queue.summary_fingerprint,
               queue.observed_change_hash,
-              queue.attempt_count
+              queue.attempt_count,
+              queue.summary_json,
+              null::jsonb as session_evidence
   )
   select * from claimed`;
 
@@ -386,7 +391,9 @@ async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> 
        select queue.queue_id,
               activation.state,
               activation.session_id,
-              activation.source as activation_source
+              activation.source as activation_source,
+              queue.summary_json,
+              cache.sessions as session_evidence
          from public.docket_bill_processing_queue queue
          join public.docket_jurisdiction_activation_bill binding
            on binding.queue_id = queue.queue_id
@@ -458,7 +465,9 @@ async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> 
                 candidate.activation_source,
                 queue.summary_fingerprint,
                 queue.observed_change_hash,
-                queue.attempt_count`,
+                queue.attempt_count,
+                candidate.summary_json,
+                candidate.session_evidence`,
     [queue_worker_id, QUEUE_LEASE_MINUTES, limit, source_scope],
     {
       label: "docket_bill_activation_queue_claim",
@@ -693,7 +702,44 @@ async function mark_job_failed(input: {
   });
 }
 
-export async function process_docket_bill_activation_job(
+export async function mark_job_live_update_skipped(input: {
+  job: docket_bill_activation_job;
+  reason: string;
+}): Promise<void> {
+  await query_with_diagnostics(
+    `update public.docket_bill_processing_queue
+        set queue_state = 'completed',
+            completed_at = now(),
+            locked_at = null,
+            locked_by = null,
+            last_failure_class = null,
+            last_error_code = null,
+            receipt_json = receipt_json || jsonb_build_object(
+              'terminal_state', 'live_api_update_not_eligible',
+              'eligibility_reason', $2::text,
+              'skipped_at', now()
+            ),
+            updated_at = now()
+      where queue_id = $1::uuid
+        and locked_by = $3`,
+    [input.job.queue_id, input.reason, queue_worker_id],
+    {
+      label: "docket_bill_activation_live_api_skipped",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+
+  console.log("[DocketJurisdictionActivation] live_api_update_skipped", {
+    queue_id: input.job.queue_id,
+    source_bill_id: input.job.source_bill_id,
+    state: input.job.state,
+    session_id: input.job.session_id,
+    reason: input.reason,
+  });
+}
+
+async function process_docket_bill_activation_job(
   job: docket_bill_activation_job,
 ): Promise<void> {
   // Even if a caller bypasses claim_jobs, the archive-only host never makes
@@ -701,6 +747,17 @@ export async function process_docket_bill_activation_job(
   if (resolve_docket_activation_source_scope() === "legiscan_bulk_json"
       && job.activation_source !== "legiscan_bulk_json") {
     throw new Error("docket_archive_worker_non_archive_job_refused");
+  }
+  if (job.activation_source !== "legiscan_bulk_json") {
+    const eligibility = resolve_docket_live_update_eligibility({
+      summary: job.summary_json,
+      session_id: job.session_id,
+      sessions: job.session_evidence,
+    });
+    if (!eligibility.eligible) {
+      await mark_job_live_update_skipped({ job, reason: eligibility.reason });
+      return;
+    }
   }
   let receipt: docket_bill_activation_receipt;
   try {
