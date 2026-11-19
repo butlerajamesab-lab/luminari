@@ -33,6 +33,7 @@ describe("LegiScan API/bulk shared Docket bill acceptance", () => {
     expect(sql).toContain("on conflict (bill_id) do nothing");
     expect(sql).toContain("docket_legiscan_bulk_member_receipt");
     expect(sql).toContain("register_docket_jurisdiction_activation(");
+    expect(sql).toContain("'activation_transport', 'legiscan_bulk_json'");
     expect(sql).toContain("from inserted");
     expect(sql).not.toContain("docket_bill_state_cache");
     expect(sql).not.toContain("rosetta");
