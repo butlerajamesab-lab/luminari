@@ -1,16 +1,13 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { useAuth } from "@/core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import {
-  Scale, BookOpen, Users, Shield, Search, MapPin, Eye,
+  Scale, BookOpen, Users, Shield, Search, Eye,
   Landmark, FileText, ArrowRight, ChevronRight, ExternalLink,
   Filter, Loader2, Building2, Globe, AlertTriangle, Gavel,
   GitCompare, ScrollText, ChevronDown, ChevronUp, Link2,
-  Plus, Send, X, Clock, CheckCircle2, XCircle, MessageSquare, Radio,
+  Send, X,
 } from "lucide-react";
-import { toast } from "sonner";
 import { VoiceReadout } from "@/components/VoiceReadout";
 import { DocketBillDetailWorkspace } from "@/components/DocketBillDetailWorkspace";
 import {
@@ -124,429 +121,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   under_review: { label: "Under Review", color: dk.purple },
 };
 
-type DocketSubmissionAvailability = {
-  available: boolean;
-  state: "unavailable";
-  reason: "docket_submissions_table_not_established";
-  tableEstablished: boolean;
-  canSubmit: boolean;
-  canReview: boolean;
-  message: string;
-};
-
 // ── Docket List View ─────────────────────────────────────────────────
-
-// ── Submit a Law Modal ──────────────────────────────────────────────
-
-function SubmitLawModal({
-  open,
-  onClose,
-  availability,
-}: {
-  open: boolean;
-  onClose: () => void;
-  availability?: DocketSubmissionAvailability;
-}) {
-  const { user } = useAuth();
-  const [lawTitle, setLawTitle] = useState("");
-  const [jurisdiction, setJurisdiction] = useState("");
-  const [jurisdictionLevel, setJurisdictionLevel] = useState<string>("federal");
-  const [referenceUrl, setReferenceUrl] = useState("");
-  const [notes, setNotes] = useState("");
-  const [uploadedFile, setUploadedFile] = useState<{ url: string; fileName: string } | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (availability?.canSubmit !== true) return;
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const maxSize = 16 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error("File too large. Maximum size is 16MB.");
-      return;
-    }
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const resp = await fetch("/api/docket/upload", {
-        method: "POST",
-        body: formData,
-      });
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ error: "Upload failed" }));
-        throw new Error(err.error || "Upload failed");
-      }
-      const data = await resp.json();
-      setUploadedFile({ url: data.url, fileName: data.fileName });
-      toast.success(`Uploaded: ${data.fileName}`);
-    } catch (err: any) {
-      toast.error(err.message || "File upload failed");
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
-
-  const submitMut = trpc.docket.submissions.create.useMutation({
-    onError: (err) => toast.error(err.message),
-  });
-
-  if (!open) return null;
-
-  const submissionReady =
-    availability?.available === true && availability.canSubmit === true;
-  const canSubmit =
-    submissionReady &&
-    lawTitle.trim().length > 0 &&
-    jurisdiction.trim().length > 0;
-
-  return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 1000,
-      background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: "1rem",
-    }} onClick={onClose}>
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          background: dk.slate, border: `1px solid ${dk.rule}`,
-          borderRadius: "12px", maxWidth: 560, width: "100%",
-          maxHeight: "90vh", overflow: "auto",
-        }}
-      >
-        {/* Modal header */}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "1.25rem 1.5rem", borderBottom: `1px solid ${dk.rule}`,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <Send size={18} style={{ color: dk.steel }} />
-            <h2 style={{ fontFamily: fontSerif, fontSize: "1.25rem", fontWeight: 600, color: dk.paper, margin: 0 }}>
-              Submit a Law for Analysis
-            </h2>
-          </div>
-          <button onClick={onClose} style={{
-            background: "none", border: "none", cursor: "pointer", color: dk.muted, padding: "0.25rem",
-          }}>
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Form */}
-        <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <p style={{ fontFamily: fontSans, fontSize: "0.85rem", color: dk.muted, lineHeight: 1.6, margin: 0 }}>
-            Submit a law, ordinance, or proposal for structural analysis. Our team will review it and add it to the Docket Room.
-          </p>
-
-          {!submissionReady && (
-            <div style={{
-              padding: "0.75rem",
-              background: `${dk.amber}11`,
-              border: `1px solid ${dk.amber}44`,
-              borderRadius: "6px",
-              color: dk.amber,
-              fontFamily: fontSans,
-              fontSize: "0.82rem",
-              lineHeight: 1.5,
-            }}>
-              {availability?.message ?? "Checking submission storage availability."}
-            </div>
-          )}
-
-          {/* Law Title */}
-          <div>
-            <label style={{ fontFamily: fontMono, fontSize: "0.7rem", color: dk.muted, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "0.35rem" }}>
-              Law / Proposal Title *
-            </label>
-            <input
-              value={lawTitle}
-              onChange={e => setLawTitle(e.target.value)}
-              placeholder="e.g., Seattle Tenant Relocation Assistance Ordinance"
-              style={{
-                width: "100%", padding: "0.6rem 0.75rem",
-                background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "6px",
-                color: dk.paper, fontFamily: fontSans, fontSize: "0.9rem",
-                outline: "none",
-              }}
-              onFocus={e => e.currentTarget.style.borderColor = dk.steel}
-              onBlur={e => e.currentTarget.style.borderColor = dk.rule}
-            />
-          </div>
-
-          {/* Jurisdiction */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-            <div>
-              <label style={{ fontFamily: fontMono, fontSize: "0.7rem", color: dk.muted, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "0.35rem" }}>
-                Jurisdiction *
-              </label>
-              <input
-                value={jurisdiction}
-                onChange={e => setJurisdiction(e.target.value)}
-                placeholder="e.g., Washington, Federal"
-                style={{
-                  width: "100%", padding: "0.6rem 0.75rem",
-                  background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "6px",
-                  color: dk.paper, fontFamily: fontSans, fontSize: "0.9rem",
-                  outline: "none",
-                }}
-                onFocus={e => e.currentTarget.style.borderColor = dk.steel}
-                onBlur={e => e.currentTarget.style.borderColor = dk.rule}
-              />
-            </div>
-            <div>
-              <label style={{ fontFamily: fontMono, fontSize: "0.7rem", color: dk.muted, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "0.35rem" }}>
-                Level *
-              </label>
-              <select
-                value={jurisdictionLevel}
-                onChange={e => setJurisdictionLevel(e.target.value)}
-                style={{
-                  width: "100%", padding: "0.6rem 0.75rem",
-                  background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "6px",
-                  color: dk.paper, fontFamily: fontSans, fontSize: "0.9rem",
-                  outline: "none", cursor: "pointer",
-                }}
-              >
-                <option value="federal">Federal</option>
-                <option value="state">State</option>
-                <option value="county">County</option>
-                <option value="city">City / Municipal</option>
-                <option value="tribal">Tribal</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Reference URL */}
-          <div>
-            <label style={{ fontFamily: fontMono, fontSize: "0.7rem", color: dk.muted, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "0.35rem" }}>
-              Reference URL (optional)
-            </label>
-            <input
-              value={referenceUrl}
-              onChange={e => setReferenceUrl(e.target.value)}
-              placeholder="https://congress.gov/bill/..."
-              style={{
-                width: "100%", padding: "0.6rem 0.75rem",
-                background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "6px",
-                color: dk.paper, fontFamily: fontSans, fontSize: "0.9rem",
-                outline: "none",
-              }}
-              onFocus={e => e.currentTarget.style.borderColor = dk.steel}
-              onBlur={e => e.currentTarget.style.borderColor = dk.rule}
-            />
-          </div>
-
-          {/* File Upload */}
-          <div>
-            <label style={{ fontFamily: fontMono, fontSize: "0.7rem", color: dk.muted, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "0.35rem" }}>
-              Attach Document (optional)
-            </label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.doc,.docx,.txt"
-              onChange={handleFileSelect}
-              style={{ display: "none" }}
-            />
-            {uploadedFile ? (
-              <div style={{
-                display: "flex", alignItems: "center", gap: "0.5rem",
-                padding: "0.5rem 0.75rem",
-                background: dk.bg, border: `1px solid ${dk.steelBorder}`, borderRadius: "6px",
-              }}>
-                <FileText size={14} style={{ color: dk.steel, flexShrink: 0 }} />
-                <span style={{ fontFamily: fontSans, fontSize: "0.85rem", color: dk.paper, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {uploadedFile.fileName}
-                </span>
-                <button
-                  onClick={() => setUploadedFile(null)}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: dk.muted, padding: "0.15rem", flexShrink: 0 }}
-                  title="Remove file"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading || !submissionReady}
-                style={{
-                  display: "flex", alignItems: "center", gap: "0.5rem",
-                  width: "100%", padding: "0.6rem 0.75rem",
-                  background: dk.bg, border: `1px dashed ${dk.rule}`, borderRadius: "6px",
-                  color: dk.muted, fontFamily: fontSans, fontSize: "0.85rem",
-                  cursor: uploading || !submissionReady ? "not-allowed" : "pointer",
-                  transition: "all 0.15s",
-                }}
-              >
-                {uploading ? (
-                  <><Loader2 size={14} className="animate-spin" /> Uploading...</>
-                ) : (
-                  <><Plus size={14} /> Upload PDF, DOCX, or TXT (max 16MB)</>
-                )}
-              </button>
-            )}
-          </div>
-
-          {/* Notes */}
-          <div>
-            <label style={{ fontFamily: fontMono, fontSize: "0.7rem", color: dk.muted, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "0.35rem" }}>
-              Why does this matter? (optional)
-            </label>
-            <textarea
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              placeholder="Context about why this law should be analyzed..."
-              rows={3}
-              style={{
-                width: "100%", padding: "0.6rem 0.75rem",
-                background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "6px",
-                color: dk.paper, fontFamily: fontSans, fontSize: "0.9rem",
-                outline: "none", resize: "vertical",
-              }}
-              onFocus={e => e.currentTarget.style.borderColor = dk.steel}
-              onBlur={e => e.currentTarget.style.borderColor = dk.rule}
-            />
-          </div>
-
-          {/* Submit */}
-          <button
-            onClick={() => {
-              if (!submissionReady) {
-                toast.error(
-                  availability?.message ?? "Submission intake is unavailable.",
-                );
-                return;
-              }
-              if (!canSubmit) return;
-              submitMut.mutate({
-                lawTitle: lawTitle.trim(),
-                jurisdiction: jurisdiction.trim(),
-                jurisdictionLevel: jurisdictionLevel as any,
-                referenceUrl: referenceUrl.trim() || undefined,
-                fileUrl: uploadedFile?.url || undefined,
-                fileName: uploadedFile?.fileName || undefined,
-                notes: notes.trim() || undefined,
-              });
-            }}
-            disabled={!canSubmit || submitMut.isPending}
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
-              padding: "0.7rem 1.5rem",
-              background: canSubmit ? dk.steel : dk.slateLight,
-              color: canSubmit ? "#fff" : dk.muted,
-              border: "none", borderRadius: "6px",
-              fontFamily: fontMono, fontSize: "0.8rem",
-              cursor: canSubmit ? "pointer" : "not-allowed",
-              transition: "all 0.15s",
-              opacity: submitMut.isPending ? 0.7 : 1,
-            }}
-          >
-            {submitMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-            {!submissionReady
-              ? "Submission Intake Unavailable"
-              : submitMut.isPending
-                ? "Submitting..."
-                : "Submit for Analysis"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── My Submissions Panel ────────────────────────────────────────────
-
-function MySubmissions({
-  availability,
-}: {
-  availability?: DocketSubmissionAvailability;
-}) {
-  const submissionReady = availability?.available === true;
-  const { data: submissions, isLoading } = trpc.docket.submissions.mine.useQuery(
-    undefined,
-    { enabled: submissionReady },
-  );
-
-  if (availability && !availability.available) {
-    return (
-      <div style={{
-        background: `${dk.amber}0d`,
-        border: `1px solid ${dk.amber}33`,
-        borderRadius: "8px",
-        padding: "0.85rem 1rem",
-        marginBottom: "1.5rem",
-        color: dk.amber,
-        fontFamily: fontSans,
-        fontSize: "0.82rem",
-        lineHeight: 1.5,
-      }}>
-        <AlertTriangle size={14} style={{ display: "inline", marginRight: "0.4rem" }} />
-        {availability.message}
-      </div>
-    );
-  }
-  if (isLoading) return null;
-  if (!submissions || submissions.length === 0) return null;
-
-  const statusIcon = (s: string) => {
-    switch (s) {
-      case "pending": return <Clock size={13} style={{ color: dk.amber }} />;
-      case "in_review": return <Eye size={13} style={{ color: dk.steelBright }} />;
-      case "published": return <CheckCircle2 size={13} style={{ color: dk.green }} />;
-      case "rejected": return <XCircle size={13} style={{ color: dk.red }} />;
-      default: return <Clock size={13} style={{ color: dk.muted }} />;
-    }
-  };
-
-  const statusLabel = (s: string) => {
-    switch (s) {
-      case "pending": return "Pending Review";
-      case "in_review": return "Under Review";
-      case "published": return "Published";
-      case "rejected": return "Not Added";
-      default: return s;
-    }
-  };
-
-  return (
-    <div style={{
-      background: dk.cardBg, border: `1px solid ${dk.cardBorder}`,
-      borderRadius: "8px", padding: "1rem 1.25rem", marginBottom: "1.5rem",
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
-        <MessageSquare size={14} style={{ color: dk.steel }} />
-        <span style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.steel, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-          Your Submissions ({submissions.length})
-        </span>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-        {submissions.map((sub: any) => (
-          <div key={sub.id} style={{
-            display: "flex", alignItems: "center", gap: "0.75rem",
-            padding: "0.5rem 0.75rem",
-            background: dk.slateMid, borderRadius: "6px",
-          }}>
-            {statusIcon(sub.status)}
-            <span style={{ fontFamily: fontSans, fontSize: "0.85rem", color: dk.paper, flex: 1 }}>
-              {sub.lawTitle}
-            </span>
-            <span style={{
-              fontFamily: fontMono, fontSize: "0.65rem",
-              color: sub.status === "published" ? dk.green : sub.status === "rejected" ? dk.red : dk.muted,
-            }}>
-              {statusLabel(sub.status)}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 
 // ── LegiScan Docket Bill Feed ───────────────────────────────────────
 
@@ -1386,12 +961,10 @@ function LegistarLiveFeed({ keyword }: { keyword?: string }) {
 // ── Docket List View ─────────────────────────────────────────────────
 
 function DocketList({ onSelect }: { onSelect: (id: string) => void }) {
-  const { user } = useAuth();
   const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterLevel, setFilterLevel] = useState<string>("");
-  const [showSubmitModal, setShowSubmitModal] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Debounce search
@@ -1407,9 +980,6 @@ function DocketList({ onSelect }: { onSelect: (id: string) => void }) {
 
   const { data: entries, isLoading } = trpc.docket.list.useQuery(queryInput);
   const { data: stats } = trpc.docket.stats.useQuery();
-  const { data: submissionAvailability } =
-    trpc.docket.submissions.availability.useQuery();
-  const submissionReady = submissionAvailability?.canSubmit === true;
 
   return (
     <div style={{ minHeight: "100vh", background: dk.bg }}>
@@ -1449,7 +1019,7 @@ function DocketList({ onSelect }: { onSelect: (id: string) => void }) {
           </p>
 
           <p style={{ fontFamily: fontSans, fontSize: "0.84rem", color: dk.cream, lineHeight: 1.6, margin: "1.25rem 0 0", maxWidth: 760 }}>
-            Follow legislation while it can still change. Status colors describe procedure only: active movement, an approaching action, completion, or inactivity. Effective dates, source freshness, and submission availability are shown separately.
+            Follow legislation while it can still change. Status colors describe procedure only: active movement, an approaching action, completion, or inactivity. Effective dates and source freshness are shown separately.
           </p>
 
           {/* Stats bar */}
@@ -1459,7 +1029,7 @@ function DocketList({ onSelect }: { onSelect: (id: string) => void }) {
               fontFamily: fontMono, fontSize: "0.8rem", color: dk.muted,
               flexWrap: "wrap",
             }}>
-              <span><strong style={{ color: dk.paper }}>{stats.total}</strong> curated entries (separate from official source bills)</span>
+              <span><strong style={{ color: dk.paper }}>{stats.total}</strong> curated analysis records (official source bills are browsed below)</span>
               {Object.entries(stats.byLevel || {}).map(([level, count]) => (
                 <span key={level}>
                   <strong style={{ color: dk.steelBright }}>{count as number}</strong> {JURISDICTION_LEVEL_LABELS[level] || level}
@@ -1468,7 +1038,7 @@ function DocketList({ onSelect }: { onSelect: (id: string) => void }) {
             </div>
           )}
 
-          {/* Search bar + Submit button */}
+          {/* Search official bills */}
           <div style={{
             display: "flex", gap: "0.75rem", marginTop: "1.25rem",
             alignItems: "center",
@@ -1507,49 +1077,7 @@ function DocketList({ onSelect }: { onSelect: (id: string) => void }) {
                 </button>
               )}
             </div>
-            <button
-              onClick={() => {
-                if (!submissionReady) return;
-                if (!user) {
-                  toast.info("Sign in to submit a law for analysis.");
-                  window.location.href = getLoginUrl();
-                  return;
-                }
-                setShowSubmitModal(true);
-              }}
-              disabled={!submissionReady}
-              title={
-                submissionReady
-                  ? "Submit a law for analysis"
-                  : submissionAvailability?.message ?? "Checking submission availability"
-              }
-              style={{
-                display: "flex", alignItems: "center", gap: "0.4rem",
-                padding: "0.6rem 1rem",
-                background: dk.steelSoft, border: `1px solid ${dk.steelBorder}`,
-                borderRadius: "6px", cursor: submissionReady ? "pointer" : "not-allowed",
-                color: submissionReady ? dk.steelBright : dk.muted, fontFamily: fontMono, fontSize: "0.8rem",
-                whiteSpace: "nowrap", transition: "all 0.15s",
-                opacity: submissionReady ? 1 : 0.7,
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = dk.steel; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = dk.steelSoft; e.currentTarget.style.color = dk.steelBright; }}
-            >
-              <Plus size={14} />
-              {submissionReady ? "Submit a Law" : "Submission Unavailable"}
-            </button>
           </div>
-          {submissionAvailability && !submissionAvailability.available && (
-            <div style={{
-              marginTop: "0.6rem",
-              color: dk.amber,
-              fontFamily: fontSans,
-              fontSize: "0.78rem",
-            }}>
-              <AlertTriangle size={12} style={{ display: "inline", marginRight: "0.35rem" }} />
-              Public submissions are unavailable; official source records remain browsable.
-            </div>
-          )}
         </div>
       </div>
 
@@ -1594,11 +1122,6 @@ function DocketList({ onSelect }: { onSelect: (id: string) => void }) {
             Clear all filters
           </button>
         )}
-      </div>
-
-      {/* My Submissions (if logged in) */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 1.5rem" }}>
-        {user && <MySubmissions availability={submissionAvailability} />}
       </div>
 
       {/* LegiScan Docket Bill Feed */}
@@ -1731,12 +1254,7 @@ function DocketList({ onSelect }: { onSelect: (id: string) => void }) {
           </div>
         )}
       </div>
-      {/* Submit Law Modal */}
-      <SubmitLawModal
-        open={showSubmitModal}
-        onClose={() => setShowSubmitModal(false)}
-        availability={submissionAvailability}
-      />
+
     </div>
   );
 }

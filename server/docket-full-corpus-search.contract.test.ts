@@ -100,7 +100,7 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(page).toContain('useState("ALL")');
     expect(page).toContain("Load more records");
     expect(page).toContain("View in Civic Genome (source ID");
-    expect(page).toContain("curated entries (separate from official source bills)");
+    expect(page).toContain("curated analysis records (official source bills are browsed below)");
     expect(page).not.toContain("entries analyzed");
     expect(page).toContain("set_archive_cursor(null);");
     expect(page).toContain("[selected_state, selected_archive_session, search_active, level]");
