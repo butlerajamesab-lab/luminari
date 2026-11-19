@@ -5,7 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { SignalArtifactContext } from "@/components/signal-architecture/SignalArtifactContext";
 import { useAuth } from "@/core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
-import { ViewfinderArtifactFeed, VIEWFINDER_REFRESH_MS, formatViewfinderDate } from "@/components/viewfinder/ViewfinderArtifactFeed";
+import { ViewfinderArtifactFeed, VIEWFINDER_REFRESH_MS, VIEWFINDER_STALE_MS, formatViewfinderDate } from "@/components/viewfinder/ViewfinderArtifactFeed";
 
 /* ═══════════════════════════════════════════════════════════════════════
    LUMINARI — ANOMALY VIEWFINDER
@@ -307,7 +307,7 @@ export default function AnomalyViewfinder() {
   const [sortKey, setSortKey] = useState<SortKey>("name");
 
   const viewfinderQuery = trpc.resourceDirectory.viewfinderStates.useQuery(undefined, {
-    staleTime: 0,
+    staleTime: VIEWFINDER_STALE_MS,
     refetchInterval: VIEWFINDER_REFRESH_MS,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
