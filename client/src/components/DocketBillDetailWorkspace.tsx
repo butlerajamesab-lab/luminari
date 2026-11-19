@@ -224,6 +224,47 @@ export function DocketBillDetailWorkspace({
     };
   }, [bill]);
 
+  const render_progress_marker = (item: unknown, index: number): React.ReactNode => {
+    if (!is_record(item)) return null;
+    const marker_date = typeof item.date === "string" ? item.date : null;
+    const same_date_actions = normalized.history
+      .filter((history_item): history_item is unknown_record =>
+        is_record(history_item) && typeof history_item.date === "string" && history_item.date === marker_date,
+      )
+      .map(history_item => ({
+        action: first_value(history_item, ["action"]),
+        chamber: first_value(history_item, ["chamber"]),
+      }))
+      .filter(entry => entry.action !== null);
+
+    return (
+      <div key={`progress-marker:${marker_date ?? "undated"}:${index}`} style={{ background: palette.slate, border: `1px solid ${palette.rule}`, borderRadius: 6, padding: "0.65rem" }}>
+        <div style={{ fontFamily: font_sans, fontSize: "0.82rem", color: palette.paper, lineHeight: 1.4 }}>Legislative progress marker</div>
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginTop: "0.35rem", fontFamily: font_mono, fontSize: "0.64rem", color: palette.muted }}>
+          <span>Date: {readable_date(marker_date)}</span>
+        </div>
+        {same_date_actions.length > 0 ? (
+          <div style={{ marginTop: "0.5rem", fontFamily: font_sans, fontSize: "0.78rem", color: palette.cream, lineHeight: 1.45 }}>
+            <div style={{ color: palette.muted, marginBottom: "0.2rem" }}>History actions reported on this date:</div>
+            {same_date_actions.map((entry, action_index) => (
+              <div key={action_index}>{entry.action}{entry.chamber ? ` · ${display_value(entry.chamber)}` : ""}</div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ marginTop: "0.45rem", fontFamily: font_sans, fontSize: "0.76rem", color: palette.muted }}>
+            No matching action text is present in the bill history for this date.
+          </div>
+        )}
+        <details style={{ marginTop: "0.45rem" }}>
+          <summary style={{ cursor: "pointer", fontFamily: font_mono, fontSize: "0.62rem", color: palette.steel }}>Provider metadata</summary>
+          <div style={{ marginTop: "0.35rem", fontFamily: font_mono, fontSize: "0.64rem", color: palette.muted }}>
+            LegiScan event code: {display_value(item.event)}
+          </div>
+        </details>
+      </div>
+    );
+  };
+
   const official_url = typeof normalized.url === "string" && /^https?:\/\//i.test(normalized.url) ? normalized.url : null;
   const lifecycle = resolve_docket_lifecycle({
     status: normalized.status,
@@ -346,7 +387,7 @@ export function DocketBillDetailWorkspace({
         <Section title="Amendments and supplements" items={normalized.amendments} empty_text="No amendments returned" />
         <Section title="Subjects" items={normalized.subjects} empty_text="No subjects returned" />
         <Section title="Calendar" items={normalized.calendar} empty_text="No calendar entries returned" />
-        <Section title="Progress markers" items={normalized.progress} empty_text="No progress markers returned" />
+        <Section title="Progress markers" items={normalized.progress} empty_text="No progress markers returned" render_item={render_progress_marker} />
       </div>
 
       <div style={{ background: palette.copper_soft, border: `1px solid ${palette.copper}`, borderRadius: 8, padding: "0.75rem", fontFamily: font_sans, fontSize: "0.78rem", color: palette.cream, lineHeight: 1.45 }}>
