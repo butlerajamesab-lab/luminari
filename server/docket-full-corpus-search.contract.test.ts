@@ -36,6 +36,8 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(archiveRoute).toContain("docket_archive_session_action_order_index_not_installed");
     expect(archiveRoute).toContain("session_evidence->>'prior'");
     expect(archiveRoute).toContain("session_evidence->>'sine_die'");
+    expect(archiveRoute.indexOf("when session_evidence->>'sine_die' in ('1','true','yes','y') then false"))
+      .toBeLessThan(archiveRoute.indexOf("when session_evidence->>'prior' in ('0','false','no','n') then true"));
     expect(route).toContain('docket_router.get("/archive/sessions"');
     expect(route).toContain("docket-preserved-sessions-v1");
     expect(route).toContain("group by 1,2,3");
