@@ -853,15 +853,26 @@ docket_router.post("/warm-next-batch", async (req, res) => {
 docket_router.get("/archive/sessions", async (req, res) => {
   try {
     const state = normalize_optional_state_code(req.query.state);
-    const state_filter = state ? "and upper(coalesce(cache.bill->>'state',''))=$1" : "";
+    const sql = [
+      "select upper(coalesce(cache.bill->>'state','')) as state,",
+      "case when cache.bill->>'session_id' ~ '^[0-9]+$' then (cache.bill->>'session_id')::integer end as session_id,",
+      "coalesce(cache.bill #>> '{session,session_title}',",
+      "         cache.bill #>> '{session,session_name}',",
+      "         cache.bill->>'session_title','Session not reported') as session_title,",
+      "count(*) as bill_count",
+      "from public.docket_bill_detail_cache cache",
+      "where cache.bill->>'session_id' ~ '^[0-9]+$'",
+      ...(state ? ["and upper(coalesce(cache.bill->>'state',''))=$1"] : []),
+      "group by 1,2,3",
+      "order by 1,3 desc,2",
+    ].join("\n");
     const result = await query_with_diagnostics<{
       state: string;
       session_id: number;
       session_title: string;
       bill_count: string | number;
     }>(
-      `select upper(coalesce(cache.bill->>'state','')) as state,
-              case when cache.bill->>'session_id' ~ '^[0-9]+
+      sql,
       state ? [state] : [],
       {label:"docket_preserved_archive_sessions",query_timeout_ms:10_000}
     );
