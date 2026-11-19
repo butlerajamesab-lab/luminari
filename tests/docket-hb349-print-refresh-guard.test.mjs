@@ -19,6 +19,16 @@ test('provider missing historic doc is held',()=>expectCode(()=>verifyProviderRe
 test('provider missing session identity is held',()=>expectCode(()=>verifyProviderRefresh({...bill([...prior,found]),session_id:4}),'docket_print_refresh_provider_bill_identity_mismatch'));
 test('provider duplicate official link held',()=>expectCode(()=>verifyProviderRefresh(bill([...prior,found,{...found,doc_id:3702401}])),'docket_print_refresh_duplicate_provider_documents'));
 test('provider sequence regression held',()=>expectCode(()=>verifyProviderRefresh(bill([found,...prior])),'docket_print_refresh_provider_print_order_invalid'));
+
+test('intervening print after PN3943 is held before canonical acceptance',async()=>{
+  const intervening={doc_id:3702399,state_link:'https://www.palegis.us/legislation/bills/text/PDF/2025/0/HB0349/PN4000',type:'Amended'};
+  let accepted=0;
+  await assert.rejects(performExactCandidate({cachedRow:row,apply:true,
+    environment:{LIGHTHOUSE_RUNTIME_ROLE:'worker',DOCKET_EXACT_PRINT_REFRESH_APPROVED_SHA256:exactPlanSha256()},
+    fetchOneBill:async()=>bill([...prior,intervening,found]),canonicalAccept:async()=>{accepted++},readBack:async()=>({})
+  }),e=>e.code==='docket_print_refresh_immediate_predecessor_changed');
+  assert.equal(accepted,0);
+});
 test('readback requires both canonical identities',()=>expectCode(()=>verifyReadBack({}), 'docket_print_refresh_registration_missing'));
 test('readback rejects invented predecessor',()=>{const expected=verifyProviderRefresh(bill([...prior,found]));expectCode(()=>verifyReadBack({expected,matchingRowCount:1,docketDocument:{source_document_key:expected.sourceDocumentKey,source_bill_id:TARGET.billId,provider_document_id:3702400,source_url:TARGET.officialPrintUrl,predecessor_source_document_key:'fake'},genomeVersion:{source_document_key:expected.sourceDocumentKey,source_bill_id:TARGET.billId,predecessor_source_document_key:'fake'}}),'docket_print_refresh_registration_identity_mismatch')});
 test('dry-run invokes no paid request or canonical write',async()=>{let calls=0;const d=await performExactCandidate({cachedRow:row,fetchOneBill:async()=>calls++,canonicalAccept:async()=>calls++,readBack:async()=>calls++,environment:{},apply:false});assert.equal(d.executed,false);assert.equal(calls,0)});
