@@ -115,7 +115,7 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(page).toContain('params.set("jurisdiction_scope", "state")');
     expect(page).toContain('new URLSearchParams({ q: search_term, limit: "25" })');
     expect(page).toContain("session_is_current === true && !resolution.is_terminal");
-    expect(page).toContain("session_is_current === true && !resolution.is_terminal");
+    expect(page).toContain('selected_archive_session !== "" || session_is_current === true');
     expect(page).toContain("resolution.is_terminal");
   });
 
