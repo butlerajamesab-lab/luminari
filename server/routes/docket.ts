@@ -913,6 +913,7 @@ docket_router.get("/archive", async (req, res) => {
     const requested_session_state = normalize_optional_state_code(req.query.session_state);
     const requested_session_id = req.query.session_id == null || req.query.session_id === ""
       ? null : normalize_bill_id(String(req.query.session_id));
+    const current_session_only = requested_session_state === null && requested_session_id === null;
     if ((requested_session_state === null) !== (requested_session_id === null)) {
       return res.status(400).json({ok:false,message:"docket_archive_session_filter_incomplete"});
     }
@@ -957,6 +958,31 @@ docket_router.get("/archive", async (req, res) => {
       where.push("upper(coalesce(cache.bill->>'state',''))="+add_param(requested_session_state));
       where.push("(cache.bill->>'session_id')="+add_param(String(requested_session_id)));
     }
+    const scope_where = [...where];
+    const count_params = [...params];
+    const current_session_cte = current_session_only
+      ? `with verified_current_sessions as (
+          select distinct upper(session_cache.state) as state, session_cache.session_id
+          from public.docket_bill_state_cache session_cache
+          cross join lateral jsonb_array_elements(
+            case when jsonb_typeof(session_cache.sessions)='array'
+                 then session_cache.sessions else '[]'::jsonb end
+          ) as session_records(session_evidence)
+          where session_cache.fetched_at >= now()-interval '24 hours'
+            and session_evidence->>'session_id'=session_cache.session_id::text
+            and coalesce(session_evidence->>'prior','') not in ('1','true','yes','y')
+            and coalesce(session_evidence->>'sine_die','') not in ('1','true','yes','y')
+            and (
+              session_evidence->>'prior' in ('0','false','no','n')
+              or session_evidence->>'sine_die' in ('0','false','no','n')
+            )
+        )`
+      : "";
+    const current_session_join = current_session_only
+      ? `join verified_current_sessions current_session
+           on current_session.state=upper(coalesce(cache.bill->>'state',''))
+          and current_session.session_id::text=cache.bill->>'session_id'`
+      : "";
     const action_date_expr = "public.docket_bill_latest_action_date_v1(cache.bill)";
     if (after_id !== null) {
       const id_param = add_param(after_id);
@@ -970,7 +996,8 @@ docket_router.get("/archive", async (req, res) => {
       }
     }
     const limit_param = add_param(limit+1);
-    const select = `select cache.bill_id,
+    const select = `${current_session_cte}
+       select cache.bill_id,
             upper(coalesce(cache.bill->>'state','')) as state,
             coalesce(cache.bill->>'bill_number',cache.bill->>'number','') as bill_number,
             coalesce(cache.bill->>'title','') as title,
@@ -1019,24 +1046,23 @@ docket_router.get("/archive", async (req, res) => {
             session_cache.fetched_at as current_session_fetched_at,
             cache.fetched_at,'detail_cache'::text as corpus_source,0 as match_rank
        from public.docket_bill_detail_cache cache
+       ${current_session_join}
        left join public.docket_bill_state_cache session_cache
          on upper(session_cache.state)=upper(coalesce(cache.bill->>'state',''))
       ${where.length ? "where "+where.join(" and ") : ""}
       order by ${action_date_expr} desc nulls last,cache.bill_id asc
       limit ${limit_param}`;
-    const count_query = state
-      ? "select (select count(*) from public.docket_bill_detail_cache) as total_preserved,"
-        + "(select count(*) from public.docket_bill_detail_cache where upper(bill->>'state')=$1) as state_total"
-      : jurisdiction_scope === "state"
-        ? "select (select count(*) from public.docket_bill_detail_cache) as total_preserved,"
-          + "(select count(*) from public.docket_bill_detail_cache where upper(coalesce(bill->>'state','')) <> 'US') as state_total"
-        : "select count(*) as total_preserved,count(*) as state_total from public.docket_bill_detail_cache";
+    const count_query = `${current_session_cte}
+      select count(*) as matching_total
+      from public.docket_bill_detail_cache cache
+      ${current_session_join}
+      ${scope_where.length ? "where "+scope_where.join(" and ") : ""}`;
     const [page,count] = await Promise.all([
       query_with_diagnostics<docket_search_database_row>(
         select,params,{label:"docket_preserved_archive_page",query_timeout_ms:10_000}
       ),
-      query_with_diagnostics<{total_preserved:string|number;state_total:string|number}>(
-        count_query,state?[state]:[],{label:"docket_preserved_archive_count",query_timeout_ms:5_000}
+      query_with_diagnostics<{matching_total:string|number}>(
+        count_query,count_params,{label:"docket_preserved_archive_count",query_timeout_ms:5_000}
       )
     ]);
     const has_more=page.rows.length>limit;
@@ -1055,12 +1081,12 @@ docket_router.get("/archive", async (req, res) => {
     const radar=new Map(enriched.map(bill=>[bill.bill_id,bill.radar]));
     const last_row=rows[rows.length-1];
     return res.json({
-      ok:true,contract:"docket-preserved-archive-v2",
+      ok:true,contract:"docket-preserved-archive-v3",
       source:"public.docket_bill_detail_cache",state_scope:state,jurisdiction_scope,
       session_scope:requested_session_state && requested_session_id !== null
         ? {state:requested_session_state,session_id:requested_session_id} : null,
-      total_preserved:Number(count.rows[0]?.total_preserved??0),
-      state_total:Number(count.rows[0]?.state_total??0),
+      current_session_only,
+      matching_total:Number(count.rows[0]?.matching_total??0),
       limit,has_more,
       next_cursor:has_more && last_row
         ? {action_date:last_row.last_action_date??null,bill_id:last_row.bill_id}
