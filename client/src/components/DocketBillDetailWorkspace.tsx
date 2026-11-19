@@ -171,32 +171,58 @@ export function DocketBillDetailWorkspace({
   const archive_people = archive_auxiliary.data?.people ?? [];
   const archive_roll_calls = archive_auxiliary.data?.roll_calls ?? [];
 
-  const normalized = useMemo(() => ({
-    bill_id: first_value(bill, ["bill_id", "id"]),
-    number: first_value(bill, ["bill_number", "number", "state_link"]),
-    title: first_value(bill, ["title", "description", "bill_name"]),
-    description: first_value(bill, ["description", "summary", "abstract"]),
-    status: first_value(bill, ["status"]),
-    status_text: first_value(bill, ["status_desc", "current_status"]),
-    completed: first_value(bill, ["completed"]),
-    status_date: first_value(bill, ["status_date"]),
-    session: first_value(bill, ["session", "session_name", "session_title", "session_id"]),
-    state: first_value(bill, ["state", "state_id", "jurisdiction"]),
-    url: first_value(bill, ["url", "state_link", "source_url"]),
-    change_hash: first_value(bill, ["change_hash"]),
-    last_action: first_value(bill, ["last_action", "action"]),
-    last_action_date: first_value(bill, ["last_action_date", "status_date"]),
-    sponsors: as_array(first_value(bill, ["sponsors", "sponsor"])),
-    history: as_array(first_value(bill, ["history", "actions", "action_history"])),
-    committees: as_array(first_value(bill, ["committees", "committee", "referrals"])),
-    texts: as_array(first_value(bill, ["texts", "text", "documents", "versions"])),
-    votes: as_array(first_value(bill, ["votes", "roll_calls", "rollcalls"])),
-    amendments: as_array(first_value(bill, ["amendments", "supplements"])),
-    subjects: as_array(first_value(bill, ["subjects", "topics"])),
-    calendar: as_array(first_value(bill, ["calendar", "calendar_entries"])),
-    progress: as_array(first_value(bill, ["progress"])),
-    effective_date: first_value(bill, ["effective_date", "date_effective", "effective", "effective_on"]),
-  }), [bill]);
+  const normalized = useMemo(() => {
+    const history = as_array(first_value(bill, ["history", "actions", "action_history"]));
+    const action_dates = [
+      first_value(bill, ["last_action_date"]),
+      ...history.map(item => is_record(item) ? item.date : null),
+    ]
+      .filter((value): value is string =>
+        typeof value === "string" && /^\\d{4}-\\d{2}-\\d{2}$/.test(value),
+      )
+      .sort();
+    const latest_action_date = action_dates.length > 0
+      ? action_dates[action_dates.length - 1]
+      : null;
+    const latest_history_item = history
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) => is_record(item) && item.date === latest_action_date)
+      .sort((left, right) => {
+        const left_important = Number(is_record(left.item) && String(left.item.importance) === "1");
+        const right_important = Number(is_record(right.item) && String(right.item.importance) === "1");
+        return right_important - left_important || right.index - left.index;
+      })[0]?.item;
+    const latest_history_action = is_record(latest_history_item)
+      ? first_value(latest_history_item, ["action"])
+      : null;
+
+    return {
+      bill_id: first_value(bill, ["bill_id", "id"]),
+      number: first_value(bill, ["bill_number", "number", "state_link"]),
+      title: first_value(bill, ["title", "description", "bill_name"]),
+      description: first_value(bill, ["description", "summary", "abstract"]),
+      status: first_value(bill, ["status"]),
+      status_text: first_value(bill, ["status_desc", "current_status"]),
+      completed: first_value(bill, ["completed"]),
+      status_date: first_value(bill, ["status_date"]),
+      session: first_value(bill, ["session", "session_name", "session_title", "session_id"]),
+      state: first_value(bill, ["state", "state_id", "jurisdiction"]),
+      url: first_value(bill, ["url", "state_link", "source_url"]),
+      change_hash: first_value(bill, ["change_hash"]),
+      last_action: latest_history_action ?? first_value(bill, ["last_action", "action"]),
+      last_action_date: latest_action_date ?? first_value(bill, ["status_date"]),
+      sponsors: as_array(first_value(bill, ["sponsors", "sponsor"])),
+      history,
+      committees: as_array(first_value(bill, ["committees", "committee", "referrals"])),
+      texts: as_array(first_value(bill, ["texts", "text", "documents", "versions"])),
+      votes: as_array(first_value(bill, ["votes", "roll_calls", "rollcalls"])),
+      amendments: as_array(first_value(bill, ["amendments", "supplements"])),
+      subjects: as_array(first_value(bill, ["subjects", "topics"])),
+      calendar: as_array(first_value(bill, ["calendar", "calendar_entries"])),
+      progress: as_array(first_value(bill, ["progress"])),
+      effective_date: first_value(bill, ["effective_date", "date_effective", "effective", "effective_on"]),
+    };
+  }, [bill]);
 
   const official_url = typeof normalized.url === "string" && /^https?:\/\//i.test(normalized.url) ? normalized.url : null;
   const lifecycle = resolve_docket_lifecycle({
