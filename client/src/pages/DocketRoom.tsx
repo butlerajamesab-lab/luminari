@@ -993,10 +993,13 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
         }),
       };
     })
-    .filter(({ resolution }) =>
-      search_active || show_completed || resolution.live_feed_eligible
-    )
-; // Keep indexed keyset/page order; don't re-sort partial pages.
+    .filter(({ bill, resolution }) => {
+      if (search_active || show_completed || resolution.live_feed_eligible) return true;
+      const session_is_current = (bill as { session?: { is_current?: boolean | null } }).session?.is_current;
+      // Archive rows without a session binding stay visible until the source proves
+      // they are non-current; the filter only removes known non-live records.
+      return session_is_current == null && !resolution.is_terminal;
+    }); // Keep indexed keyset/page order; don't re-sort partial pages.
 
   const active_loading = search_active ? search_loading : archive_loading && archive_rows.length === 0;
   const active_error = search_active ? search_error : archive_error;
