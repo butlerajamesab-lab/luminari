@@ -123,6 +123,131 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 
 // ── Docket List View ─────────────────────────────────────────────────
 
+// ── LegiScan Docket Bill Feed ───────────────────────────────────────
+
+type docket_bill = {
+  bill_id: number;
+  search_context?: {
+    state: string;
+    session_title: string | null;
+    session_id?: number | null;
+    session_is_current?: boolean | null;
+    current_session_fetched_at?: string | null;
+    fetched_at: string;
+    corpus_source: "detail_cache" | "state_cache";
+  };
+  number?: string;
+  title?: string;
+  status?: string | number;
+  status_desc?: string;
+  status_date?: string;
+  last_action_date?: string;
+  last_action?: string;
+  effective_date?: string;
+  source_url?: string;
+  url?: string;
+  radar?: {
+    available?: boolean;
+    velocity_score: number;
+    events_14d: number;
+    amended_7d: number;
+    next_event_date: string | null;
+    next_event_class: string | null;
+    next_event_description: string | null;
+    drift: Array<{ trait_class: string; base_count: number; latest_count: number; delta: number }>;
+    drift_coverage: boolean;
+    structural_state?: "quarantined";
+  };
+};
+
+type docket_state_payload = {
+  ok: boolean;
+  state?: string;
+  source?: string;
+  session_id?: number;
+  session_title?: string | null;
+  session_current?: boolean | null;
+  bill_count?: number;
+  fetched_at?: string;
+  refresh_state?: docket_source_freshness_state;
+  bills?: docket_bill[];
+  message?: string;
+};
+
+type docket_search_payload = {
+  ok: boolean;
+  contract?: "docket-full-corpus-search-v1";
+  source?: "preserved_docket_cache";
+  query?: string;
+  state_scope?: string | null;
+  result_count?: number;
+  limit?: number;
+  results?: Array<{
+    state: string;
+    session_title: string | null;
+    session_id?: number | null;
+    session_is_current?: boolean | null;
+    current_session_fetched_at?: string | null;
+    fetched_at: string;
+    corpus_source: "detail_cache" | "state_cache";
+    bill: docket_bill;
+  }>;
+  message?: string;
+};
+
+type docket_archive_payload = {
+  ok: boolean;
+  contract?: "docket-preserved-archive-v2";
+  source?: "public.docket_bill_detail_cache";
+  total_preserved?: number;
+  state_total?: number;
+  has_more?: boolean;
+  next_cursor?: { action_date: string | null; bill_id: number } | null;
+  results?: NonNullable<docket_search_payload["results"]>;
+  message?: string;
+};
+
+type docket_archive_sessions_payload = {
+  ok: boolean;
+  contract?: "docket-preserved-sessions-v1";
+  results?: Array<{
+    state: string;
+    session_id: number;
+    session_title: string;
+    bill_count: number;
+  }>;
+  message?: string;
+};
+
+type docket_bill_detail_payload = {
+  ok: boolean;
+  source?: string;
+  bill_id?: number;
+  fetched_at?: string;
+  refresh_state?: docket_source_freshness_state;
+  bill?: Record<string, unknown>;
+  message?: string;
+};
+
+type docket_cache_status = {
+  state: string;
+  has_cache: boolean;
+  bill_count: number;
+  session_id: number | null;
+  session_title: string | null;
+  fetched_at: string | null;
+  age_minutes: number | null;
+  is_fresh: boolean;
+  refresh_state?: docket_source_freshness_state;
+};
+
+type docket_cache_status_payload = {
+  ok: boolean;
+  states?: docket_cache_status[];
+  message?: string;
+  error?: string;
+};
+
 const docket_states = [
   "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
   "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
