@@ -85,10 +85,10 @@ describe("downstream live-read schema contracts", () => {
     expect(router).toContain("docket_submissions_table_not_established");
     expect(router).toContain("availability: publicProcedure.query");
     expect(router).toContain('code: "PRECONDITION_FAILED"');
-    expect(client).toContain("submissions.availability");
-    expect(client).toContain("availability?.canSubmit !== true");
-    expect(client).toContain("disabled={!submissionReady}");
-    expect(client).toContain("Submission Intake Unavailable");
+    expect(client).not.toContain("submissions.availability");
+    expect(client).not.toContain("/api/docket/upload");
+    expect(client).not.toContain("Submit a Law");
+    expect(client).not.toContain("Submission Intake Unavailable");
     expect(client).toContain(
       "Actor-ledger storage is not established for this registry.",
     );
