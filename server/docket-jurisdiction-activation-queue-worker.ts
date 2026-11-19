@@ -708,7 +708,14 @@ async function mark_job_live_update_skipped(input: {
 }): Promise<void> {
   await query_with_diagnostics(
     `update public.docket_bill_processing_queue
-        set queue_state = 'completed',
+        set queue_state = case
+              when $2::text = 'current_session_unverified' then 'degraded'
+              else 'completed'
+            end,
+            next_attempt_at = case
+              when $2::text = 'current_session_unverified' then now() + interval '1 hour'
+              else next_attempt_at
+            end,
             completed_at = now(),
             locked_at = null,
             locked_by = null,
