@@ -1,10 +1,23 @@
-import { docket_terminal_action } from "../shared/docket-lifecycle";
 import { legiscan_session_is_current } from "./docket-session";
 
 type unknown_record = Record<string, unknown>;
 
 const is_record = (value: unknown): value is unknown_record =>
   Boolean(value) && typeof value === "object" && !Array.isArray(value);
+
+const whole_bill_terminal_patterns = [
+  /^\\s*(?:chapter(?:ed)?|enacted|withdrawn|dead|vetoed|expired|became law|postponed indefinitely|indefinitely postponed)\\b/i,
+  /^\\s*failed(?:\\s+(?:final passage|to pass))?\\s*[.;]?\\s*$/i,
+  /\\b(?:signed|approved) by (?:the )?(?:governor|president)\\b|\\b(?:governor|president) signed\\b/i,
+  /\\b(?:bill|measure|resolution)\\s+(?:has\\s+)?(?:enacted|failed(?:\\s+(?:final passage|to pass))?|withdrawn|vetoed|expired|died|dead|(?:been\\s+)?postponed\\s+indefinitely|indefinitely\\s+postponed)(?:\\s*[.;]|$)/i,
+] as const;
+
+const summary_is_whole_bill_terminal = (summary: unknown_record): boolean => {
+  if ([5, 6].includes(Number(summary.status))) return true;
+  return [summary.status_desc, summary.current_status, summary.last_action]
+    .flatMap(value => typeof value === "string" ? value.split(/[;\\n]/) : [])
+    .some(clause => whole_bill_terminal_patterns.some(pattern => pattern.test(clause.trim())));
+};
 
 export type docket_live_update_eligibility = {
   eligible: boolean;
@@ -37,12 +50,7 @@ export function resolve_docket_live_update_eligibility(input: {
   if (!summary) {
     return { eligible: false, reason: "bill_summary_missing" };
   }
-  if (docket_terminal_action(
-    summary.status,
-    summary.status_desc,
-    summary.current_status,
-    summary.last_action,
-  )) {
+  if (summary_is_whole_bill_terminal(summary)) {
     return { eligible: false, reason: "bill_terminal" };
   }
 
