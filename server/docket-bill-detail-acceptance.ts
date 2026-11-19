@@ -109,6 +109,7 @@ export async function accept_docket_bill_detail(input: docket_accept_input):
     " select public.register_docket_jurisdiction_activation(",
     "  $7::text, $6::integer, null::text,",
     "  jsonb_build_array(jsonb_build_object(",
+    "   'activation_transport', 'legiscan_bulk_json',",
     "   'bill_id', $1::integer, 'number', $2::jsonb->>'bill_number',",
     "   'title', $2::jsonb->>'title', 'description', $2::jsonb->>'description',",
     "   'status', $2::jsonb->'status', 'status_date', $2::jsonb->>'status_date',",
