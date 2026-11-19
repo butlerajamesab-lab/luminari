@@ -683,7 +683,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
             <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>
               Session / year
               <select disabled={selected_state === "ALL"} title={selected_state === "ALL" ? "Choose a jurisdiction to load its sessions" : undefined} value={selected_archive_session} onChange={event => set_selected_archive_session(event.target.value)} style={{ background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "6px", color: dk.paper, fontFamily: fontMono, fontSize: "0.78rem", padding: "0.35rem 0.5rem", maxWidth: 280, opacity: selected_state === "ALL" ? 0.65 : 1 }}>
-                <option value="">{selected_state === "ALL" ? "Choose a jurisdiction first" : "All sessions"}</option>
+                <option value="">{selected_state === "ALL" ? "Choose a jurisdiction first" : "Verified current session"}</option>
                 {archive_sessions.map(session => <option key={`${session.state}:${session.session_id}`} value={`${session.state}:${session.session_id}`}>{session.state} · {session.session_title} ({session.bill_count.toLocaleString()})</option>)}
               </select>
             </label>
