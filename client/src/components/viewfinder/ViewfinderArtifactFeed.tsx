@@ -150,7 +150,7 @@ export function ViewfinderArtifactFeed({ domain }: { domain: Domain }) {
         <button type="button" disabled={feed.isFetching} onClick={() => { void feed.refetch(); }}>{feed.isFetching ? "Refreshing…" : "Refresh now"}</button>
       </div>
       <div className="vf-freshness" role="status">
-        Checks every 30 seconds while visible, and when you return. Last successful check: {formatViewfinderDate(data?.checked_at)}.
+        Checks once a day while open, and when you return after a few minutes away — or use Refresh now anytime. Last successful check: {formatViewfinderDate(data?.checked_at)}.
         {feed.fetchStatus === "paused" ? " Connection paused; showing the last successful result." : ""}
       </div>
       {feed.error ? <div className="vf-error" role="alert">Refresh failed. {accessDenied ? "Your session no longer has access. Sign in again to view detections." : data ? "Showing the last successful result; it may be out of date." : "The live feed is unavailable."} Use Refresh now to retry.</div> : null}
