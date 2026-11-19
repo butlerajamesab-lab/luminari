@@ -716,7 +716,10 @@ async function mark_job_live_update_skipped(input: {
               when $2::text = 'current_session_unverified' then now() + interval '1 hour'
               else next_attempt_at
             end,
-            completed_at = now(),
+            completed_at = case
+              when $2::text = 'current_session_unverified' then null
+              else now()
+            end,
             locked_at = null,
             locked_by = null,
             last_failure_class = null,
