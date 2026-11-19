@@ -740,7 +740,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
               : <>
                   <span>Preserved official-provider records · newest source action first</span>
                   <span>{archive_data?.matching_total?.toLocaleString() ?? "—"} bills in the scoped session set</span>
-                  <span>Status filter applies to loaded pages; load more to continue through this session scope.</span>}
+                  <span>Status filter applies to loaded pages; load more to continue through this session scope.</span>
                 </>}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.75rem" }}>
