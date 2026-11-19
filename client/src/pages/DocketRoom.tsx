@@ -123,7 +123,720 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 
 // ── Docket List View ─────────────────────────────────────────────────
 
+const docket_states = [
+  "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+  "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+  "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+  "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+  "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
+  "DC",
+  "US",
+];
+
+const valid_date = (value?: string | null): Date | null => {
+  if (!value || value.startsWith("0000-00-00")) return null;
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? new Date(`${value}T00:00:00`)
+    : new Date(value);
+  return Number.isFinite(parsed.getTime()) ? parsed : null;
+};
+
+const lifecycle_presentation: Record<lifecycle_state, { label: string; color: string; background: string }> = {
+  live: { label: "Live · changeable", color: dk.teal, background: "rgba(57,210,192,0.10)" },
+  action_approaching: { label: "Action approaching", color: dk.amber, background: dk.copperSoft },
+  completed: { label: "Completed", color: dk.green, background: "rgba(63,185,80,0.10)" },
+  stalled: { label: "Stalled", color: dk.muted, background: "rgba(125,133,144,0.10)" },
+  unknown: { label: "Unknown", color: dk.muted, background: "rgba(125,133,144,0.10)" },
+};
+
+const freshness_presentation: Record<docket_source_freshness_state, { label: string; color: string }> = {
+  fresh: { label: "Source fresh", color: dk.teal },
+  stale: { label: "Source stale", color: dk.amber },
+  unknown: { label: "Source freshness unknown", color: dk.muted },
+  refresh_paused: { label: "Refresh paused", color: dk.amber },
+};
+
+const readable_date = (value?: string | null): string => {
+  const date = valid_date(value);
+  return date ? date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Not reported";
+};
+
+const snapshot_is_fresh = (fetched_at?: string | null): boolean => {
+  const parsed = fetched_at ? new Date(fetched_at) : null;
+  return Boolean(parsed && Number.isFinite(parsed.getTime()) && Date.now() - parsed.getTime() < 24 * 60 * 60 * 1000);
+};
+
+function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?: string }) {
+  const [preferred_state, set_selected_state] = useState("ALL");
+  const selected_state = level === "federal" ? "US" : level === "state" && preferred_state === "US" ? "ALL" : preferred_state;
+  const [state_data, set_state_data] = useState<docket_state_payload | null>(null);
+  const [state_error, set_state_error] = useState<string | null>(null);
+  const [state_loading, set_state_loading] = useState(false);
+  const [selected_bill_id, set_selected_bill_id] = useState<number | null>(null);
+  const [bill_detail, set_bill_detail] = useState<docket_bill_detail_payload | null>(null);
+  const [bill_detail_error, set_bill_detail_error] = useState<string | null>(null);
+  const [bill_detail_loading, set_bill_detail_loading] = useState(false);
+  const [cache_statuses, set_cache_statuses] = useState<docket_cache_status[]>([]);
+  const [cache_status_error, set_cache_status_error] = useState<string | null>(null);
+  const [cache_status_loading, set_cache_status_loading] = useState(false);
+  const [archive_view, set_archive_view] = useState<"all" | "under_deliberation" | "completed" | "past_sessions" | "unclassified">("all");
+  const [selected_archive_session, set_selected_archive_session] = useState("");
+  const [archive_sessions, set_archive_sessions] = useState<NonNullable<docket_archive_sessions_payload["results"]>>([]);
+  const [archive_sessions_error, set_archive_sessions_error] = useState<string | null>(null);
+  const [archive_data, set_archive_data] = useState<docket_archive_payload | null>(null);
+  const [archive_rows, set_archive_rows] = useState<NonNullable<docket_search_payload["results"]>>([]);
+  const [archive_cursor, set_archive_cursor] = useState<{action_date:string|null;bill_id:number}|null>(null);
+  const [archive_loading, set_archive_loading] = useState(false);
+  const [archive_error, set_archive_error] = useState<string | null>(null);
+  const archive_reset_pending = useRef(false);
+  const [search_data, set_search_data] = useState<docket_search_payload | null>(null);
+  const [search_error, set_search_error] = useState<string | null>(null);
+  const [search_loading, set_search_loading] = useState(false);
+  const search_term = keyword.trim();
+  const search_active = search_term.length >= 2;
+  const search_state_scope = level === "federal"
+    ? "US"
+    : level === "state"
+      ? (selected_state === "ALL" ? null : selected_state)
+      : null;
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const load_state = async () => {
+      if (selected_state === "ALL") {
+        set_state_data(null);
+        set_state_error(null);
+        set_state_loading(false);
+        return;
+      }
+      set_state_loading(true);
+      set_state_error(null);
+      set_state_data(null);
+      set_selected_bill_id(null);
+      set_bill_detail(null);
+      set_bill_detail_error(null);
+
+      try {
+        const response = await fetch(`/api/docket/state?state=${encodeURIComponent(selected_state)}`, {
+          signal: controller.signal,
+        });
+        const payload = await response.json().catch(() => ({
+          ok: false,
+          message: `api_docket_state_failed_http_${response.status}`,
+        })) as docket_state_payload;
+
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.message || `api_docket_state_failed_http_${response.status}`);
+        }
+
+        set_state_data(payload);
+      } catch (error: any) {
+        if (error?.name !== "AbortError") {
+          set_state_error(error?.message || "api_docket_state_failed");
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          set_state_loading(false);
+        }
+      }
+    };
+
+    load_state();
+
+    return () => controller.abort();
+  }, [selected_state]);
+
+  useEffect(() => {
+    if (!search_active) {
+      set_search_data(null);
+      set_search_error(null);
+      set_search_loading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const load_search = async () => {
+      set_search_loading(true);
+      set_search_error(null);
+      set_search_data(null);
+      set_selected_bill_id(null);
+      set_bill_detail(null);
+      set_bill_detail_error(null);
+
+      try {
+        const params = new URLSearchParams({ q: search_term, limit: "25" });
+        if (search_state_scope) params.set("state", search_state_scope);
+        if (level === "state") params.set("jurisdiction_scope", "state");
+        const response = await fetch(`/api/docket/search?${params.toString()}`, {
+          signal: controller.signal,
+        });
+        const payload = await response.json().catch(() => ({
+          ok: false,
+          message: `api_docket_search_failed_http_${response.status}`,
+        })) as docket_search_payload;
+        if (!response.ok || !payload.ok) {
+          throw new Error(
+            payload.message || `api_docket_search_failed_http_${response.status}`,
+          );
+        }
+        set_search_data(payload);
+      } catch (error: any) {
+        if (error?.name !== "AbortError") {
+          set_search_error(error?.message || "api_docket_search_failed");
+        }
+      } finally {
+        if (!controller.signal.aborted) set_search_loading(false);
+      }
+    };
+
+    void load_search();
+    return () => controller.abort();
+  }, [search_active, search_term, search_state_scope, level]);
+
+  // Changing jurisdiction or returning from search starts a fresh page.
+  // Do not append a previously loaded cursor page twice after clearing search.
+  const archive_filters_initialized = useRef(false);
+  useEffect(() => {
+    if (!archive_filters_initialized.current) {
+      archive_filters_initialized.current = true;
+      return;
+    }
+    archive_reset_pending.current = true;
+    set_archive_cursor(null);
+    set_archive_rows([]);
+    set_archive_data(null);
+  }, [selected_state, selected_archive_session, search_active, level]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    set_archive_sessions([]);
+    set_archive_sessions_error(null);
+    set_selected_archive_session("");
+    const load_sessions = async () => {
+      try {
+        const params = new URLSearchParams();
+        if (selected_state !== "ALL") params.set("state", selected_state);
+        const response = await fetch(`/api/docket/archive/sessions?${params.toString()}`, {signal: controller.signal});
+        const payload = await response.json().catch(() => ({
+          ok:false,message:`api_docket_archive_sessions_failed_http_${response.status}`
+        })) as docket_archive_sessions_payload;
+        if (!response.ok || !payload.ok) throw new Error(payload.message || "api_docket_archive_sessions_failed");
+        if (!controller.signal.aborted) set_archive_sessions(payload.results ?? []);
+      } catch (error: any) {
+        if (error?.name !== "AbortError") set_archive_sessions_error(error?.message || "api_docket_archive_sessions_failed");
+      }
+    };
+    void load_sessions();
+    return () => controller.abort();
+  }, [selected_state]);
+
+  useEffect(() => {
+    if (search_active) return;
+    if (archive_reset_pending.current) {
+      archive_reset_pending.current = false;
+      if (archive_cursor !== null) return;
+    }
+    const controller = new AbortController();
+    const load_archive = async () => {
+      set_archive_loading(true);
+      set_archive_error(null);
+      if (archive_cursor === null) {
+        set_archive_rows([]);
+        set_archive_data(null);
+        set_selected_bill_id(null);
+        set_bill_detail(null);
+      }
+      try {
+        const params = new URLSearchParams({limit:"25"});
+        if (archive_cursor) {
+          params.set("after_date", archive_cursor.action_date ?? "");
+          params.set("after_id", String(archive_cursor.bill_id));
+        }
+        if (selected_state !== "ALL") params.set("state",selected_state);
+        if (selected_archive_session) {
+          const [session_state, session_id] = selected_archive_session.split(":");
+          params.set("session_state", session_state);
+          params.set("session_id", session_id);
+        }
+        if (level === "state") params.set("jurisdiction_scope", "state");
+        const response = await fetch(`/api/docket/archive?${params.toString()}`, {signal: controller.signal});
+        const payload = await response.json().catch(() => ({
+          ok:false,message:`api_docket_archive_failed_http_${response.status}`
+        })) as docket_archive_payload;
+        if (!response.ok || !payload.ok) throw new Error(payload.message || "api_docket_archive_failed");
+        if (!controller.signal.aborted) {
+          set_archive_data(payload);
+          set_archive_rows(previous => archive_cursor === null
+            ? (payload.results ?? [])
+            : [...previous, ...(payload.results ?? [])]);
+        }
+      } catch (error: any) {
+        if (error?.name !== "AbortError") set_archive_error(error?.message || "api_docket_archive_failed");
+      } finally {
+        if (!controller.signal.aborted) set_archive_loading(false);
+      }
+    };
+    void load_archive();
+    return () => controller.abort();
+  }, [archive_cursor, selected_state, selected_archive_session, search_active, level]);
+
+  const load_bill_detail = async (bill_id: number) => {
+    set_selected_bill_id(bill_id);
+    set_bill_detail(null);
+    set_bill_detail_error(null);
+    set_bill_detail_loading(true);
+
+    try {
+      const response = await fetch(`/api/docket/bill/${bill_id}`);
+      const payload = await response.json().catch(() => ({
+        ok: false,
+        message: `api_docket_bill_failed_http_${response.status}`,
+      })) as docket_bill_detail_payload;
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.message || `api_docket_bill_failed_http_${response.status}`);
+      }
+
+      set_bill_detail(payload);
+    } catch (error: any) {
+      set_bill_detail_error(error?.message || "api_docket_bill_failed");
+    } finally {
+      set_bill_detail_loading(false);
+    }
+  };
+
+  const refresh_cache_status = useCallback(async () => {
+    set_cache_status_loading(true);
+    set_cache_status_error(null);
+
+    try {
+      const response = await fetch("/api/docket/cache-status");
+      const payload = await response.json().catch(() => ({
+        ok: false,
+        message: `api_docket_cache_status_failed_http_${response.status}`,
+      })) as docket_cache_status_payload;
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || payload.message || `api_docket_cache_status_failed_http_${response.status}`);
+      }
+
+      set_cache_statuses(payload.states ?? []);
+    } catch (error: any) {
+      set_cache_status_error(error?.message || "api_docket_cache_status_failed");
+    } finally {
+      set_cache_status_loading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh_cache_status();
+  }, [refresh_cache_status]);
+
+  const bills = state_data?.bills ?? [];
+  const selected_cache_status = cache_statuses.find(status => status.state === selected_state);
+  const snapshot_fresh = state_data?.fetched_at
+    ? snapshot_is_fresh(state_data.fetched_at)
+    : selected_cache_status?.is_fresh === true;
+  const displayed_cache_status = state_data?.fetched_at ? {
+    is_fresh: snapshot_fresh,
+    bill_count: state_data.bill_count ?? bills.length,
+    fetched_at: state_data.fetched_at,
+    session_title: state_data.session_title ?? null,
+    refresh_state: state_data?.refresh_state ?? (snapshot_fresh ? "fresh" : "unknown"),
+  } : selected_cache_status;
+  const displayed_refresh = freshness_presentation[
+    displayed_cache_status?.refresh_state
+      ?? (displayed_cache_status?.is_fresh === true ? "fresh" : "unknown")
+  ];
+  const current_session_flag = state_data?.session_current ?? null;
+
+  const search_bills = (search_data?.results ?? []).map(result => ({
+    ...result.bill,
+    search_context: {
+      state: result.state,
+      session_title: result.session_title,
+      fetched_at: result.fetched_at,
+      corpus_source: result.corpus_source,
+    },
+  }));
+
+  const preserved_bills = archive_rows.map(result => ({
+    ...result.bill,
+    search_context: {
+      state: result.state,
+      session_title: result.session_title,
+      session_id: result.session_id ?? null,
+      session_is_current: result.session_is_current ?? null,
+      current_session_fetched_at: result.current_session_fetched_at ?? null,
+      fetched_at: result.fetched_at,
+      corpus_source: result.corpus_source,
+    },
+  }));
+  const candidate_bills = search_active ? search_bills : preserved_bills;
+  const resolved_bills = candidate_bills
+    .map(bill => {
+      const search_context = bill.search_context;
+      const result_fresh = search_context
+        ? snapshot_is_fresh(search_context.fetched_at)
+        : snapshot_fresh;
+      return {
+        bill,
+        resolution: resolve_docket_lifecycle({
+          ...bill,
+          session: {
+            ...(bill as { session?: Record<string, unknown> }).session,
+            is_current: search_context
+        ? (search_context.session_is_current ?? null)
+        : current_session_flag,
+          },
+          freshness: {
+            ...(bill as { freshness?: Record<string, unknown> }).freshness,
+            state: search_context
+              ? (result_fresh ? "fresh" : "refresh_paused")
+              : state_data?.refresh_state,
+            is_fresh: result_fresh,
+            last_observed_at: search_context?.fetched_at ?? state_data?.fetched_at ?? null,
+          },
+        }),
+      };
+    })
+    .filter(({ bill, resolution }) => {
+      if (search_active || archive_view === "all") return true;
+      const session_is_current = bill.search_context?.session_is_current ?? null;
+      if (archive_view === "under_deliberation") {
+        return session_is_current === true && !resolution.is_terminal;
+      }
+      if (archive_view === "completed") return resolution.is_terminal;
+      if (archive_view === "past_sessions") return session_is_current === false;
+      return session_is_current === null;
+    }); // Archive pages are globally ordered by latest source action date.
+
+  const unverified_current_session_rows = archive_rows.filter(row => row.session_is_current == null);
+  const active_loading = search_active ? search_loading : archive_loading && archive_rows.length === 0;
+  const active_error = search_active ? search_error : archive_error;
+  const active_ready = search_active ? search_data !== null : archive_data !== null;
+
+  return (
+    <div style={{ background: dk.sectionBg, border: `1px solid ${dk.steelBorder}`, borderRadius: "8px", padding: "1rem 1.25rem", marginBottom: "1.5rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(145px, 1fr))", gap: "0.5rem", marginBottom: "1rem" }}>
+        {[
+          ["Federal", "Connected", dk.teal],
+          ["State", "50 states + DC", dk.teal],
+          ["City", "Seattle connected", dk.steelBright],
+          ["County", "Source not connected", dk.muted],
+          ["Tribal", "Source not connected", dk.muted],
+        ].map(([level, state, color]) => (
+          <div key={level} style={{ background: dk.bg, border: `1px solid ${dk.rule}`, borderLeft: `3px solid ${color}`, borderRadius: 6, padding: "0.55rem 0.65rem" }}>
+            <div style={{ color: dk.paper, fontFamily: fontSans, fontSize: "0.78rem", fontWeight: 600 }}>{level}</div>
+            <div style={{ color, fontFamily: fontMono, fontSize: "0.62rem", marginTop: "0.2rem" }}>{state}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
+        <div>
+          <div style={{ fontFamily: fontMono, fontSize: "0.75rem", color: dk.steelBright, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}>{selected_state === "US" ? "Federal legislation" : "Preserved Docket legislation"}</div>
+          <p style={{ fontFamily: fontSans, fontSize: "0.82rem", color: dk.muted, margin: "0.25rem 0 0" }}>Browse preserved official-provider bill records, including those awaiting Genome projection or Rosetta analysis.</p>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>
+            Jurisdiction
+            <select value={selected_state} onChange={event => set_selected_state(event.target.value)} style={{ background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "6px", color: dk.paper, fontFamily: fontMono, fontSize: "0.78rem", padding: "0.35rem 0.5rem" }}>
+              {(level === "federal" ? ["US"] : ["ALL", ...docket_states.filter(state => level === "state" ? state !== "US" : true)]).map(state => <option key={state} value={state}>{state === "ALL" ? "All jurisdictions" : state}</option>)}
+            </select>
+          </label>
+          {!search_active && <>
+            <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>
+              View
+              <select value={archive_view} onChange={event => set_archive_view(event.target.value as typeof archive_view)} style={{ background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "6px", color: dk.paper, fontFamily: fontMono, fontSize: "0.78rem", padding: "0.35rem 0.5rem" }}>
+                <option value="all">All bills</option>
+                <option value="under_deliberation">Under deliberation · verified current session</option>
+                <option value="completed">Completed · terminal outcome</option>
+                <option value="past_sessions">Past sessions · currentness verified</option>
+                <option value="unclassified">Session currentness unknown</option>
+              </select>
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>
+              Session / year
+              <select value={selected_archive_session} onChange={event => set_selected_archive_session(event.target.value)} style={{ background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "6px", color: dk.paper, fontFamily: fontMono, fontSize: "0.78rem", padding: "0.35rem 0.5rem", maxWidth: 280 }}>
+                <option value="">All sessions</option>
+                {archive_sessions.map(session => <option key={`${session.state}:${session.session_id}`} value={`${session.state}:${session.session_id}`}>{session.state} · {session.session_title} ({session.bill_count.toLocaleString()})</option>)}
+              </select>
+            </label>
+          </>}
+        </div>
+      </div>
+
+      <div style={{ background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "8px", padding: "0.85rem", marginBottom: "0.9rem" }}>
+        {search_active ? (
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>
+            <span style={{ color: dk.teal }}>Full preserved Docket corpus search</span>
+            <span>{search_data?.result_count ?? 0} result{(search_data?.result_count ?? 0) === 1 ? "" : "s"}</span>
+            <span>{search_state_scope ? `jurisdiction ${search_state_scope}` : "all cached jurisdictions"}</span>
+            <span>current-session visibility does not limit search</span>
+          </div>
+        ) : archive_data ? (
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>
+            <span style={{ color: dk.teal }}>Preserved source corpus</span>
+            <span>{archive_data.total_preserved?.toLocaleString() ?? "—"} source bills in database</span>
+            <span>{archive_data.state_total?.toLocaleString() ?? "—"} in this jurisdiction</span>
+            <span>{archive_rows.length} loaded in pages</span>
+            {displayed_cache_status && selected_state !== "ALL" &&
+              <span style={{ color: dk.amber }}>Separate legacy session snapshot: {displayed_cache_status.bill_count} bills, last observed {readable_date(displayed_cache_status.fetched_at)}</span>}
+          </div>
+        ) : displayed_cache_status ? (
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>
+            <span style={{ color: displayed_refresh.color }}>{displayed_refresh.label}</span>
+            <span>{displayed_cache_status.bill_count} bills</span>
+            <span>Last source observation {readable_date(displayed_cache_status.fetched_at)}</span>
+            {displayed_cache_status.session_title && <span>{displayed_cache_status.session_title}</span>}
+            {state_data?.session_current === false && <span>Completed session</span>}
+            {state_data?.session_current === null && state_data?.session_title && <span>Session currentness unknown</span>}
+          </div>
+        ) : cache_status_loading ? <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>loading_cache_status</div> : cache_status_error ? <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.red }}>cache_status_error {cache_status_error}</div> : <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>cache_status_unavailable</div>}
+        {!search_active && unverified_current_session_rows.length > 0 &&
+          <div style={{ color: dk.amber, fontFamily: fontMono, fontSize: "0.68rem", marginTop: "0.6rem" }}>
+            Current session is unverified for {unverified_current_session_rows.length} loaded bill{unverified_current_session_rows.length === 1 ? "" : "s"}; those records stay unclassified.
+          </div>}
+        {!search_active && archive_sessions_error &&
+          <div style={{ color: dk.amber, fontFamily: fontMono, fontSize: "0.68rem", marginTop: "0.6rem" }}>
+            Session list unavailable: {archive_sessions_error}
+          </div>}
+      </div>
+
+      {active_loading ? (
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: dk.muted, fontFamily: fontMono, fontSize: "0.75rem" }}><Loader2 size={14} className="animate-spin" /> {search_active ? "searching_preserved_docket_corpus" : "loading_preserved_docket_bills"}</div>
+      ) : active_error ? (
+        <div style={{ color: dk.red, fontFamily: fontMono, fontSize: "0.75rem" }}>error {active_error}</div>
+      ) : active_ready ? (
+        <>
+          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", fontFamily: fontMono, fontSize: "0.7rem", color: dk.muted, marginBottom: "0.85rem" }}>
+            <span>{resolved_bills.length} shown</span>
+            {search_active
+              ? <span>preserved Docket search · {search_data?.contract ?? "docket-full-corpus-search-v1"}</span>
+              : <>
+                  <span>Preserved official-provider records · newest source action first</span>
+                  <span>{archive_data?.total_preserved?.toLocaleString() ?? "—"} source bills available</span>
+                  {archive_view !== "all" && <span>Filter applies to loaded pages; load more to continue through the ordered corpus.</span>}
+                </>}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.75rem" }}>
+            {resolved_bills.map(({ bill, resolution }) => {
+              const bill_url = bill.url || bill.source_url;
+              const lifecycle_ui = lifecycle_presentation[resolution.procedural_state];
+              return (
+                <button key={bill.bill_id} onClick={() => load_bill_detail(bill.bill_id)} style={{ textAlign: "left", background: dk.cardBg, border: `1px solid ${selected_bill_id === bill.bill_id ? dk.steel : dk.cardBorder}`, borderLeft: `4px solid ${lifecycle_ui.color}`, borderRadius: "8px", padding: "0.85rem", cursor: "pointer" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", alignItems: "center", marginBottom: "0.35rem" }}>
+                    <span style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.steelBright }}>{bill.number || `Bill ${bill.bill_id}`}</span>
+                    <span style={{ fontFamily: fontMono, fontSize: "0.62rem", color: lifecycle_ui.color, background: lifecycle_ui.background, borderRadius: 999, padding: "0.2rem 0.45rem" }}>{lifecycle_ui.label}</span>
+                  </div>
+                  <div style={{ fontFamily: fontSerif, fontSize: "1rem", color: dk.paper, lineHeight: 1.25, marginBottom: "0.5rem" }}>{bill.title || "title_unavailable"}</div>
+                  <div style={{ display: "grid", gap: "0.25rem", fontFamily: fontMono, fontSize: "0.66rem", color: dk.muted }}>
+                    {bill.search_context && <span style={{ color: dk.steelBright }}>{bill.search_context.state} · {bill.search_context.session_title ?? "session not reported"} · {bill.search_context.corpus_source.replace("_", " ")}</span>}
+                    <span>{bill.last_action || "Latest action not reported"}</span>
+                    <span>{readable_date(bill.last_action_date || bill.status_date)}</span>
+                    {resolution.effective_state === "effective_immediately" && <span style={{ color: dk.green }}>Effective immediately</span>}
+                    {resolution.effective_state === "effective_now" && <span style={{ color: dk.green }}>Effective now</span>}
+                    {resolution.effective_state === "effective_future" && resolution.effective_date && <span style={{ color: dk.green }}>Takes effect {readable_date(resolution.effective_date)}</span>}
+                    {bill.radar && bill.radar.velocity_score > 0 && <span style={{ color: dk.teal }}>Movement {bill.radar.velocity_score.toFixed(1)} · {bill.radar.events_14d} events in 14 days</span>}
+                    {bill.radar?.next_event_date && <span style={{ color: dk.amber }}>{bill.radar.next_event_class?.replaceAll("_", " ")} · {readable_date(bill.radar.next_event_date)}</span>}
+                    {bill.radar?.structural_state === "quarantined" && <span>Structural comparison unavailable</span>}
+                    {bill.radar?.drift_coverage && bill.radar.drift.filter(item => item.delta !== 0).map(item => <span key={item.trait_class}>{item.trait_class} {item.base_count} → {item.latest_count} ({item.delta > 0 ? "+" : ""}{item.delta})</span>)}
+                    <span><a href={`/civic-genome/bill/${bill.bill_id}`} onClick={event => event.stopPropagation()} style={{ color: dk.steelBright }}>View in Civic Genome (source ID {bill.bill_id})</a></span>
+                    {bill_url && <span><a href={bill_url} target="_blank" rel="noopener noreferrer" onClick={event => event.stopPropagation()} style={{ color: dk.steelBright }}>Source record</a></span>}
+                  </div>
+                </button>
+              );
+            })}
+            {resolved_bills.length === 0 && (
+              <div style={{ gridColumn: "1 / -1", background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "8px", padding: "1rem", color: dk.muted, fontFamily: fontSans, fontSize: "0.82rem", lineHeight: 1.5 }}>
+                {search_active
+                  ? `No preserved Docket records match “${search_term}”.`
+                  : "No preserved Docket records on this page match the selected procedural filter."}
+              </div>
+            )}
+          </div>
+          {!search_active && archive_data?.has_more && (
+            <button
+              disabled={archive_loading || archive_data.next_cursor == null}
+              onClick={() => {
+                if (archive_data.next_cursor != null) set_archive_cursor(archive_data.next_cursor);
+              }}
+              style={{
+                marginTop: "1rem", padding: "0.65rem 1rem",
+                background: dk.steelSoft, border: `1px solid ${dk.steelBorder}`,
+                borderRadius: 6, color: dk.steelBright, cursor: "pointer"
+              }}
+            >
+              {archive_loading ? "Loading next page…" : "Load more records"}
+            </button>
+          )}
+          {selected_bill_id && (
+            <div style={{ marginTop: "1rem", background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "8px", padding: "0.85rem" }}>
+              <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.steelBright, marginBottom: "0.5rem" }}>bill_detail_click_through bill_id {selected_bill_id}</div>
+              {bill_detail_loading ? <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>loading_bill_detail</div> : bill_detail_error ? <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.red }}>error {bill_detail_error}</div> : bill_detail ? <DocketBillDetailWorkspace payload={bill_detail} session_current={null} /> : null}
+            </div>
+          )}
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+// ── Legistar Live Feed ──────────────────────────────────────────────
+
+function LegistarLiveFeed({ keyword }: { keyword?: string }) {
+  const { data, isLoading } = trpc.docket.legistarFeed.useQuery(
+    { keyword, top: 6 },
+    { refetchInterval: 5 * 60 * 1000 } // refresh every 5 minutes
+  );
+  const [collapsed, setCollapsed] = useState(false);
+
+  const formatDate = (d: string | null) => {
+    if (!d || d.startsWith("0000-00-00")) return "Date not reported";
+    const parsed = new Date(d);
+    return Number.isFinite(parsed.getTime())
+      ? parsed.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+      : "Date not reported";
+  };
+
+  const statusColor = (status: string) => {
+    if (status.toLowerCase().includes("passed") || status.toLowerCase().includes("adopted")) return dk.green;
+    if (status.toLowerCase().includes("agenda") || status.toLowerCase().includes("ready")) return dk.copper;
+    if (status.toLowerCase().includes("committee")) return dk.steel;
+    return dk.muted;
+  };
+
+  return (
+    <div style={{
+      background: dk.sectionBg,
+      border: `1px solid ${dk.steelBorder}`,
+      borderRadius: "8px",
+      overflow: "hidden",
+      marginBottom: "1.5rem",
+    }}>
+      {/* Header */}
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        style={{
+          display: "flex", alignItems: "center", gap: "0.75rem",
+          width: "100%", padding: "0.85rem 1.25rem",
+          background: "transparent", border: "none", cursor: "pointer",
+          textAlign: "left",
+        }}
+      >
+        <div style={{
+          width: 28, height: 28, borderRadius: "6px",
+          background: dk.steelSoft,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          flexShrink: 0,
+        }}>
+          <Radio size={14} style={{ color: dk.steelBright }} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <span style={{
+            fontFamily: fontMono, fontSize: "0.75rem",
+            color: dk.steelBright, fontWeight: 600,
+            letterSpacing: "0.04em", textTransform: "uppercase",
+          }}>
+            Seattle City Council — Live Legislative Feed
+          </span>
+          {data && !isLoading && (
+            <span style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted, marginLeft: "0.75rem" }}>
+              {data.matters.length} recent matters
+              {keyword && ` matching "${keyword}"`}
+              {" · "}
+              {Number.isFinite(data.fetched_at)
+                ? new Date(data.fetched_at).toLocaleTimeString()
+                : "Retrieval time unavailable"}
+            </span>
+          )}
+        </div>
+        {collapsed ? <ChevronDown size={14} style={{ color: dk.muted }} /> : <ChevronUp size={14} style={{ color: dk.muted }} />}
+      </button>
+
+      {!collapsed && (
+        <div style={{ borderTop: `1px solid ${dk.rule}`, padding: "0.75rem 1.25rem" }}>
+          {isLoading ? (
+            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", padding: "0.5rem 0", color: dk.muted }}>
+              <Loader2 size={14} className="animate-spin" />
+              <span style={{ fontFamily: fontMono, fontSize: "0.75rem" }}>Fetching from Seattle Legistar...</span>
+            </div>
+          ) : data?.error ? (
+            <p style={{ fontFamily: fontMono, fontSize: "0.75rem", color: dk.red, padding: "0.5rem 0" }}>
+              ⚠ {data.error}
+            </p>
+          ) : data?.matters.length === 0 ? (
+            <p style={{ fontFamily: fontMono, fontSize: "0.75rem", color: dk.muted, padding: "0.5rem 0" }}>
+              No recent matters found{keyword ? ` for "${keyword}"` : ""}.
+            </p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              {data?.matters.map((m: any) => (
+                <a
+                  key={m.id}
+                  href={m.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "flex", alignItems: "flex-start", gap: "0.75rem",
+                    padding: "0.65rem 0.85rem",
+                    background: dk.cardBg,
+                    border: `1px solid ${dk.cardBorder}`,
+                    borderRadius: "6px",
+                    textDecoration: "none",
+                    transition: "border-color 0.15s",
+                  }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = dk.steel}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = dk.cardBorder}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.2rem" }}>
+                      <span style={{
+                        fontFamily: fontMono, fontSize: "0.65rem",
+                        padding: "0.1rem 0.4rem", borderRadius: "3px",
+                        background: `${statusColor(m.status)}22`,
+                        color: statusColor(m.status),
+                        border: `1px solid ${statusColor(m.status)}44`,
+                        flexShrink: 0,
+                      }}>{m.status}</span>
+                      <span style={{ fontFamily: fontMono, fontSize: "0.65rem", color: dk.muted }}>{m.file}</span>
+                      <span style={{ fontFamily: fontMono, fontSize: "0.65rem", color: dk.muted }}>{m.type}</span>
+                    </div>
+                    <p style={{
+                      fontFamily: fontSans, fontSize: "0.82rem", color: dk.cream,
+                      margin: 0, lineHeight: 1.4,
+                      overflow: "hidden", textOverflow: "ellipsis",
+                      display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+                    }}>{m.title}</p>
+                    <div style={{ display: "flex", gap: "1rem", marginTop: "0.3rem", flexWrap: "wrap" }}>
+                      <span style={{ fontFamily: fontMono, fontSize: "0.65rem", color: dk.muted }}>
+                        <Building2 size={10} style={{ display: "inline", marginRight: "0.25rem" }} />
+                        {m.body}
+                      </span>
+                      {m.introDate && (
+                        <span style={{ fontFamily: fontMono, fontSize: "0.65rem", color: dk.muted }}>
+                          <Clock size={10} style={{ display: "inline", marginRight: "0.25rem" }} />
+                          Intro: {formatDate(m.introDate)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <ExternalLink size={12} style={{ color: dk.muted, flexShrink: 0, marginTop: "0.25rem" }} />
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Docket List View ─────────────────────────────────────────────────
+
 function DocketList({ onSelect }: { onSelect: (id: string) => void }) {
+  const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterLevel, setFilterLevel] = useState<string>("");
