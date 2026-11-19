@@ -21,7 +21,7 @@ describe("Docket complete preserved-source public browsing contract", () => {
   it("lists canonical Docket source inventory using a bounded keyset cursor", () => {
     expect(route).toContain('docket_router.get("/archive"');
     expect(archiveRoute).toContain("public.docket_bill_detail_cache");
-    expect(archiveRoute).toContain("docket-preserved-archive-v1");
+    expect(archiveRoute).toContain("docket-preserved-archive-v2");
     expect(archiveRoute).toContain("order by ${action_date_expr} desc nulls last,cache.bill_id asc");
     expect(archiveRoute).toContain("docket_bill_latest_action_date_v1(cache.bill)");
     expect(archiveRoute).toContain("after_date");
@@ -94,7 +94,7 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(page).toContain("Preserved source corpus");
     expect(page).toContain("Separate legacy session snapshot");
     expect(page).toContain('useState("ALL")');
-    expect(page).toContain("Load more preserved bills");
+    expect(page).toContain("Load more records");
     expect(page).toContain("View in Civic Genome (source ID");
     expect(page).toContain("curated entries (separate from official source bills)");
     expect(page).not.toContain("entries analyzed");
@@ -105,7 +105,7 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(page).toContain("Completed · terminal outcome");
     expect(page).toContain("Past sessions · currentness verified");
     expect(page).toContain("Session / year");
-    expect(page).toContain("Current-session filters are unclassified because the latest session snapshot is stale");
+    expect(page).toContain("Current session is unverified for");
     expect(page).toContain("archive_reset_pending.current");
     expect(page).toContain('params.set("jurisdiction_scope", "state")');
     expect(page).toContain('new URLSearchParams({ q: search_term, limit: "25" })');
