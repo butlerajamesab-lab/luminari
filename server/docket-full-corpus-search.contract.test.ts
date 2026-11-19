@@ -13,7 +13,7 @@ const searchRoute = route.slice(
   route.indexOf('docket_router.get("/state"'),
 );
 const archiveRoute = route.slice(
-  route.indexOf('docket_router.get("/archive"'),
+  route.indexOf('docket_router.get("/archive",'),
   route.indexOf('docket_router.get("/search"'),
 );
 
