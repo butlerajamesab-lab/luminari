@@ -373,6 +373,57 @@ describe('round 8: government-only merges preserve every synthesized contact', (
   });
 });
 
+describe('round 9: extension-bearing gov phones are preserved, not dropped', () => {
+  it('keeps a phone-shaped value normPhone rejects, under a raw preservation key', () => {
+    const govById = new Map([['off1', { office_id: 'off1', phone_raw: '509-555-0100 ext 123', email: null, url: null }]]);
+    const gov = buildGovContacts({ links: [{ resource_entity_id: 'B', office_id: 'off1' }], govById });
+    expect(gov.get('B')).toEqual([
+      { type: 'phone', value: '509-555-0100 ext 123', key: 'raw:509-555-0100 ext 123', office_id: 'off1' },
+    ]);
+  });
+  it('still drops values that are not phone-shaped at all', () => {
+    const govById = new Map([['off1', { office_id: 'off1', phone_raw: 'N/A', email: null, url: null }]]);
+    const gov = buildGovContacts({ links: [{ resource_entity_id: 'B', office_id: 'off1' }], govById });
+    expect(gov.get('B')).toBeUndefined();
+  });
+  it('materializes the extension phone in a government-only merge correlated by email', () => {
+    const govById = new Map([
+      ['offA', { office_id: 'offA', phone_raw: '509-555-0100 ext 123', email: 'help@county.gov', url: null }],
+      ['offB', { office_id: 'offB', phone_raw: null, email: 'help@county.gov', url: null }],
+    ]);
+    const gov = buildGovContacts({
+      links: [
+        { resource_entity_id: 'A', office_id: 'offA' },
+        { resource_entity_id: 'B', office_id: 'offB' },
+      ],
+      govById,
+    });
+    const ctx = makeCtx([ent('A'), ent('B')], [], [loc('A'), loc('B')], new Map(), new Map(), new Map(), gov);
+    const plan = planCluster({ memberIds: ['A', 'B'], edges: [{ a: 'A', b: 'B', via: ['email'] }] }, ctx);
+    // The shared email materializes once; the extension phone —
+    // served today via the fallback — survives the merge as a point.
+    expect(plan.materialize_points).toEqual(expect.arrayContaining([
+      { contact_type: 'phone', contact_value: '509-555-0100 ext 123', office_id: 'offA', from_entity_id: 'A' },
+      { contact_type: 'email', contact_value: 'help@county.gov', office_id: 'offA', from_entity_id: 'A' },
+    ]));
+    expect(plan.materialize_points).toHaveLength(2);
+  });
+  it('dedupes identical extension values arriving from two offices', () => {
+    const govById = new Map([
+      ['offA', { office_id: 'offA', phone_raw: '509-555-0100 ext 123', email: null, url: null }],
+      ['offB', { office_id: 'offB', phone_raw: '509-555-0100  ext  123', email: null, url: null }],
+    ]);
+    const gov = buildGovContacts({
+      links: [
+        { resource_entity_id: 'A', office_id: 'offA' },
+        { resource_entity_id: 'A', office_id: 'offB' },
+      ],
+      govById,
+    });
+    expect(gov.get('A')).toHaveLength(1);
+  });
+});
+
 describe('planManifest', () => {
   it('is stable and membership-sensitive', () => {
     const p1 = [{ cluster_id: 'dmc_x', survivor: 'A', absorbed: [{ entity_id: 'B' }] }];

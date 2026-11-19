@@ -142,7 +142,17 @@ export function buildGovContacts({ links, govById }) {
     // link to county.gov/housing is a distinct served contact from
     // the survivor's county.gov/food point. Domain-level matching
     // stays confined to entity correlation (Codex P2, round 5).
-    const key = type === 'phone' ? normPhone(value) : type === 'email' ? normEmail(value) : (normDomain(value) ? normUrl(value) : null);
+    // Phone keys: the strict identity key when the value parses —
+    // otherwise a PRESERVATION key. The serving path accepts any
+    // phone-shaped value (is_phone_shaped: >= 3 digits), including
+    // extension-bearing numbers like "509-555-0100 ext 123" that
+    // normPhone rejects; dropping those here would make a served
+    // contact inaccessible the moment materialization disables the
+    // synthesis fallback (Codex P2, round 9). The 'raw:' namespace
+    // never equals a strict key, so preservation values dedupe only
+    // against identical served values and never create or satisfy
+    // a correlation/coverage match on the bare number.
+    const key = type === 'phone' ? (normPhone(value) ?? (String(value).replace(/\D/g, '').length >= 3 ? 'raw:' + String(value).trim().replace(/\s+/g, ' ').toLowerCase() : null)) : type === 'email' ? normEmail(value) : (normDomain(value) ? normUrl(value) : null);
     if (!key) return;
     if (!map.has(id)) map.set(id, []);
     const list = map.get(id);
