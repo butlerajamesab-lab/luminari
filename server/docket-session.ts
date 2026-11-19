@@ -20,9 +20,10 @@ export const legiscan_session_is_current = (
   if (!session) return null;
   const prior = as_bool(session.prior);
   const sine_die = as_bool(session.sine_die);
-  if (prior === true) return false;
+  // Either provider flag proves the session has ended. In particular, prior=0
+  // means "not marked as a prior session"; it does not override sine_die=1.
+  if (prior === true || sine_die === true) return false;
   if (prior === false) return true;
-  if (sine_die === true) return false;
   if (sine_die === false) return true;
   return null;
 };
