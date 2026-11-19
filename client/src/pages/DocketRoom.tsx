@@ -1062,7 +1062,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
       return session_is_current === null;
     }); // Archive pages are globally ordered by latest source action date.
 
-  const current_session_observed_at = archive_rows.find(row => row.current_session_fetched_at)?.current_session_fetched_at ?? null;
+  const unverified_current_session_rows = archive_rows.filter(row => row.session_is_current == null);
   const active_loading = search_active ? search_loading : archive_loading && archive_rows.length === 0;
   const active_error = search_active ? search_error : archive_error;
   const active_ready = search_active ? search_data !== null : archive_data !== null;
@@ -1144,9 +1144,9 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
             {state_data?.session_current === null && state_data?.session_title && <span>Session currentness unknown</span>}
           </div>
         ) : cache_status_loading ? <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>loading_cache_status</div> : cache_status_error ? <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.red }}>cache_status_error {cache_status_error}</div> : <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>cache_status_unavailable</div>}
-        {!search_active && current_session_observed_at && !snapshot_is_fresh(current_session_observed_at) &&
+        {!search_active && unverified_current_session_rows.length > 0 &&
           <div style={{ color: dk.amber, fontFamily: fontMono, fontSize: "0.68rem", marginTop: "0.6rem" }}>
-            Current-session filters are unclassified because the latest session snapshot is stale ({readable_date(current_session_observed_at)}).
+            Current session is unverified for {unverified_current_session_rows.length} loaded bill{unverified_current_session_rows.length === 1 ? "" : "s"}; those records stay unclassified.
           </div>}
         {!search_active && archive_sessions_error &&
           <div style={{ color: dk.amber, fontFamily: fontMono, fontSize: "0.68rem", marginTop: "0.6rem" }}>
@@ -1165,8 +1165,9 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
             {search_active
               ? <span>preserved Docket search · {search_data?.contract ?? "docket-full-corpus-search-v1"}</span>
               : <>
-                  <span>Preserved official-provider records · source dates shown per bill</span>
+                  <span>Preserved official-provider records · newest source action first</span>
                   <span>{archive_data?.total_preserved?.toLocaleString() ?? "—"} source bills available</span>
+                  {archive_view !== "all" && <span>Filter applies to loaded pages; load more to continue through the ordered corpus.</span>}
                 </>}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.75rem" }}>
@@ -1217,7 +1218,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
                 borderRadius: 6, color: dk.steelBright, cursor: "pointer"
               }}
             >
-              {archive_loading ? "Loading next page…" : "Load more preserved bills"}
+              {archive_loading ? "Loading next page…" : "Load more records"}
             </button>
           )}
           {selected_bill_id && (
