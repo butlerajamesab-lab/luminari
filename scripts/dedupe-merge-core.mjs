@@ -33,7 +33,18 @@ export const normDomain = (s) => {
   return m.includes('.') ? m : null;
 };
 export const normUrl = (s) => {
-  let u = (s || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '');
+  let u = (s || '').trim().replace(/^https?:\/\//i, '');
+  // Lowercase ONLY the host. URL paths and query strings are
+  // case-sensitive: two links differing only in path/query case
+  // (e.g. /Apply?token=AbC vs /Apply?token=aBc) are distinct
+  // contacts, and folding them together would retire a distinct
+  // service link at merge time (Codex P2, round 10). Scheme and
+  // host are case-insensitive and keep the old normalization,
+  // including the leading www. strip.
+  const hostEnd = u.search(/[/?#]/);
+  const host = (hostEnd === -1 ? u : u.slice(0, hostEnd)).toLowerCase().replace(/^www\./, '');
+  const rest = hostEnd === -1 ? '' : u.slice(hostEnd);
+  u = host + rest;
   if (u.endsWith('/')) u = u.slice(0, -1);
   return u || null;
 };

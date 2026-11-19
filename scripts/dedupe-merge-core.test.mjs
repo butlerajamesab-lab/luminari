@@ -21,7 +21,10 @@ describe('normalization', () => {
   });
   it('normalizes domains and urls distinctly', () => {
     expect(normDomain('https://www.Example.org/apply')).toBe('example.org');
-    expect(normUrl('https://www.Example.org/Apply/')).toBe('example.org/apply');
+    // Host lowercases; the path keeps its case — paths are
+    // case-sensitive (corrected round 10; the old expectation
+    // folded the whole URL to lowercase).
+    expect(normUrl('https://www.Example.org/Apply/')).toBe('example.org/Apply');
     expect(contactKey('website', 'https://a.org/x')).not.toBe(contactKey('website', 'https://a.org/y'));
   });
 });
@@ -421,6 +424,34 @@ describe('round 9: extension-bearing gov phones are preserved, not dropped', () 
       govById,
     });
     expect(gov.get('A')).toHaveLength(1);
+  });
+});
+
+describe('round 10: URL keys preserve case-sensitive path and query', () => {
+  it('treats URLs differing only in path case as distinct contacts', () => {
+    expect(normUrl('https://county.gov/Apply')).not.toBe(normUrl('https://county.gov/apply'));
+    expect(normUrl('https://county.gov/Apply?token=AbC')).not.toBe(normUrl('https://county.gov/Apply?token=aBc'));
+  });
+  it('still folds scheme, host case, and a leading www.', () => {
+    expect(normUrl('HTTPS://WWW.County.GOV/Apply')).toBe('county.gov/Apply');
+    expect(normUrl('https://county.gov/Apply')).toBe(normUrl('http://www.county.gov/Apply'));
+  });
+  it('materializes both case-distinct links in a government-only merge', () => {
+    const govById = new Map([
+      ['offA', { office_id: 'offA', phone_raw: null, email: 'help@county.gov', url: 'https://county.gov/Apply' }],
+      ['offB', { office_id: 'offB', phone_raw: null, email: 'help@county.gov', url: 'https://county.gov/apply' }],
+    ]);
+    const gov = buildGovContacts({
+      links: [
+        { resource_entity_id: 'A', office_id: 'offA' },
+        { resource_entity_id: 'B', office_id: 'offB' },
+      ],
+      govById,
+    });
+    const ctx = makeCtx([ent('A'), ent('B')], [], [loc('A'), loc('B')], new Map(), new Map(), new Map(), gov);
+    const plan = planCluster({ memberIds: ['A', 'B'], edges: [{ a: 'A', b: 'B', via: ['email'] }] }, ctx);
+    const websites = plan.materialize_points.filter((m) => m.contact_type === 'website').map((m) => m.contact_value);
+    expect(websites).toEqual(expect.arrayContaining(['https://county.gov/Apply', 'https://county.gov/apply']));
   });
 });
 
