@@ -555,6 +555,9 @@ type docket_bill = {
   search_context?: {
     state: string;
     session_title: string | null;
+    session_id?: number | null;
+    session_is_current?: boolean | null;
+    current_session_fetched_at?: string | null;
     fetched_at: string;
     corpus_source: "detail_cache" | "state_cache";
   };
@@ -607,6 +610,9 @@ type docket_search_payload = {
   results?: Array<{
     state: string;
     session_title: string | null;
+    session_id?: number | null;
+    session_is_current?: boolean | null;
+    current_session_fetched_at?: string | null;
     fetched_at: string;
     corpus_source: "detail_cache" | "state_cache";
     bill: docket_bill;
@@ -616,13 +622,25 @@ type docket_search_payload = {
 
 type docket_archive_payload = {
   ok: boolean;
-  contract?: "docket-preserved-archive-v1";
+  contract?: "docket-preserved-archive-v2";
   source?: "public.docket_bill_detail_cache";
   total_preserved?: number;
   state_total?: number;
   has_more?: boolean;
-  next_cursor?: number | null;
+  next_cursor?: { action_date: string | null; bill_id: number } | null;
   results?: NonNullable<docket_search_payload["results"]>;
+  message?: string;
+};
+
+type docket_archive_sessions_payload = {
+  ok: boolean;
+  contract?: "docket-preserved-sessions-v1";
+  results?: Array<{
+    state: string;
+    session_id: number;
+    session_title: string;
+    bill_count: number;
+  }>;
   message?: string;
 };
 
@@ -711,10 +729,13 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
   const [cache_statuses, set_cache_statuses] = useState<docket_cache_status[]>([]);
   const [cache_status_error, set_cache_status_error] = useState<string | null>(null);
   const [cache_status_loading, set_cache_status_loading] = useState(false);
-  const [show_completed, set_show_completed] = useState(true);
+  const [archive_view, set_archive_view] = useState<"all" | "under_deliberation" | "completed" | "past_sessions" | "unclassified">("all");
+  const [selected_archive_session, set_selected_archive_session] = useState("");
+  const [archive_sessions, set_archive_sessions] = useState<NonNullable<docket_archive_sessions_payload["results"]>>([]);
+  const [archive_sessions_error, set_archive_sessions_error] = useState<string | null>(null);
   const [archive_data, set_archive_data] = useState<docket_archive_payload | null>(null);
   const [archive_rows, set_archive_rows] = useState<NonNullable<docket_search_payload["results"]>>([]);
-  const [archive_cursor, set_archive_cursor] = useState(0);
+  const [archive_cursor, set_archive_cursor] = useState<{action_date:string|null;bill_id:number}|null>(null);
   const [archive_loading, set_archive_loading] = useState(false);
   const [archive_error, set_archive_error] = useState<string | null>(null);
   const archive_reset_pending = useRef(false);
@@ -832,10 +853,10 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
       return;
     }
     archive_reset_pending.current = true;
-    set_archive_cursor(0);
+    set_archive_cursor(null);
     set_archive_rows([]);
     set_archive_data(null);
-  }, [selected_state, search_active, level]);
+  }, [selected_state, selected_archive_session, search_active, level]);
 
   useEffect(() => {
     if (search_active) return;
@@ -847,15 +868,24 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
     const load_archive = async () => {
       set_archive_loading(true);
       set_archive_error(null);
-      if (archive_cursor === 0) {
+      if (archive_cursor === null) {
         set_archive_rows([]);
         set_archive_data(null);
         set_selected_bill_id(null);
         set_bill_detail(null);
       }
       try {
-        const params = new URLSearchParams({limit:"25", after:String(archive_cursor)});
+        const params = new URLSearchParams({limit:"25"});
+        if (archive_cursor) {
+          params.set("after_date", archive_cursor.action_date ?? "");
+          params.set("after_id", String(archive_cursor.bill_id));
+        }
         if (selected_state !== "ALL") params.set("state",selected_state);
+        if (selected_archive_session) {
+          const [session_state, session_id] = selected_archive_session.split(":");
+          params.set("session_state", session_state);
+          params.set("session_id", session_id);
+        }
         if (level === "state") params.set("jurisdiction_scope", "state");
         const response = await fetch(`/api/docket/archive?${params.toString()}`, {signal: controller.signal});
         const payload = await response.json().catch(() => ({
@@ -864,7 +894,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
         if (!response.ok || !payload.ok) throw new Error(payload.message || "api_docket_archive_failed");
         if (!controller.signal.aborted) {
           set_archive_data(payload);
-          set_archive_rows(previous => archive_cursor === 0
+          set_archive_rows(previous => archive_cursor === null
             ? (payload.results ?? [])
             : [...previous, ...(payload.results ?? [])]);
         }
@@ -876,7 +906,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
     };
     void load_archive();
     return () => controller.abort();
-  }, [archive_cursor, selected_state, search_active, level]);
+  }, [archive_cursor, selected_state, selected_archive_session, search_active, level]);
 
   const load_bill_detail = async (bill_id: number) => {
     set_selected_bill_id(bill_id);
@@ -963,6 +993,9 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
     search_context: {
       state: result.state,
       session_title: result.session_title,
+      session_id: result.session_id ?? null,
+      session_is_current: result.session_is_current ?? null,
+      current_session_fetched_at: result.current_session_fetched_at ?? null,
       fetched_at: result.fetched_at,
       corpus_source: result.corpus_source,
     },
@@ -980,7 +1013,9 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
           ...bill,
           session: {
             ...(bill as { session?: Record<string, unknown> }).session,
-            is_current: search_context ? null : current_session_flag,
+            is_current: search_context
+        ? (search_context.session_is_current ?? null)
+        : current_session_flag,
           },
           freshness: {
             ...(bill as { freshness?: Record<string, unknown> }).freshness,
@@ -994,12 +1029,15 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
       };
     })
     .filter(({ bill, resolution }) => {
-      if (search_active || show_completed || resolution.live_feed_eligible) return true;
-      const session_is_current = (bill as { session?: { is_current?: boolean | null } }).session?.is_current;
-      // Archive rows without a session binding stay visible until the source proves
-      // they are non-current; the filter only removes known non-live records.
-      return session_is_current == null && !resolution.is_terminal;
-    }); // Keep indexed keyset/page order; don't re-sort partial pages.
+      if (search_active || archive_view === "all") return true;
+      const session_is_current = bill.search_context?.session_is_current ?? null;
+      if (archive_view === "under_deliberation") {
+        return session_is_current === true && !resolution.is_terminal;
+      }
+      if (archive_view === "completed") return resolution.is_terminal;
+      if (archive_view === "past_sessions") return session_is_current === false;
+      return session_is_current === null;
+    }); // Archive pages are globally ordered by latest source action date.
 
   const active_loading = search_active ? search_loading : archive_loading && archive_rows.length === 0;
   const active_error = search_active ? search_error : archive_error;
