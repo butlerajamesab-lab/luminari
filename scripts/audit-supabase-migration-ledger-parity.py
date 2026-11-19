@@ -502,6 +502,13 @@ APPROVED_REPOSITORY_ONLY = {
         "20261119052953_docket_history_action_date_search_path.sql",
         "6f9a7827d362fad231b2f42b5649697d9688c9bb",
     ),
+    # Genome version-spine no-op guard. Repository-only pending the
+    # separately approved production migration; pin the exact SQL blob and
+    # do not imply that the trigger change is installed in production.
+    "20261119110000": (
+        "20261119110000_docket_genome_spine_noop_update_guard.sql",
+        "2d5af7a6b42b244632556073a7df5dab81050dc8",
+    ),
     # Restored production migration (legal authority catalog
     # materialized view). Applied in the live production ledger on
     # 2026-10-20 and verified there first-hand 2026-11-11, but absent
