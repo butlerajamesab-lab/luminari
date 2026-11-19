@@ -6,13 +6,14 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 const route = read("server/routes/docket.ts");
 const page = read("client/src/pages/DocketRoom.tsx");
 const migration = read("supabase/migrations/20261118090000_docket_corpus_indexed_public_read.sql");
+const orderingMigration = read("supabase/migrations/20261119010000_docket_history_session_ordering.sql");
 
 const searchRoute = route.slice(
   route.indexOf('docket_router.get("/search"'),
   route.indexOf('docket_router.get("/state"'),
 );
 const archiveRoute = route.slice(
-  route.indexOf('docket_router.get("/archive"'),
+  route.indexOf('docket_router.get("/archive",'),
   route.indexOf('docket_router.get("/search"'),
 );
 
@@ -20,15 +21,24 @@ describe("Docket complete preserved-source public browsing contract", () => {
   it("lists canonical Docket source inventory using a bounded keyset cursor", () => {
     expect(route).toContain('docket_router.get("/archive"');
     expect(archiveRoute).toContain("public.docket_bill_detail_cache");
-    expect(archiveRoute).toContain("docket-preserved-archive-v1");
-    expect(archiveRoute).toContain("order by cache.bill_id");
-    expect(archiveRoute).toContain("cache.bill_id>$1");
+    expect(archiveRoute).toContain("docket-preserved-archive-v2");
+    expect(archiveRoute).toContain("order by ${action_date_expr} desc nulls last,cache.bill_id asc");
+    expect(archiveRoute).toContain("docket_bill_latest_action_date_v1(cache.bill)");
+    expect(archiveRoute).toContain("after_date");
+    expect(archiveRoute).toContain("after_id");
     expect(archiveRoute).toContain("total_preserved");
     expect(archiveRoute).toContain("state_total");
     expect(archiveRoute).toContain("next_cursor");
     expect(archiveRoute).toContain("limit+1");
-    expect(archiveRoute).toContain('req.query.after === "0"');
-    expect(archiveRoute).toContain("docket_archive_state_index_not_installed");
+    expect(archiveRoute).toContain("docket_archive_cursor_incomplete");
+    expect(archiveRoute).toContain("docket_archive_action_order_index_not_installed");
+    expect(archiveRoute).toContain("docket_archive_state_action_order_index_not_installed");
+    expect(archiveRoute).toContain("docket_archive_session_action_order_index_not_installed");
+    expect(archiveRoute).toContain("session_evidence->>'prior'");
+    expect(archiveRoute).toContain("session_evidence->>'sine_die'");
+    expect(route).toContain('docket_router.get("/archive/sessions"');
+    expect(route).toContain("docket-preserved-sessions-v1");
+    expect(route).toContain("group by 1,2,3");
     expect(archiveRoute).not.toContain("get_master_list");
     expect(archiveRoute).not.toContain("get_bill(");
     expect(archiveRoute).not.toContain("register_docket");
@@ -86,17 +96,24 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(page).toContain("Preserved source corpus");
     expect(page).toContain("Separate legacy session snapshot");
     expect(page).toContain('useState("ALL")');
-    expect(page).toContain("Load more preserved bills");
+    expect(page).toContain("Load more records");
     expect(page).toContain("View in Civic Genome (source ID");
     expect(page).toContain("curated entries (separate from official source bills)");
     expect(page).not.toContain("entries analyzed");
-    expect(page).toContain("set_archive_cursor(0);");
-    expect(page).toContain("[selected_state, search_active, level]");
+    expect(page).toContain("set_archive_cursor(null);");
+    expect(page).toContain("[selected_state, selected_archive_session, search_active, level]");
+    expect(page).toContain("docket-preserved-archive-v2");
+    expect(page).toContain("Under deliberation · verified current session");
+    expect(page).toContain("Completed · terminal outcome");
+    expect(page).toContain("Past sessions · currentness verified");
+    expect(page).toContain("Session / year");
+    expect(page).toContain("Current session is unverified for");
     expect(page).toContain("archive_reset_pending.current");
     expect(page).toContain('params.set("jurisdiction_scope", "state")');
     expect(page).toContain('new URLSearchParams({ q: search_term, limit: "25" })');
-    expect(page).toContain("session_is_current == null && !resolution.is_terminal");
-    expect(page).toContain("Archive rows without a session binding stay visible");
+    expect(page).toContain("session_is_current === true && !resolution.is_terminal");
+    expect(page).toContain("session_is_current === false");
+    expect(page).toContain("session_is_current === null");
   });
 
   it("caps searches and requires real SQL indexes without charging provider calls", () => {
@@ -107,6 +124,11 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(migration).toContain("docket_bill_detail_cache_title_trgm_public_idx");
     expect(migration).toContain("FROM pg_extension e JOIN pg_namespace n");
     expect(migration).not.toContain("extensions.gin_trgm_ops");
+    expect(orderingMigration).toContain("docket_bill_latest_action_date_v1");
+    expect(orderingMigration).toContain("docket_bill_detail_cache_action_date_public_idx");
+    expect(orderingMigration).toContain("docket_bill_detail_cache_state_session_action_public_idx");
+    expect(orderingMigration).toContain("history_items(history_item)");
+    expect(orderingMigration).toContain("ADD COLUMN IF NOT EXISTS sessions jsonb");
     expect(archiveRoute).not.toContain("get_master_list");
     expect(searchRoute).not.toContain("get_master_list");
     expect(archiveRoute).not.toContain("get_bill(");
