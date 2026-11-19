@@ -859,10 +859,33 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
   }, [selected_state, selected_archive_session, search_active, level]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    set_archive_sessions([]);
+    set_archive_sessions_error(null);
+    set_selected_archive_session("");
+    const load_sessions = async () => {
+      try {
+        const params = new URLSearchParams();
+        if (selected_state !== "ALL") params.set("state", selected_state);
+        const response = await fetch(`/api/docket/archive/sessions?${params.toString()}`, {signal: controller.signal});
+        const payload = await response.json().catch(() => ({
+          ok:false,message:`api_docket_archive_sessions_failed_http_${response.status}`
+        })) as docket_archive_sessions_payload;
+        if (!response.ok || !payload.ok) throw new Error(payload.message || "api_docket_archive_sessions_failed");
+        if (!controller.signal.aborted) set_archive_sessions(payload.results ?? []);
+      } catch (error: any) {
+        if (error?.name !== "AbortError") set_archive_sessions_error(error?.message || "api_docket_archive_sessions_failed");
+      }
+    };
+    void load_sessions();
+    return () => controller.abort();
+  }, [selected_state]);
+
+  useEffect(() => {
     if (search_active) return;
     if (archive_reset_pending.current) {
       archive_reset_pending.current = false;
-      if (archive_cursor !== 0) return;
+      if (archive_cursor !== null) return;
     }
     const controller = new AbortController();
     const load_archive = async () => {
@@ -1039,6 +1062,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
       return session_is_current === null;
     }); // Archive pages are globally ordered by latest source action date.
 
+  const current_session_observed_at = archive_rows.find(row => row.current_session_fetched_at)?.current_session_fetched_at ?? null;
   const active_loading = search_active ? search_loading : archive_loading && archive_rows.length === 0;
   const active_error = search_active ? search_error : archive_error;
   const active_ready = search_active ? search_data !== null : archive_data !== null;
@@ -1064,12 +1088,33 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
           <div style={{ fontFamily: fontMono, fontSize: "0.75rem", color: dk.steelBright, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}>{selected_state === "US" ? "Federal legislation" : "Preserved Docket legislation"}</div>
           <p style={{ fontFamily: fontSans, fontSize: "0.82rem", color: dk.muted, margin: "0.25rem 0 0" }}>Browse preserved official-provider bill records, including those awaiting Genome projection or Rosetta analysis.</p>
         </div>
-        <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>
-          Jurisdiction
-          <select value={selected_state} onChange={event => set_selected_state(event.target.value)} style={{ background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "6px", color: dk.paper, fontFamily: fontMono, fontSize: "0.78rem", padding: "0.35rem 0.5rem" }}>
-            {(level === "federal" ? ["US"] : ["ALL", ...docket_states.filter(state => level === "state" ? state !== "US" : true)]).map(state => <option key={state} value={state}>{state === "ALL" ? "All jurisdictions" : state}</option>)}
-          </select>
-        </label>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>
+            Jurisdiction
+            <select value={selected_state} onChange={event => set_selected_state(event.target.value)} style={{ background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "6px", color: dk.paper, fontFamily: fontMono, fontSize: "0.78rem", padding: "0.35rem 0.5rem" }}>
+              {(level === "federal" ? ["US"] : ["ALL", ...docket_states.filter(state => level === "state" ? state !== "US" : true)]).map(state => <option key={state} value={state}>{state === "ALL" ? "All jurisdictions" : state}</option>)}
+            </select>
+          </label>
+          {!search_active && <>
+            <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>
+              View
+              <select value={archive_view} onChange={event => set_archive_view(event.target.value as typeof archive_view)} style={{ background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "6px", color: dk.paper, fontFamily: fontMono, fontSize: "0.78rem", padding: "0.35rem 0.5rem" }}>
+                <option value="all">All bills</option>
+                <option value="under_deliberation">Under deliberation · verified current session</option>
+                <option value="completed">Completed · terminal outcome</option>
+                <option value="past_sessions">Past sessions · currentness verified</option>
+                <option value="unclassified">Session currentness unknown</option>
+              </select>
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>
+              Session / year
+              <select value={selected_archive_session} onChange={event => set_selected_archive_session(event.target.value)} style={{ background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "6px", color: dk.paper, fontFamily: fontMono, fontSize: "0.78rem", padding: "0.35rem 0.5rem", maxWidth: 280 }}>
+                <option value="">All sessions</option>
+                {archive_sessions.map(session => <option key={`${session.state}:${session.session_id}`} value={`${session.state}:${session.session_id}`}>{session.state} · {session.session_title} ({session.bill_count.toLocaleString()})</option>)}
+              </select>
+            </label>
+          </>}
+        </div>
       </div>
 
       <div style={{ background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "8px", padding: "0.85rem", marginBottom: "0.9rem" }}>
@@ -1099,9 +1144,14 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
             {state_data?.session_current === null && state_data?.session_title && <span>Session currentness unknown</span>}
           </div>
         ) : cache_status_loading ? <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>loading_cache_status</div> : cache_status_error ? <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.red }}>cache_status_error {cache_status_error}</div> : <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>cache_status_unavailable</div>}
-        {!search_active && <label style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", marginTop: "0.65rem", color: dk.cream, fontFamily: fontSans, fontSize: "0.78rem" }}>
-          <input type="checkbox" checked={show_completed} onChange={event => set_show_completed(event.target.checked)} /> Show completed and non-live legislation
-        </label>}
+        {!search_active && current_session_observed_at && !snapshot_is_fresh(current_session_observed_at) &&
+          <div style={{ color: dk.amber, fontFamily: fontMono, fontSize: "0.68rem", marginTop: "0.6rem" }}>
+            Current-session filters are unclassified because the latest session snapshot is stale ({readable_date(current_session_observed_at)}).
+          </div>}
+        {!search_active && archive_sessions_error &&
+          <div style={{ color: dk.amber, fontFamily: fontMono, fontSize: "0.68rem", marginTop: "0.6rem" }}>
+            Session list unavailable: {archive_sessions_error}
+          </div>}
       </div>
 
       {active_loading ? (
