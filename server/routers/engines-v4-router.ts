@@ -19,16 +19,6 @@ import {
   getEntityTransparencyStats,
 } from "../engines/entity-transparency";
 import {
-  scoreEntityEvidence,
-  getEntityEvidenceScore,
-  evaluateVisibility,
-  getVisibleEntities,
-  getProvisionalEntities,
-  renderSafeLanguage,
-  exportEntityEvidence,
-  getEvidenceThresholdStats,
-} from "../engines/entity-evidence-threshold";
-import {
   calculateRiskScore,
   forecastPatternRisk,
   forecastEntityRisk,
@@ -48,20 +38,6 @@ import {
   markNotificationRead,
   getAlertingStats,
 } from "../engines/public-alerting";
-import {
-  upsertMapNode,
-  createMapEdge,
-  buildMapFromSignals,
-  getMapData,
-  addAnnotation,
-  getMapStats,
-  upsertFailureProfile,
-  calculateFailureProbability,
-  recordTimelineEvent,
-  getFailureProfiles,
-  getProfileTimeline,
-  getFailurePredictionStats,
-} from "../engines/systemic-intelligence-map";
 
 export const enginesV4Router = router({
   // ─── Entity Transparency ─────────────────────────────────────────
@@ -91,61 +67,6 @@ export const enginesV4Router = router({
 
   entityTransparencyStats: protectedProcedure
     .query(() => getEntityTransparencyStats()),
-
-  // ─── Entity Evidence Threshold ───────────────────────────────────
-  scoreEvidence: protectedProcedure
-    .input(z.object({
-      entityName: z.string(),
-      patternId: z.number().optional(),
-    }))
-    .mutation(({ input }) => withEngineTracking({ engineId: ENGINE_IDS.EVIDENCE_THRESHOLD, caseId: 0 }, () => scoreEntityEvidence(input.entityName, input.patternId))),
-
-  entityEvidenceScore: protectedProcedure
-    .input(z.object({
-      entityName: z.string(),
-      patternId: z.number().optional(),
-    }))
-    .query(({ input }) => getEntityEvidenceScore(input.entityName, input.patternId)),
-
-  entityVisibility: protectedProcedure
-    .input(z.object({
-      signalCount: z.number(),
-      lawsuitCount: z.number(),
-      enforcementCount: z.number(),
-      streamCount: z.number(),
-      confidenceScore: z.number(),
-    }))
-    .query(({ input }) => ({ result: evaluateVisibility(input) })),
-
-  visibleEntities: protectedProcedure
-    .query(() => getVisibleEntities()),
-
-  provisionalEntities: protectedProcedure
-    .query(() => getProvisionalEntities()),
-
-  safeLanguage: protectedProcedure
-    .input(z.object({
-      entityName: z.string(),
-      complaintCount: z.number(),
-      lawsuitCount: z.number().optional(),
-      enforcementCount: z.number().optional(),
-      issue: z.string(),
-    }))
-    .query(({ input }) => ({
-      text: renderSafeLanguage(input.entityName, {
-        complaintCount: input.complaintCount,
-        lawsuitCount: input.lawsuitCount || 0,
-        enforcementCount: input.enforcementCount || 0,
-        issue: input.issue,
-      }),
-    })),
-
-  exportEvidence: protectedProcedure
-    .input(z.object({ entityName: z.string() }))
-    .query(({ input }) => exportEntityEvidence(input.entityName)),
-
-  evidenceThresholdStats: protectedProcedure
-    .query(() => getEvidenceThresholdStats()),
 
   // ─── Systemic Risk Forecast ──────────────────────────────────────
   calculateRisk: protectedProcedure
@@ -247,95 +168,6 @@ export const enginesV4Router = router({
 
   alertingStats: protectedProcedure
     .query(() => getAlertingStats()),
-
-  // ─── Global Systemic Intelligence Map ────────────────────────────
-  upsertNode: protectedProcedure
-    .input(z.object({
-      nodeType: z.string(),
-      nodeName: z.string(),
-      jurisdiction: z.string().optional(),
-      industry: z.string().optional(),
-      riskScore: z.number().optional(),
-      patternCount: z.number().optional(),
-    }))
-    .mutation(({ input }) => withEngineTracking({ engineId: "systemic-map-engine", caseId: 0 }, () => upsertMapNode(input))),
-
-  createEdge: protectedProcedure
-    .input(z.object({
-      sourceNodeId: z.number(),
-      targetNodeId: z.number(),
-      edgeType: z.string(),
-      weight: z.number().optional(),
-    }))
-    .mutation(({ input }) => withEngineTracking({ engineId: "systemic-map-engine", caseId: 0 }, () => createMapEdge(input))),
-
-  buildMap: protectedProcedure
-    .mutation(() => withEngineTracking({ engineId: "systemic-map-engine", caseId: 0 }, () => buildMapFromSignals())),
-
-  mapData: protectedProcedure
-    .input(z.object({
-      nodeType: z.string().optional(),
-      minRiskScore: z.number().optional(),
-    }).optional())
-    .query(({ input }) => getMapData(input || undefined)),
-
-  addAnnotation: protectedProcedure
-    .input(z.object({
-      nodeId: z.number(),
-      note: z.string(),
-    }))
-    .mutation(({ ctx, input }) => withEngineTracking({ engineId: "systemic-map-engine", caseId: 0 }, () => addAnnotation({
-      nodeId: input.nodeId,
-      analyst: ctx.user.name || ctx.user.id.toString(),
-      note: input.note,
-    }))),
-
-  mapStats: protectedProcedure
-    .query(() => getMapStats()),
-
-  // ─── Institutional Failure Prediction ────────────────────────────
-  upsertFailureProfile: protectedProcedure
-    .input(z.object({
-      institutionId: z.number(),
-      complaintVolume: z.number().optional(),
-      litigationVolume: z.number().optional(),
-      regulatoryActions: z.number().optional(),
-      enforcementActions: z.number().optional(),
-      appealReversalRate: z.number().optional(),
-      processingDelayIndex: z.number().optional(),
-      policyShockScore: z.number().optional(),
-    }))
-    .mutation(({ input }) => withEngineTracking({ engineId: "failure-prediction-engine", caseId: 0 }, () => upsertFailureProfile(input))),
-
-  calculateFailureProbability: protectedProcedure
-    .input(z.object({
-      complaintVolume: z.number(),
-      enforcementRate: z.number(),
-      responseTime: z.number(),
-      historicalFailures: z.number(),
-      budgetPressure: z.number(),
-    }))
-    .query(({ input }) => ({ probability: calculateFailureProbability(input) })),
-
-  failureProfiles: protectedProcedure
-    .input(z.object({ minProbability: z.number().optional() }).optional())
-    .query(({ input }) => getFailureProfiles(input?.minProbability)),
-
-  profileTimeline: protectedProcedure
-    .input(z.object({ institutionId: z.number() }))
-    .query(({ input }) => getProfileTimeline(input.institutionId)),
-
-  recordTimelineEvent: protectedProcedure
-    .input(z.object({
-      institutionId: z.number(),
-      eventType: z.string(),
-      impactScore: z.number().optional(),
-      metadata: z.record(z.string(), z.unknown()).optional(),
-    }))
-    .mutation(({ input }) => withEngineTracking({ engineId: "failure-prediction-engine", caseId: 0 }, () => recordTimelineEvent(input))),
-
-  failurePredictionStats: protectedProcedure
-    .query(() => getFailurePredictionStats()),
 
   // ─── Investigative Query Engine ──────────────────────────────────
   runInvestigativeQuery: protectedProcedure

@@ -2,10 +2,12 @@
  * Engines V3 Router (Session 73)
  *
  * Exposes tRPC endpoints for:
- * - Systemic Simulation Engine
  * - Public Transparency Layer
- * - Evidence Publishing & Dossier Engine
  * - External Collaboration & Secure Sharing Engine
+ *
+ * The Systemic Simulation and Evidence Publishing & Dossier sections
+ * were removed with their Mission Control panels in the Gate A
+ * removal (2026-11-19).
  */
 
 import { z } from "zod";
@@ -13,67 +15,6 @@ import { router, protectedProcedure, adminProcedure } from "../_core/trpc";
 import { withEngineTracking, ENGINE_IDS } from "../engine-entrypoint-wrapper";
 
 export const enginesV3Router = router({
-  // ═══════════════════════════════════════════
-  // Systemic Simulation Engine
-  // ═══════════════════════════════════════════
-
-  simulationStats: protectedProcedure.query(async () => {
-    const { getSimulationStats } = await import("../engines/systemic-simulation");
-    return getSimulationStats();
-  }),
-
-  runSimulation: protectedProcedure
-    .input(z.object({
-      simulationType: z.enum(["policy_change", "enforcement_increase", "penalty_adjustment", "staffing_change", "jurisdiction_reform"]),
-      targetIndustry: z.string().optional(),
-      targetEntity: z.string().optional(),
-      jurisdiction: z.string().optional(),
-      parameters: z.record(z.string(), z.number()),
-      description: z.string().optional(),
-    }))
-    .mutation(async ({ input, ctx }) => {
-      return withEngineTracking({ engineId: ENGINE_IDS.SYSTEMIC_SIMULATION, caseId: 0 }, async () => {
-        const { runSimulation } = await import("../engines/systemic-simulation");
-        return runSimulation({
-          ...input,
-          createdBy: ctx.user?.name ?? "system",
-        } as any);
-      });
-    }),
-
-  simulationHistory: protectedProcedure
-    .input(z.object({
-      simulationType: z.string().optional(),
-      industry: z.string().optional(),
-      limit: z.number().optional(),
-      offset: z.number().optional(),
-    }).optional())
-    .query(async ({ input }) => {
-      const { listSimulations } = await import("../engines/systemic-simulation") as any;
-      return listSimulations(input);
-    }),
-
-  simulationDetail: protectedProcedure
-    .input(z.object({ simulationId: z.number() }))
-    .query(async ({ input }) => {
-      const { getSimulationById } = await import("../engines/systemic-simulation");
-      return getSimulationById(input.simulationId);
-    }),
-
-  compareSimulations: protectedProcedure
-    .input(z.object({ simulationIds: z.array(z.number()).min(2).max(5) }))
-    .query(async ({ input }) => {
-      const { compareSimulations } = await import("../engines/systemic-simulation") as any;
-      return compareSimulations(input.simulationIds);
-    }),
-
-  simulationReport: protectedProcedure
-    .input(z.object({ simulationId: z.number() }))
-    .query(async ({ input }) => {
-      const { generateSimulationReport } = await import("../engines/systemic-simulation");
-      return generateSimulationReport(input.simulationId);
-    }),
-
   // ═══════════════════════════════════════════
   // Public Transparency Layer
   // ═══════════════════════════════════════════
@@ -155,71 +96,6 @@ export const enginesV3Router = router({
     .query(async ({ input }) => {
       const { translateJargon } = await import("../engines/public-transparency");
       return { translated: translateJargon(input.text) };
-    }),
-
-  // ═══════════════════════════════════════════
-  // Evidence Publishing & Dossier Engine
-  // ═══════════════════════════════════════════
-
-  dossierStats: protectedProcedure.query(async () => {
-    const { getDossierStats } = await import("../engines/evidence-dossier");
-    return getDossierStats();
-  }),
-
-  generateDossier: protectedProcedure
-    .input(z.object({
-      dossierType: z.enum(["investigation_kit", "legal_bundle", "policy_packet", "regulator_referral", "entity_dossier", "pattern_dossier"]),
-      patternId: z.number().optional(),
-      patternName: z.string().optional(),
-      entityId: z.number().optional(),
-      entityName: z.string().optional(),
-      jurisdiction: z.string().optional(),
-      audienceType: z.enum(["journalist", "attorney", "policymaker", "regulator", "advocate", "internal"]),
-      signalCount: z.number().optional(),
-      complaintCount: z.number().optional(),
-      litigationCount: z.number().optional(),
-      enforcementCount: z.number().optional(),
-      entityNames: z.array(z.string()).optional(),
-      institutionNames: z.array(z.string()).optional(),
-      pressureIndex: z.number().optional(),
-      accountabilityScore: z.number().optional(),
-      enforcementGap: z.number().optional(),
-      crisisProbability: z.number().optional(),
-      trendClassification: z.string().optional(),
-      topSignals: z.array(z.object({ title: z.string(), severity: z.number(), date: z.string() })).optional(),
-      relatedPatterns: z.array(z.object({ name: z.string(), pressureIndex: z.number() })).optional(),
-    }))
-    .mutation(async ({ input, ctx }) => {
-      return withEngineTracking({ engineId: ENGINE_IDS.EVIDENCE_DOSSIER, caseId: 0 }, async () => {
-        const mod = await import("../engines/evidence-dossier");
-        const dossierInput = { ...input, createdBy: ctx.user?.name ?? "system" };
-        switch (input.dossierType) {
-          case "investigation_kit": return mod.generateInvestigationKit(dossierInput);
-          case "legal_bundle": return mod.generateLegalBundle(dossierInput);
-          case "policy_packet": return mod.generatePolicyPacket(dossierInput);
-          case "regulator_referral": return mod.generateRegulatorReferral(dossierInput);
-          case "entity_dossier": return mod.generateEntityDossier(dossierInput);
-          case "pattern_dossier": return mod.generatePatternDossier(dossierInput);
-          default: return mod.generateInvestigationKit(dossierInput);
-        }
-      });
-    }),
-
-  dossierDetail: protectedProcedure
-    .input(z.object({ dossierId: z.number() }))
-    .query(async ({ input }) => {
-      const { getDossierById } = await import("../engines/evidence-dossier");
-      return getDossierById(input.dossierId);
-    }),
-
-  exportDossier: protectedProcedure
-    .input(z.object({
-      dossierId: z.number(),
-      format: z.enum(["markdown", "html", "json"]).optional(),
-    }))
-    .query(async ({ input }) => {
-      const { exportDossier } = await import("../engines/evidence-dossier");
-      return { content: await exportDossier(input.dossierId, input.format ?? "markdown") };
     }),
 
   // ═══════════════════════════════════════════
