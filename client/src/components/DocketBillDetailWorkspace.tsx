@@ -247,7 +247,7 @@ export function DocketBillDetailWorkspace({
           <div style={{ marginTop: "0.5rem", fontFamily: font_sans, fontSize: "0.78rem", color: palette.cream, lineHeight: 1.45 }}>
             <div style={{ color: palette.muted, marginBottom: "0.2rem" }}>History actions reported on this date:</div>
             {same_date_actions.map((entry, action_index) => (
-              <div key={action_index}>{entry.action}{entry.chamber ? ` · ${display_value(entry.chamber)}` : ""}</div>
+              <div key={action_index}>{display_value(entry.action)}{entry.chamber ? ` · ${display_value(entry.chamber)}` : ""}</div>
             ))}
           </div>
         ) : (
