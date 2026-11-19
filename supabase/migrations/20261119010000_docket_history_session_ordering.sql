@@ -18,7 +18,7 @@ AS $function$
         WHEN jsonb_typeof(p_bill->'history') = 'array' THEN p_bill->'history'
         ELSE '[]'::jsonb
       END
-    ) AS history_item
+    ) AS history_items(history_item)
   ) AS action_dates
   WHERE action_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2};
 $function$;
