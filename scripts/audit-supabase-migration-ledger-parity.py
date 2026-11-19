@@ -489,6 +489,13 @@ APPROVED_REPOSITORY_ONLY = {
         "20261118090000_docket_corpus_indexed_public_read.sql",
         "c7142606f1d5e84415d717e7dca71413c9f72801",
     ),
+    # Docket action-date ordering and provider session-currentness substrate.
+    # Repository-only until exact-head review, migration replay, and separate
+    # production installation approval. This pin does not mark it installed.
+    "20261119010000": (
+        "20261119010000_docket_history_session_ordering.sql",
+        "efdea9e78157fb0299fe5111b35f0101bbe21a2b",
+    ),
     # Restored production migration (legal authority catalog
     # materialized view). Applied in the live production ledger on
     # 2026-10-20 and verified there first-hand 2026-11-11, but absent

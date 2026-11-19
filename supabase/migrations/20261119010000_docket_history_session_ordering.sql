@@ -33,6 +33,25 @@ BEGIN
 END;
 $preflight$;
 
+-- Preserve the provider's actual currentness flags for every session in the
+-- state snapshot. A chosen fallback session ID alone is not currentness proof.
+ALTER TABLE public.docket_bill_state_cache
+  ADD COLUMN IF NOT EXISTS sessions jsonb NOT NULL DEFAULT '[]'::jsonb;
+
+DO $session_shape$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname='docket_bill_state_cache_sessions_array'
+      AND conrelid='public.docket_bill_state_cache'::regclass
+  ) THEN
+    ALTER TABLE public.docket_bill_state_cache
+      ADD CONSTRAINT docket_bill_state_cache_sessions_array
+      CHECK (jsonb_typeof(sessions)='array');
+  END IF;
+END;
+$session_shape$;
+
 -- Global browse order. NULL dates fall behind dated source history.
 CREATE INDEX docket_bill_detail_cache_action_date_public_idx
 ON public.docket_bill_detail_cache (
@@ -60,6 +79,12 @@ ON public.docket_bill_detail_cache (
 DO $postflight$
 BEGIN
   IF to_regprocedure('public.docket_bill_latest_action_date_v1(jsonb)') IS NULL
+    OR NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema='public'
+        AND table_name='docket_bill_state_cache'
+        AND column_name='sessions'
+    )
     OR to_regclass('public.docket_bill_detail_cache_action_date_public_idx') IS NULL
     OR to_regclass('public.docket_bill_detail_cache_state_action_date_public_idx') IS NULL
     OR to_regclass('public.docket_bill_detail_cache_state_session_action_public_idx') IS NULL THEN

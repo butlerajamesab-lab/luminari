@@ -34,6 +34,8 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(archiveRoute).toContain("docket_archive_action_order_index_not_installed");
     expect(archiveRoute).toContain("docket_archive_state_action_order_index_not_installed");
     expect(archiveRoute).toContain("docket_archive_session_action_order_index_not_installed");
+    expect(archiveRoute).toContain("session_evidence->>'prior'");
+    expect(archiveRoute).toContain("session_evidence->>'sine_die'");
     expect(route).toContain('docket_router.get("/archive/sessions"');
     expect(route).toContain("docket-preserved-sessions-v1");
     expect(route).toContain("group by 1,2,3");
@@ -126,6 +128,7 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(orderingMigration).toContain("docket_bill_detail_cache_action_date_public_idx");
     expect(orderingMigration).toContain("docket_bill_detail_cache_state_session_action_public_idx");
     expect(orderingMigration).toContain("history_items(history_item)");
+    expect(orderingMigration).toContain("ADD COLUMN IF NOT EXISTS sessions jsonb");
     expect(archiveRoute).not.toContain("get_master_list");
     expect(searchRoute).not.toContain("get_master_list");
     expect(archiveRoute).not.toContain("get_bill(");

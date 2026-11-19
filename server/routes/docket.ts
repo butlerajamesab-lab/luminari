@@ -7,6 +7,7 @@ import {
   LEGISCAN_ROLLOUT_STATES,
   type legiscan_bill_detail,
   type legiscan_master_bill,
+  type legiscan_session,
 } from "../services/legiscan";
 import {
   pick_preferred_legiscan_session,
@@ -39,6 +40,7 @@ type docket_state_cache_row = {
   state: string;
   session_id: number;
   session_title: string | null;
+  sessions: legiscan_session[];
   bills: legiscan_master_bill[];
   bill_count: number;
   fetched_at: string;
@@ -423,7 +425,7 @@ const search_docket_corpus = async (input: {
 
 const read_state_cache = async (state: string): Promise<docket_state_cache_row | null> => {
   const result = await query_with_diagnostics<docket_state_cache_database_row>(
-    `select id, state, session_id, session_title, bills, bill_count, fetched_at, source
+    `select id, state, session_id, session_title, sessions, bills, bill_count, fetched_at, source
        from public.docket_bill_state_cache
       where state = $1
       limit 1`,
@@ -441,7 +443,7 @@ const read_state_cache = async (state: string): Promise<docket_state_cache_row |
 
 const read_all_state_cache = async (): Promise<docket_state_cache_row[]> => {
   const result = await query_with_diagnostics<docket_state_cache_database_row>(
-    `select id, state, session_id, session_title, bills, bill_count, fetched_at, source
+    `select id, state, session_id, session_title, sessions, bills, bill_count, fetched_at, source
        from public.docket_bill_state_cache
       where state = any($1::text[])`,
     [LEGISCAN_ROLLOUT_STATES],
@@ -465,11 +467,12 @@ const upsert_state_cache = async (
   await query_with_diagnostics(
     `with cache_write as (
        insert into public.docket_bill_state_cache (
-       state, session_id, session_title, bills, bill_count, fetched_at, source
-       ) values ($1, $2, $3, $4::jsonb, $5, $6::timestamptz, $7)
+       state, session_id, session_title, sessions, bills, bill_count, fetched_at, source
+       ) values ($1, $2, $3, $4::jsonb, $5::jsonb, $6, $7::timestamptz, $8)
        on conflict (state) do update set
        session_id = excluded.session_id,
        session_title = excluded.session_title,
+       sessions = excluded.sessions,
        bills = excluded.bills,
        bill_count = excluded.bill_count,
        fetched_at = excluded.fetched_at,
@@ -481,12 +484,12 @@ const upsert_state_cache = async (
        (state, failure_count, retry_after, last_error_code, updated_at)
      select state, 1, now(), 'request_scoped_cache_refresh_requires_projection', now()
        from cache_write
-      where $8::boolean
+      where $9::boolean
      on conflict (state) do update set
        retry_after = now(),
        last_error_code = excluded.last_error_code,
        updated_at = now()`,
-    [row.state, row.session_id, row.session_title, JSON.stringify(row.bills), row.bill_count, row.fetched_at, row.source, projection_required],
+    [row.state, row.session_id, row.session_title, JSON.stringify(row.sessions), JSON.stringify(row.bills), row.bill_count, row.fetched_at, row.source, projection_required],
     {
       label: "docket_state_cache_upsert",
       pool_acquire_timeout_ms: 1_000,
@@ -531,11 +534,6 @@ const is_fresh = (fetched_at: string, ttl_ms = cache_ttl_ms): boolean => {
   }
 
   return Date.now() - fetched_ms < ttl_ms;
-};
-
-const pick_active_session = async (state: string) => {
-  const sessions = await get_session_list(state);
-  return pick_preferred_legiscan_session(sessions);
 };
 
 const age_minutes = (fetched_at: string | null): number | null => {
@@ -619,7 +617,8 @@ const refresh_state_cache = async (
     };
   }
 
-  const session = await pick_active_session(state);
+  const sessions = await get_session_list(state);
+  const session = pick_preferred_legiscan_session(sessions);
 
   if (!session?.session_id) {
     throw new Error(`no_legiscan_sessions_found_for_${state}`);
@@ -631,6 +630,7 @@ const refresh_state_cache = async (
     state,
     session_id: session.session_id,
     session_title: session.session_title ?? session.session_name ?? session.name ?? null,
+    sessions,
     bills,
     bill_count: bills.length,
     fetched_at: new Date().toISOString(),
@@ -997,10 +997,24 @@ docket_router.get("/archive", async (req, res) => {
             case when cache.bill->>'session_id' ~ '^[0-9]+$'
                  then (cache.bill->>'session_id')::integer end as session_id,
             case
-              when session_cache.fetched_at >= now()-interval '24 hours'
-                and cache.bill->>'session_id' ~ '^[0-9]+$'
-              then session_cache.session_id=(cache.bill->>'session_id')::integer
-              else null
+              when session_cache.fetched_at < now()-interval '24 hours'
+                or cache.bill->>'session_id' !~ '^[0-9]+$'
+              then null
+              else (
+                select case
+                  when session_evidence->>'prior' in ('1','true','yes','y') then false
+                  when session_evidence->>'prior' in ('0','false','no','n') then true
+                  when session_evidence->>'sine_die' in ('1','true','yes','y') then false
+                  when session_evidence->>'sine_die' in ('0','false','no','n') then true
+                  else null
+                end
+                from jsonb_array_elements(
+                  case when jsonb_typeof(session_cache.sessions)='array'
+                       then session_cache.sessions else '[]'::jsonb end
+                ) as session_items(session_evidence)
+                where session_evidence->>'session_id'=(cache.bill->>'session_id')
+                limit 1
+              )
             end as session_is_current,
             session_cache.fetched_at as current_session_fetched_at,
             cache.fetched_at,'detail_cache'::text as corpus_source,0 as match_rank
