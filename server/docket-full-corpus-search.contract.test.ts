@@ -95,6 +95,8 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(page).toContain("archive_reset_pending.current");
     expect(page).toContain('params.set("jurisdiction_scope", "state")');
     expect(page).toContain('new URLSearchParams({ q: search_term, limit: "25" })');
+    expect(page).toContain("session_is_current == null && !resolution.is_terminal");
+    expect(page).toContain("Archive rows without a session binding stay visible");
   });
 
   it("caps searches and requires real SQL indexes without charging provider calls", () => {
