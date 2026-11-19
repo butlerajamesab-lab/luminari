@@ -109,6 +109,7 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(page).toContain("Undeliberated · verified current session");
     expect(page).toContain("Deliberated · terminal outcome");
     expect(page).toContain("Choose a jurisdiction first");
+    expect(page).toContain('"Verified current session"');
     expect(page).toContain("Session / year");
     expect(page).toContain("Current session is unverified for");
     expect(page).toContain("archive_reset_pending.current");
