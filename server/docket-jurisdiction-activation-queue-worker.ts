@@ -356,7 +356,7 @@ export const DOCKET_ARCHIVE_ONLY_CLAIM_SQL = `
               queue.summary_fingerprint,
               queue.observed_change_hash,
               queue.attempt_count,
-              queue.summary_json,
+              null::jsonb as summary_json,
               null::jsonb as session_evidence
   )
   select * from claimed`;
