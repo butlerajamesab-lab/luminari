@@ -1003,8 +1003,8 @@ docket_router.get("/archive", async (req, res) => {
               else (
                 select case
                   when session_evidence->>'prior' in ('1','true','yes','y') then false
-                  when session_evidence->>'prior' in ('0','false','no','n') then true
                   when session_evidence->>'sine_die' in ('1','true','yes','y') then false
+                  when session_evidence->>'prior' in ('0','false','no','n') then true
                   when session_evidence->>'sine_die' in ('0','false','no','n') then true
                   else null
                 end
