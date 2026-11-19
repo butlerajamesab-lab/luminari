@@ -633,7 +633,8 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
       if (search_active) return true;
       const session_is_current = bill.search_context?.session_is_current ?? null;
       if (archive_view === "undeliberated") {
-        return session_is_current === true && !resolution.is_terminal;
+        return !resolution.is_terminal
+          && (selected_archive_session !== "" || session_is_current === true);
       }
       return resolution.is_terminal
         && (selected_archive_session !== "" || session_is_current === true);
