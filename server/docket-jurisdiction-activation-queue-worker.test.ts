@@ -120,6 +120,10 @@ describe("Docket jurisdiction activation queue", () => {
 
       expect(get_bill).not.toHaveBeenCalled();
       expect(query.mock.calls.some(call => call[2]?.label === "docket_bill_activation_live_api_skipped")).toBe(true);
+      expect(query.mock.calls.some(call =>
+        call[2]?.label === "docket_bill_activation_live_api_skipped"
+        && String(call[0]).includes("when $2::text = 'current_session_unverified' then 'degraded'")
+        && String(call[0]).includes("now() + interval '1 hour'"))).toBe(true);
       expect(query.mock.calls.some(call => call[2]?.label === "docket_bill_activation_register_version_spine")).toBe(false);
     }
   });
