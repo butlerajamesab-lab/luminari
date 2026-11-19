@@ -58,11 +58,28 @@ begin
        where tgrelid = 'public.civic_genome_bill'::regclass
          and tgname = 'civic_genome_bill_lifecycle_event_time_v3'
          and tgenabled <> 'D'
-     ) or not exists (
-       select 1 from pg_trigger
-       where tgrelid = 'public.civic_genome_bill'::regclass
-         and tgname = 'civic_genome_legislative_version_spine_registration'
-         and tgenabled <> 'D'
+     ) or not (
+       exists (
+         select 1 from pg_trigger
+         where tgrelid = 'public.civic_genome_bill'::regclass
+           and tgname = 'civic_genome_legislative_version_spine_registration'
+           and tgenabled <> 'D'
+       ) or (
+         exists (
+           select 1 from pg_trigger
+           where tgrelid = 'public.civic_genome_bill'::regclass
+             and tgname = 'civic_genome_legislative_version_spine_registration_insert'
+             and tgenabled <> 'D'
+         )
+         and exists (
+           select 1 from pg_trigger trigger_row
+           where trigger_row.tgrelid = 'public.civic_genome_bill'::regclass
+             and trigger_row.tgname = 'civic_genome_legislative_version_spine_registration_update'
+             and trigger_row.tgenabled <> 'D'
+             and pg_get_triggerdef(trigger_row.oid)
+               ilike '%old.structural_dna_json%IS DISTINCT FROM%new.structural_dna_json%'
+         )
+       )
      ) then
     raise exception 'real_civic_genome_bill_triggers_not_enabled';
   end if;
