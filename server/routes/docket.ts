@@ -1340,7 +1340,13 @@ docket_router.get("/bill/:bill_id", async (req, res) => {
           ),
         };
       })
-      .find(item => item !== null && Number.isSafeInteger(item.session_id) && item.session_id > 0);
+      .find(item =>
+        item !== null
+        && Number.isSafeInteger(item.session_id)
+        && item.session_id > 0
+        && Number.isFinite(Date.parse(item.state_cache.fetched_at))
+        && Date.now() - Date.parse(item.state_cache.fetched_at) < 24 * 60 * 60 * 1000,
+      );
     const eligibility = candidate
       ? resolve_docket_live_update_eligibility({
           summary: candidate.summary,
