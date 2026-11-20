@@ -2,7 +2,8 @@
 -- SHA-256 bill UUID; preserve every prior 3/21/53/66 assertion but use the same
 -- deterministic synthetic identity that production emits, never gen_random_uuid().
 -- Disposable Supabase replay acceptance only; NEVER run on production.
--- This script uses the actual migrated lifecycle + registration triggers.
+-- This script uses the actual migrated lifecycle triggers and drains the durable
+-- detail-derived-work outbox through its production claim/process/complete RPCs.
 -- All synthetic rows, source metadata, and derived ledger writes are rolled back.
 -- Histories mirror the 3/21/53/66 event cardinalities seen in the five-job pilot;
 -- they are NOT copies of provider documents and cannot prove performance at scale.
@@ -39,6 +40,11 @@ declare
   v_effective_at timestamptz;
   v_current_state text;
   v_tombstone_count integer;
+  v_work_id uuid;
+  v_work_source_bill_id integer;
+  v_work_fetched_at timestamptz;
+  v_work_receipt jsonb;
+  v_work_completed boolean;
 begin
   if to_regprocedure('public.sync_civic_genome_lifecycle_history_v3(integer)') is null
       or to_regprocedure('public.register_docket_legislative_version_spine(integer,boolean)') is null
@@ -162,6 +168,30 @@ begin
     ) returning genome_bill_id into v_genome_bill_id;
     v_duration_ms := round((extract(epoch from clock_timestamp() - v_start) * 1000)::numeric, 1);
 
+    -- Detail and Genome triggers enqueue one idempotent work item. Process it
+    -- through the same leased contract used by the background worker before
+    -- asserting lifecycle history and source-version registration.
+    select work.work_id, work.source_bill_id, work.docket_fetched_at
+      into v_work_id, v_work_source_bill_id, v_work_fetched_at
+    from public.claim_docket_bill_detail_derived_work_v1(
+      'ci-real-lifecycle-trigger-worker', 1
+    ) work;
+    if v_work_id is null or v_work_source_bill_id <> v_source_bill_id
+        or v_work_fetched_at is distinct from timestamptz '2026-11-14 12:00:00+00' then
+      raise exception 'real_spine_outbox_claim_mismatch history=% claimed_source=% claimed_fetched_at=%',
+        v_history_length, v_work_source_bill_id, v_work_fetched_at;
+    end if;
+    select public.process_docket_bill_detail_derived_work_v1(
+      v_work_source_bill_id, v_work_fetched_at
+    ) into v_work_receipt;
+    select public.complete_docket_bill_detail_derived_work_v1(
+      v_work_id, 'ci-real-lifecycle-trigger-worker', v_work_receipt
+    ) into v_work_completed;
+    if v_work_completed is not true or v_work_receipt->>'status' <> 'processed' then
+      raise exception 'real_spine_outbox_process_mismatch history=% receipt=% completed=%',
+        v_history_length, v_work_receipt, v_work_completed;
+    end if;
+
     -- Registration must have actually run on the real AFTER INSERT trigger.
     select count(*)::integer into v_document_count
     from public.docket_bill_source_document
@@ -247,6 +277,25 @@ begin
              fetched_at = timestamptz '2026-11-14 12:00:01+00'
        where bill_id = v_source_bill_id;
 
+      select work.work_id, work.source_bill_id, work.docket_fetched_at
+        into v_work_id, v_work_source_bill_id, v_work_fetched_at
+      from public.claim_docket_bill_detail_derived_work_v1(
+        'ci-real-lifecycle-trigger-worker', 1
+      ) work;
+      if v_work_id is null or v_work_source_bill_id <> v_source_bill_id
+          or v_work_fetched_at is distinct from timestamptz '2026-11-14 12:00:01+00' then
+        raise exception 'long_history_correction_outbox_claim_mismatch';
+      end if;
+      select public.process_docket_bill_detail_derived_work_v1(
+        v_work_source_bill_id, v_work_fetched_at
+      ) into v_work_receipt;
+      select public.complete_docket_bill_detail_derived_work_v1(
+        v_work_id, 'ci-real-lifecycle-trigger-worker', v_work_receipt
+      ) into v_work_completed;
+      if v_work_completed is not true or v_work_receipt->>'status' <> 'processed' then
+        raise exception 'long_history_correction_outbox_process_mismatch receipt=%', v_work_receipt;
+      end if;
+
       select event.lifecycle_event_id into v_correction_event_id
       from public.v_civic_genome_lifecycle_event_current_v3 event
       where event.genome_bill_id = v_genome_bill_id
@@ -271,6 +320,24 @@ begin
          set bill = v_empty_record,
              fetched_at = timestamptz '2026-11-14 12:00:02+00'
        where bill_id = v_source_bill_id;
+      select work.work_id, work.source_bill_id, work.docket_fetched_at
+        into v_work_id, v_work_source_bill_id, v_work_fetched_at
+      from public.claim_docket_bill_detail_derived_work_v1(
+        'ci-real-lifecycle-trigger-worker', 1
+      ) work;
+      if v_work_id is null or v_work_source_bill_id <> v_source_bill_id
+          or v_work_fetched_at is distinct from timestamptz '2026-11-14 12:00:02+00' then
+        raise exception 'long_history_delete_outbox_claim_mismatch';
+      end if;
+      select public.process_docket_bill_detail_derived_work_v1(
+        v_work_source_bill_id, v_work_fetched_at
+      ) into v_work_receipt;
+      select public.complete_docket_bill_detail_derived_work_v1(
+        v_work_id, 'ci-real-lifecycle-trigger-worker', v_work_receipt
+      ) into v_work_completed;
+      if v_work_completed is not true or v_work_receipt->>'status' <> 'processed' then
+        raise exception 'long_history_delete_outbox_process_mismatch receipt=%', v_work_receipt;
+      end if;
       select count(*)::integer into v_current_events
       from public.v_civic_genome_lifecycle_event_current_v3
       where genome_bill_id = v_genome_bill_id;
@@ -294,6 +361,24 @@ begin
          set bill = v_record,
              fetched_at = timestamptz '2026-11-14 12:00:03+00'
        where bill_id = v_source_bill_id;
+      select work.work_id, work.source_bill_id, work.docket_fetched_at
+        into v_work_id, v_work_source_bill_id, v_work_fetched_at
+      from public.claim_docket_bill_detail_derived_work_v1(
+        'ci-real-lifecycle-trigger-worker', 1
+      ) work;
+      if v_work_id is null or v_work_source_bill_id <> v_source_bill_id
+          or v_work_fetched_at is distinct from timestamptz '2026-11-14 12:00:03+00' then
+        raise exception 'long_history_restore_outbox_claim_mismatch';
+      end if;
+      select public.process_docket_bill_detail_derived_work_v1(
+        v_work_source_bill_id, v_work_fetched_at
+      ) into v_work_receipt;
+      select public.complete_docket_bill_detail_derived_work_v1(
+        v_work_id, 'ci-real-lifecycle-trigger-worker', v_work_receipt
+      ) into v_work_completed;
+      if v_work_completed is not true or v_work_receipt->>'status' <> 'processed' then
+        raise exception 'long_history_restore_outbox_process_mismatch receipt=%', v_work_receipt;
+      end if;
       select count(*)::integer into v_current_events
       from public.v_civic_genome_lifecycle_event_current_v3
       where genome_bill_id = v_genome_bill_id;
@@ -329,6 +414,24 @@ begin
          set bill = v_record,
              fetched_at = timestamptz '2026-11-14 12:00:03+00'
        where bill_id = v_source_bill_id;
+      select work.work_id, work.source_bill_id, work.docket_fetched_at
+        into v_work_id, v_work_source_bill_id, v_work_fetched_at
+      from public.claim_docket_bill_detail_derived_work_v1(
+        'ci-real-lifecycle-trigger-worker', 1
+      ) work;
+      if v_work_id is null or v_work_source_bill_id <> v_source_bill_id
+          or v_work_fetched_at is distinct from timestamptz '2026-11-14 12:00:03+00' then
+        raise exception 'long_history_exact_replay_outbox_claim_mismatch';
+      end if;
+      select public.process_docket_bill_detail_derived_work_v1(
+        v_work_source_bill_id, v_work_fetched_at
+      ) into v_work_receipt;
+      select public.complete_docket_bill_detail_derived_work_v1(
+        v_work_id, 'ci-real-lifecycle-trigger-worker', v_work_receipt
+      ) into v_work_completed;
+      if v_work_completed is not true or v_work_receipt->>'status' <> 'processed' then
+        raise exception 'long_history_exact_replay_outbox_process_mismatch receipt=%', v_work_receipt;
+      end if;
       if v_after_events <> (
           select count(*) from public.civic_genome_lifecycle_event_v2
           where genome_bill_id = v_genome_bill_id
