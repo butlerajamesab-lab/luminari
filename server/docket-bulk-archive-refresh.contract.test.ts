@@ -5,12 +5,16 @@ describe("LegiScan archive credit and publication boundaries", () => {
   const route = readFileSync("server/routes/docket.ts", "utf8");
   const service = readFileSync("server/docket-bill-detail-acceptance.ts", "utf8");
   const runner = readFileSync("scripts/legiscan-bulk-docket-intake.ts", "utf8");
-  it("does not re-fetch archive bill snapshots through paid getBill after 24h", () => {
-    const guard = route.indexOf('cached && cached.source === "legiscan_bulk_json"');
+  it("refreshes stale bulk details only after current-session eligibility is proven", () => {
+    const guard = route.indexOf('cached.source === "legiscan_bulk_json"');
     const getbill = route.indexOf("const bill = await get_bill(bill_id);", guard);
     expect(guard).toBeGreaterThan(0);
     expect(getbill).toBeGreaterThan(guard);
+    expect(route.slice(guard, getbill)).toContain("is_fresh(cached.fetched_at, bill_detail_cache_ttl_ms)");
+    expect(route.slice(guard, getbill)).toContain("!background_workers_allowed()");
     expect(route.slice(guard, getbill)).toContain('refresh_state: "archive_snapshot"');
+    expect(route.slice(getbill - 4000, getbill)).toContain("resolve_docket_live_update_eligibility");
+    expect(route.slice(getbill - 1200, getbill)).toContain("if (!eligibility.eligible)");
   });
   it("never overwrites canonical live cache with bulk snapshots", () => {
     expect(service).toContain("on conflict (bill_id) do nothing returning bill_id");

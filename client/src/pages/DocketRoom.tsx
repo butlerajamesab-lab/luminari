@@ -487,6 +487,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
           params.set("session_state", session_state);
           params.set("session_id", session_id);
         }
+        if (archive_view === "deliberated") params.set("category", "deliberated");
         if (level === "state") params.set("jurisdiction_scope", "state");
         const response = await fetch(`/api/docket/archive?${params.toString()}`, {signal: controller.signal});
         const payload = await response.json().catch(() => ({
@@ -633,12 +634,10 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
       if (search_active) return true;
       const session_is_current = bill.search_context?.session_is_current ?? null;
       if (archive_view === "undeliberated") {
-        return !resolution.is_terminal
-          && (selected_archive_session !== "" || session_is_current === true);
+        return session_is_current === true && !resolution.is_terminal;
       }
-      return resolution.is_terminal
-        && (selected_archive_session !== "" || session_is_current === true);
-    }); // Archive pages are server-scoped to current sessions or an explicit session.
+      return session_is_current === false || resolution.is_terminal;
+    }); // Undeliberated is verified current-session work; Deliberated is prior-session or terminal.
 
   const unverified_current_session_rows = archive_rows.filter(row => row.session_is_current == null);
   const active_loading = search_active ? search_loading : archive_loading && archive_rows.length === 0;
@@ -677,8 +676,8 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
             <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>
               View
               <select value={archive_view} onChange={event => set_archive_view(event.target.value as typeof archive_view)} style={{ background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "6px", color: dk.paper, fontFamily: fontMono, fontSize: "0.78rem", padding: "0.35rem 0.5rem" }}>
-                <option value="undeliberated">Undeliberated · verified current session</option>
-                <option value="deliberated">Deliberated · terminal outcome</option>
+                <option value="undeliberated">Undeliberated · current session, open</option>
+                <option value="deliberated">Deliberated · prior session or terminal</option>
               </select>
             </label>
             <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>
@@ -702,7 +701,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
           </div>
         ) : archive_data ? (
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>
-            <span style={{ color: dk.teal }}>{selected_archive_session ? "Selected session" : "Verified current sessions"}</span>
+            <span style={{ color: dk.teal }}>{selected_archive_session ? "Selected session" : archive_view === "deliberated" ? "Deliberated archive" : "Verified current sessions"}</span>
             <span>{archive_data.matching_total?.toLocaleString() ?? "—"} bills in this scoped session set</span>
             <span>{archive_rows.length} loaded in pages</span>
             {displayed_cache_status && selected_state !== "ALL" &&

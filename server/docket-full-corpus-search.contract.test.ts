@@ -106,8 +106,8 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(page).toContain("set_archive_cursor(null);");
     expect(page).toContain("[selected_state, selected_archive_session, search_active, level, archive_view]");
     expect(page).toContain("docket-preserved-archive-v3");
-    expect(page).toContain("Undeliberated · verified current session");
-    expect(page).toContain("Deliberated · terminal outcome");
+    expect(page).toContain("Undeliberated · current session, open");
+    expect(page).toContain("Deliberated · prior session or terminal");
     expect(page).toContain("Choose a jurisdiction first");
     expect(page).toContain('"Verified current session"');
     expect(page).toContain("Session / year");
@@ -115,8 +115,8 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(page).toContain("archive_reset_pending.current");
     expect(page).toContain('params.set("jurisdiction_scope", "state")');
     expect(page).toContain('new URLSearchParams({ q: search_term, limit: "25" })');
-    expect(page).toContain('return !resolution.is_terminal\n          && (selected_archive_session !== "" || session_is_current === true);');
-    expect(page).toContain('return resolution.is_terminal\n        && (selected_archive_session !== "" || session_is_current === true);');
+    expect(page).toContain('return session_is_current === true && !resolution.is_terminal;');
+    expect(page).toContain('return session_is_current === false || resolution.is_terminal;');
     expect(page).toContain("resolution.is_terminal");
   });
 
