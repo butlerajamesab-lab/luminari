@@ -79,6 +79,19 @@ describe("nearest-office SQL shape (live schema contract)", () => {
     expect(sql).toContain("order by distance_mi asc");
   });
 
+  it("picks a representative office per family, not one per location", () => {
+    const sql = build_office_nearest_sql();
+    // A site can link offices of several families; the lateral pick
+    // must keep the best-linked office of EACH family (one candidate
+    // per location × family) so the family filter — and the
+    // families_not_found computation built on it — sees every family
+    // the site carries. A single pick per location would silently
+    // drop the site's other families.
+    expect(sql).toMatch(
+      /distinct on \(g\.agency_key\)[\s\S]*?order by\s+g\.agency_key,/,
+    );
+  });
+
   it("coverage counts the same anchored population the search reads", () => {
     const sql = build_office_coverage_sql();
     expect(sql).toContain("count(distinct l.location_id)::int as anchored_office_sites");
@@ -175,6 +188,36 @@ describe("assemble_office_results", () => {
       new Map(),
     );
     expect(no_address.address).toBeNull();
+  });
+
+  it("assembles both family candidates of one site, each from its own office row", () => {
+    // The same entity + location linked to an SSA office and a VA
+    // office produces one candidate per family; each candidate's
+    // hours and fallback contacts come from ITS family's office row.
+    const results = assemble_office_results(
+      [
+        nearest_row(),
+        nearest_row({
+          resource_name: "VA Puget Sound Health Care",
+          family: "veterans_affairs",
+          office_hours: "Mon-Fri 8:00 AM - 4:30 PM",
+          office_phone: null,
+          office_url: "https://www.va.gov/puget-sound-health-care/",
+        }),
+      ],
+      new Map(),
+    );
+    expect(results.map((r) => r.family)).toEqual([
+      "ssa",
+      "veterans_affairs",
+    ]);
+    expect(results[0].phone).toBe("800-772-1213");
+    expect(results[0].hours).toBe("Mon-Fri 9:00 AM - 4:00 PM");
+    expect(results[1].hours).toBe("Mon-Fri 8:00 AM - 4:30 PM");
+    expect(results[1].url).toBe(
+      "https://www.va.gov/puget-sound-health-care/",
+    );
+    expect("phone" in results[1]).toBe(false);
   });
 
   it("treats blank hours as absent", () => {
@@ -292,6 +335,55 @@ describe("find_nearest_offices", () => {
       "ssa",
       "veterans_affairs",
     ]);
+  });
+
+  it("finds the second family of a two-family site without expanding or reporting it missing", async () => {
+    // One catalog site (one entity, one location) linked to offices
+    // of two families. The nearest query produces one candidate per
+    // family for the site, so a filter on the family a single-pick
+    // query would have dropped still finds its candidate at the
+    // initial radius; the mocked pool applies the family parameter
+    // to the candidate rows the way the SQL does.
+    const site_candidates = [
+      nearest_row({ distance_mi: 1.2 }),
+      nearest_row({
+        resource_name: "VA Puget Sound Health Care",
+        family: "veterans_affairs",
+        office_hours: "Mon-Fri 8:00 AM - 4:30 PM",
+        office_phone: null,
+        office_url: "https://www.va.gov/puget-sound-health-care/",
+        distance_mi: 1.2,
+      }),
+    ];
+    const radii_asked: number[] = [];
+    query.mockImplementation(async (sql: string, params: unknown[]) => {
+      if (sql.includes(CONTACTS_SQL_MARKER)) return { rows: [] };
+      radii_asked.push(Number(params[2]));
+      const families = params[3] as string[] | null;
+      const rows = families
+        ? site_candidates.filter((row) =>
+            families.includes(String(row.family)),
+          )
+        : site_candidates;
+      return { rows };
+    });
+    const outcome = await find_nearest_offices({
+      latitude: 47.6,
+      longitude: -122.3,
+      families: ["veterans_affairs"],
+    });
+    expect(radii_asked).toEqual([10]);
+    expect(outcome.initial_radius_mi).toBe(10);
+    expect(outcome.families_not_found).toEqual([]);
+    expect(outcome.results).toHaveLength(1);
+    expect(outcome.results[0].family).toBe("veterans_affairs");
+    // Hours and website come from the VA office row picked for that
+    // family — not from the same site's SSA row.
+    expect(outcome.results[0].hours).toBe("Mon-Fri 8:00 AM - 4:30 PM");
+    expect(outcome.results[0].url).toBe(
+      "https://www.va.gov/puget-sound-health-care/",
+    );
+    expect("phone" in outcome.results[0]).toBe(false);
   });
 
   it("names a family that no radius can satisfy instead of substituting another", async () => {

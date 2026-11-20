@@ -22,6 +22,7 @@ import {
 import OfficeCard from "@/components/offices/OfficeCard";
 import {
   group_office_results,
+  office_radius_note,
   sort_by_distance,
   type NearestOfficesResponse,
   type OfficeSearchResult,
@@ -151,6 +152,19 @@ export default function FindAnOffice() {
       ? search.response
       : null;
   const filtered = families.length > 0;
+  // Why the radius widened, stated precisely: a filtered search
+  // widens until every picked family is in reach, so the note names
+  // the families that were not within the initial radius instead of
+  // claiming nothing was (see office_radius_note).
+  const radius_note = matched
+    ? office_radius_note({
+        filtered,
+        radius_used_mi: matched.radius_used_mi,
+        initial_radius_mi: matched.initial_radius_mi,
+        families_not_found: matched.families_not_found,
+        results: matched.results,
+      })
+    : null;
 
   return (
     <main
@@ -281,9 +295,7 @@ export default function FindAnOffice() {
           ) : matched ? (
             <p style={{ margin: "0.75rem 0 0", lineHeight: 1.7 }}>
               Showing offices near {matched.geocoded_address}.
-              {matched.radius_used_mi > 10
-                ? ` No offices were within 10 miles, so the search widened to ${matched.radius_used_mi} miles.`
-                : ""}
+              {radius_note ? ` ${radius_note}` : ""}
             </p>
           ) : (
             <p

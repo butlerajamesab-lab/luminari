@@ -74,6 +74,7 @@ officesRouter.post("/nearest", async (req: Request, res: Response) => {
       status: "matched",
       geocoded_address: match.matchedAddress,
       radius_used_mi: search.radius_used_mi,
+      initial_radius_mi: search.initial_radius_mi,
       families_not_found: search.families_not_found,
       results: search.results,
       coverage: {

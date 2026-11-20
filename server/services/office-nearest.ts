@@ -59,12 +59,21 @@ function haversine_mi_sql(latitude_expr: string, longitude_expr: string) {
 }
 
 /**
- * The nearest-office query. One row per catalog location of an
- * anchored-office entity: the location supplies the exact site and
- * its coordinates; a lateral pick chooses the entity's linked office
- * row that belongs to that site (exact coordinate match first, then
- * smallest coordinate delta, then office_id for determinism) and
- * supplies family + hours + fallback contact fields from it.
+ * The nearest-office query. One candidate row per (catalog location,
+ * office family): the location supplies the exact site and its
+ * coordinates; a lateral pick chooses, PER FAMILY, the entity's
+ * linked office row of that family that belongs to that site (exact
+ * coordinate match first, then smallest coordinate delta, then
+ * office_id for determinism) and supplies that family's hours +
+ * fallback contact fields from it.
+ *
+ * The pick must be per family, not one office per location: a site
+ * can link offices of several families (the projection links offices
+ * to entities by address regardless of family, and dedupe moves
+ * office links onto surviving entities). Picking a single office
+ * first and filtering by family afterwards would silently drop the
+ * site's other families — the requested family would be reported
+ * missing at every radius even though its office sits at that site.
  *
  * Parameters: $1 latitude, $2 longitude, $3 radius miles,
  * $4 requested families (text[] or null), $5 per-family rank cap,
@@ -96,12 +105,14 @@ export function build_office_nearest_sql(): string {
         and l.latitude is not null
         and l.longitude is not null
       join lateral (
-        select g.agency_key, g.hours, g.phone_raw, g.url, g.email
+        select distinct on (g.agency_key)
+          g.agency_key, g.hours, g.phone_raw, g.url, g.email
         from public.luminari_anchor_office_source_rows a
         join public.gov_offices g on g.office_id = a.office_id
         where a.resource_entity_id = c.resource_entity_id
           and g.superseded_by is null
         order by
+          g.agency_key,
           (case when g.lat is not null and g.lng is not null
                  and g.lat = l.latitude and g.lng = l.longitude
                 then 0 else 1 end),
@@ -110,7 +121,6 @@ export function build_office_nearest_sql(): string {
                    + abs(g.lng::float8 - l.longitude::float8)
                 end) nulls last,
           g.office_id
-        limit 1
       ) office on true
       where (${distance}) <= $3
         and ($4::text[] is null or office.agency_key = any($4::text[]))
@@ -174,6 +184,8 @@ export type office_search_outcome = {
   results: office_search_result[];
   /** The radius that satisfied the request (the last tried, if none did). */
   radius_used_mi: number;
+  /** The first radius tried; expansion is measured against it. */
+  initial_radius_mi: number;
   /** Requested families with no office inside the widest radius. */
   families_not_found: string[];
 };
@@ -367,6 +379,7 @@ export async function find_nearest_offices(input: {
   return {
     results: assemble_office_results(rows, reviewed),
     radius_used_mi,
+    initial_radius_mi: OFFICE_SEARCH_RADII_MI[0],
     families_not_found,
   };
 }

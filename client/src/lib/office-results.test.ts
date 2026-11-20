@@ -3,6 +3,7 @@ import {
   format_distance,
   group_office_results,
   office_card_fields,
+  office_radius_note,
   sort_by_distance,
   website_href,
   type OfficeSearchResult,
@@ -117,5 +118,87 @@ describe("website_href", () => {
     expect(website_href("www.ssa.gov")).toBe("https://www.ssa.gov");
     expect(website_href("https://www.ssa.gov")).toBe("https://www.ssa.gov");
     expect(website_href("http://example.org/x")).toBe("http://example.org/x");
+  });
+});
+
+describe("office_radius_note", () => {
+  it("says nothing when the search was satisfied at the initial radius", () => {
+    expect(
+      office_radius_note({
+        filtered: true,
+        radius_used_mi: 10,
+        initial_radius_mi: 10,
+        families_not_found: [],
+        results: [result({ distance_mi: 2 })],
+      }),
+    ).toBeNull();
+  });
+
+  it("keeps the no-offices wording for a genuinely empty unfiltered widening", () => {
+    // Unfiltered, the ladder only widens when the initial radius
+    // held nothing at all — the original wording is exactly true.
+    expect(
+      office_radius_note({
+        filtered: false,
+        radius_used_mi: 25,
+        initial_radius_mi: 10,
+        families_not_found: [],
+        results: [result({ distance_mi: 18 })],
+      }),
+    ).toBe(
+      "No offices were within 10 miles, so the search widened to 25 miles.",
+    );
+  });
+
+  it("names the family that forced a filtered widening when another was already near", () => {
+    // SSA at 2 miles, VA at 20.4: the search widened to 25 for the
+    // VA office alone. The note must not claim nothing was within
+    // 10 miles — an SSA office 2 miles away is on screen.
+    const note = office_radius_note({
+      filtered: true,
+      radius_used_mi: 25,
+      initial_radius_mi: 10,
+      families_not_found: [],
+      results: [
+        result({ family: "ssa", distance_mi: 2 }),
+        result({
+          family: "veterans_affairs",
+          name: "VA Puget Sound Health Care",
+          distance_mi: 20.4,
+        }),
+      ],
+    });
+    expect(note).toBe(
+      "Not all the kinds of offices you picked were within 10 miles — the nearest Veterans Affairs site is 20.4 miles away — so the search widened to 25 miles.",
+    );
+    expect(note).not.toContain("No offices were within 10 miles");
+  });
+
+  it("names a never-found family as the widening reason when the found ones were already near", () => {
+    const note = office_radius_note({
+      filtered: true,
+      radius_used_mi: 50,
+      initial_radius_mi: 10,
+      families_not_found: ["hud"],
+      results: [result({ family: "ssa", distance_mi: 2 })],
+    });
+    expect(note).toBe(
+      "Not all the kinds of offices you picked were within 10 miles — HUD Field Offices was not found within 50 miles — so the search widened to 50 miles.",
+    );
+    expect(note).not.toContain("No offices were within 10 miles");
+  });
+
+  it("says none of the picked kinds were near when a filtered search found nothing inside the initial radius", () => {
+    expect(
+      office_radius_note({
+        filtered: true,
+        radius_used_mi: 25,
+        initial_radius_mi: 10,
+        families_not_found: [],
+        results: [result({ family: "ssa", distance_mi: 15 })],
+      }),
+    ).toBe(
+      "None of the kinds of offices you picked were within 10 miles, so the search widened to 25 miles.",
+    );
   });
 });
