@@ -523,6 +523,12 @@ APPROVED_REPOSITORY_ONLY = {
         "20261020111915_materialize_legal_authority_catalog_v2_20261020.sql",
         "7202fedb8b7cf1ba67a40a994797e4f54b010b9d",
     ),
+    # Docket detail derived-work outbox candidate. Repository-only until its
+    # migration is separately reviewed and approved for production installation.
+    "20261120193000": (
+        "20261120193000_docket_bill_detail_derived_work_outbox_v1.sql",
+        "6b7a48eb1e24c155c84cabbc98e56bd75b03ef65",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
