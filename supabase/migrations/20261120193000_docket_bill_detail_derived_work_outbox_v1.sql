@@ -381,7 +381,7 @@ BEGIN
   END IF;
   IF position('sync_civic_genome_lifecycle_history_v3' in
       pg_get_functiondef('public.sync_civic_genome_lifecycle_from_detail_cache_v3()'::regprocedure)) > 0
-     OR position('register_docket_legislative_version_spine' in
+     OR position('public.register_docket_legislative_version_spine(' in
       pg_get_functiondef('public.try_register_docket_legislative_version_spine_from_cache()'::regprocedure)) > 0
      OR position('sync_civic_genome_lifecycle_history_v3' in
       pg_get_functiondef('public.sync_civic_genome_lifecycle_from_bill_v3()'::regprocedure)) > 0 THEN
