@@ -106,8 +106,8 @@ describe("Docket complete preserved-source public browsing contract", () => {
     expect(page).toContain("set_archive_cursor(null);");
     expect(page).toContain("[selected_state, selected_archive_session, search_active, level, archive_view]");
     expect(page).toContain("docket-preserved-archive-v3");
-    expect(page).toContain("Undeliberated · verified current session");
-    expect(page).toContain("Deliberated · terminal outcome");
+    expect(page).toContain("Undeliberated · current session, open");
+    expect(page).toContain("Deliberated · prior session or terminal");
     expect(page).toContain("Choose a jurisdiction first");
     expect(page).toContain('"Verified current session"');
     expect(page).toContain("Session / year");
