@@ -35,6 +35,10 @@ function queue_managed_label(label: string): boolean {
     "legislative_version_queue_",
     "legislative_version_record_failure",
     "docket_bill_activation_",
+    "docket_bill_detail_accept",
+    "docket_bill_detail_cache_upsert",
+    "docket_bill_detail_derived_",
+    "docket_bulk_canonical_accept",
   ].some(prefix => label.startsWith(prefix));
 }
 

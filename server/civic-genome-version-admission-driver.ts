@@ -105,6 +105,16 @@ export const SELECT_UNREGISTERED_BILLS_SQL = `
            on version.bill_version_id = queue.bill_version_id
         where version.genome_bill_id = bill.genome_bill_id
      )
+     and not exists (
+       select 1
+         from public.docket_bill_detail_derived_work_v1 work
+        where work.source_bill_id = case
+          when coalesce(bill.structural_dna_json ->> 'source_bill_id','') ~ '^[0-9]+$'
+            then (bill.structural_dna_json ->> 'source_bill_id')::int
+          else null
+        end
+          and work.work_state in ('eligible','leased','degraded')
+     )
    order by bill.genome_bill_id
    limit $1::int`;
 
