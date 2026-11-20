@@ -16,12 +16,14 @@ const WORKER_LEASE_ID = [
 type derived_work_job = {
   work_id: string;
   source_bill_id: number;
-  docket_fetched_at: string | Date;
+  // Keep PostgreSQL's microsecond precision. A JavaScript Date silently rounds
+  // timestamptz values to milliseconds and can make the DB treat this job as stale.
+  docket_fetched_at: string;
   attempt_count: number;
 };
 
 const CLAIM_SQL = `
-  select work_id, source_bill_id, docket_fetched_at, attempt_count
+  select work_id, source_bill_id, docket_fetched_at::text as docket_fetched_at, attempt_count
   from public.claim_docket_bill_detail_derived_work_v1($1,$2)
 `;
 const PROCESS_SQL = `

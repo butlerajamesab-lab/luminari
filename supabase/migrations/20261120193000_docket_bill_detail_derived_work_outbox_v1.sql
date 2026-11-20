@@ -43,7 +43,7 @@ CREATE TABLE public.docket_bill_detail_derived_work_v1 (
   source_bill_id integer NOT NULL CHECK (source_bill_id > 0),
   docket_fetched_at timestamptz NOT NULL,
   work_state text NOT NULL DEFAULT 'eligible'
-    CHECK (work_state IN ('eligible','leased','degraded','completed')),
+    CHECK (work_state IN ('eligible','leased','degraded','held','completed')),
   attempt_count integer NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
   next_attempt_at timestamptz NOT NULL DEFAULT now(),
   locked_at timestamptz,
@@ -54,7 +54,10 @@ CREATE TABLE public.docket_bill_detail_derived_work_v1 (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (source_bill_id, docket_fetched_at),
-  CHECK ((work_state = 'leased') = (locked_at IS NOT NULL AND locked_by IS NOT NULL)),
+  CHECK (
+    (work_state = 'leased' AND locked_at IS NOT NULL AND locked_by IS NOT NULL)
+    OR (work_state <> 'leased' AND locked_at IS NULL AND locked_by IS NULL)
+  ),
   CHECK ((work_state = 'completed') = (completed_at IS NOT NULL))
 );
 
@@ -94,7 +97,7 @@ BEGIN
         last_error_code=NULL,
         receipt_json='{}'::jsonb,
         updated_at=now()
-    WHERE prior.work_state='completed'
+    WHERE prior.work_state IN ('held','completed')
   RETURNING work_id INTO v_work_id;
   IF v_work_id IS NULL THEN
     SELECT work.work_id INTO v_work_id
@@ -163,6 +166,18 @@ BEGIN
     );
   END IF;
 
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.civic_genome_bill bill
+    WHERE bill.structural_dna_json->>'source_bill_id'=p_source_bill_id::text
+  ) THEN
+    RETURN jsonb_build_object(
+      'status','waiting_for_genome_identity',
+      'source_bill_id',p_source_bill_id,
+      'docket_fetched_at',p_docket_fetched_at
+    );
+  END IF;
+
   PERFORM public.sync_civic_genome_lifecycle_history_v3(p_source_bill_id);
 
   FOR v_genome_bill_id IN
@@ -196,7 +211,33 @@ SET search_path TO 'pg_catalog', 'public'
 AS $function$
 DECLARE
   v_rows integer;
+  v_source_bill_id integer;
+  v_docket_fetched_at timestamptz;
+  v_requeue boolean := false;
 BEGIN
+  IF p_receipt->>'status'='waiting_for_genome_identity' THEN
+    SELECT work.source_bill_id, work.docket_fetched_at
+      INTO v_source_bill_id, v_docket_fetched_at
+    FROM public.docket_bill_detail_derived_work_v1 work
+    WHERE work.work_id=p_work_id AND work.work_state='leased' AND work.locked_by=p_worker_id;
+    IF NOT FOUND THEN RETURN false; END IF;
+    SELECT EXISTS (
+      SELECT 1 FROM public.civic_genome_bill bill
+      WHERE bill.structural_dna_json->>'source_bill_id'=v_source_bill_id::text
+    ) INTO v_requeue;
+    UPDATE public.docket_bill_detail_derived_work_v1
+    SET work_state=CASE WHEN v_requeue THEN 'eligible' ELSE 'held' END,
+        next_attempt_at=now(),
+        locked_at=NULL,
+        locked_by=NULL,
+        completed_at=NULL,
+        last_error_code=NULL,
+        receipt_json=coalesce(p_receipt,'{}'::jsonb),
+        updated_at=now()
+    WHERE work_id=p_work_id AND work_state='leased' AND locked_by=p_worker_id;
+    GET DIAGNOSTICS v_rows=ROW_COUNT;
+    RETURN v_rows=1;
+  END IF;
   UPDATE public.docket_bill_detail_derived_work_v1
   SET work_state='completed',
       completed_at=now(),
