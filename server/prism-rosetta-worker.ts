@@ -109,6 +109,66 @@ let current_result_observation_enabled = false;
 let docket_loopback_server: Server | null = null;
 let shutting_down = false;
 
+function resolve_docket_live_detail_refresh_bill_ids(): number[] {
+  const raw = process.env.DOCKET_LIVE_DETAIL_REFRESH_BILL_IDS?.trim();
+  if (!raw) return [];
+  const parts = raw.split(",").map(value => value.trim());
+  const ids = parts.map(value => Number(value));
+  if (
+    ids.length === 0
+    || ids.length > 5
+    || ids.some(value => !Number.isSafeInteger(value) || value <= 0)
+    || new Set(ids).size !== ids.length
+  ) {
+    throw new Error("docket_live_detail_refresh_batch_invalid_bill_ids");
+  }
+  return ids;
+}
+
+async function run_docket_live_detail_refresh_batch(
+  port: number,
+  bill_ids: number[],
+): Promise<void> {
+  const results = await Promise.all(bill_ids.map(async bill_id => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:${port}/api/docket/bill/${bill_id}`,
+        { method: "GET", signal: AbortSignal.timeout(120_000) },
+      );
+      const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
+      const source = typeof payload?.source === "string" ? payload.source : null;
+      const refresh_state = typeof payload?.refresh_state === "string" ? payload.refresh_state : null;
+      const result = response.ok && payload?.ok === true
+        && (source === "legiscan_refresh_stale_cache" || source === "legiscan_refresh_empty_cache")
+        ? "refreshed"
+        : response.ok && payload?.ok === true ? "held_or_cached" : "failed";
+      console.log("[DocketWorker] live_detail_refresh_result", {
+        bill_id,
+        result,
+        http_status: response.status,
+        source,
+        refresh_state,
+        error: typeof payload?.error === "string" ? payload.error : null,
+        reason: typeof payload?.reason === "string" ? payload.reason : null,
+      });
+      return result;
+    } catch (error) {
+      console.error("[DocketWorker] live_detail_refresh_result", {
+        bill_id,
+        result: "failed",
+        error_code: stable_legiscan_failure_code(error),
+      });
+      return "failed";
+    }
+  }));
+  console.log("[DocketWorker] live_detail_refresh_batch_complete", {
+    requested: bill_ids.length,
+    refreshed: results.filter(result => result === "refreshed").length,
+    held_or_cached: results.filter(result => result === "held_or_cached").length,
+    failed: results.filter(result => result === "failed").length,
+  });
+}
+
 async function start_docket_workers(): Promise<void> {
   const cache_warmer_requested = background_feature_enabled(
     "DOCKET_STATE_CACHE_WARMER_ENABLED",
@@ -116,12 +176,21 @@ async function start_docket_workers(): Promise<void> {
   const activation_queue_requested = background_feature_enabled(
     "DOCKET_BILL_ACTIVATION_QUEUE_ENABLED",
   );
-  if (!cache_warmer_requested && !activation_queue_requested) return;
+  const live_detail_refresh_requested = background_feature_enabled(
+    "DOCKET_LIVE_DETAIL_REFRESH_BATCH_ENABLED",
+  );
+  const live_detail_refresh_bill_ids = live_detail_refresh_requested
+    ? resolve_docket_live_detail_refresh_bill_ids()
+    : [];
+  if (live_detail_refresh_requested && live_detail_refresh_bill_ids.length === 0) {
+    throw new Error("docket_live_detail_refresh_batch_ids_required");
+  }
+  if (!cache_warmer_requested && !activation_queue_requested && !live_detail_refresh_requested) return;
 
   if (activation_queue_requested) {
     start_docket_bill_activation_queue_worker();
   }
-  if (!cache_warmer_requested) return;
+  if (!cache_warmer_requested && !live_detail_refresh_requested) return;
 
   const app = express();
   app.use(express.json({ limit: "1mb" }));
@@ -136,10 +205,21 @@ async function start_docket_workers(): Promise<void> {
   if (!address || typeof address === "string") {
     throw new Error("docket_worker_loopback_address_unavailable");
   }
-  start_docket_state_cache_warmer(address.port);
+  if (cache_warmer_requested) start_docket_state_cache_warmer(address.port);
+  if (live_detail_refresh_requested) {
+    console.log("[DocketWorker] live_detail_refresh_batch_started", {
+      requested: live_detail_refresh_bill_ids.length,
+    });
+    await run_docket_live_detail_refresh_batch(address.port, live_detail_refresh_bill_ids);
+    if (!cache_warmer_requested) {
+      await new Promise<void>(resolve => server.close(() => resolve()));
+      docket_loopback_server = null;
+    }
+  }
   console.log("[DocketWorker] started", {
     cache_warmer_requested,
     activation_queue_requested,
+    live_detail_refresh_requested,
     loopback_port: address.port,
   });
 }
