@@ -9,6 +9,7 @@ Status: isolated source-only **candidate**. NOT deployed, executed against LegiS
 - `public.docket_bill_detail_cache` for LegiScan `bill_id=1940853`: `state=PA`, `session_id=2192`, `bill_number=HB349`; `fetched_at=2026-09-30 02:01:55.381689+00`; `texts` has only `doc_id=3084350` / PN0304 and `doc_id=3460740` / PN3943. Existing cache is from BEFORE PN4024 was issued.
 - `public.civic_genome_bill_version` has two related texts; no bound Rosetta, assembly or Prism receipts.
 - Live database trigger `docket_legislative_version_spine_registration` is enabled on cache insert/update and invokes `register_docket_legislative_version_spine(new.bill_id,false)`.
+- **Current production side effect verified 2026-11-20:** the same cache update also fires `docket_bill_detail_cache_lifecycle_event_time_v3`, synchronizing lifecycle history and refreshing the temporal projection for any matching Civic Genome bill. For HB349, the read-only preflight found 1 matching Genome bill, 4 lifecycle events, and 1 revision. This is synchronous trigger work; it is not a queue request, Rosetta decomposition, or assembly run.
 - Existing targeted API acceptance is `server/docket-bill-detail-acceptance.ts:accept_docket_bill_detail`, not a second importer. Its nonarchive path updates the existing cache; the production trigger registers metadata without automatic queue enqueue.
 - Existing `civic-genome-final-source-reconciliation-worker.ts` is limited to enacted bills lacking enrolled/chaptered text: inappropriate for unenacted HB349.
 
