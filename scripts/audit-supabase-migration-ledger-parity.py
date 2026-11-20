@@ -527,7 +527,7 @@ APPROVED_REPOSITORY_ONLY = {
     # migration is separately reviewed and approved for production installation.
     "20261120193000": (
         "20261120193000_docket_bill_detail_derived_work_outbox_v1.sql",
-        "a0d037aa0e03331271bedee8cd2c7ab304504e58",
+        "6b7a48eb1e24c155c84cabbc98e56bd75b03ef65",
     ),
 }
 

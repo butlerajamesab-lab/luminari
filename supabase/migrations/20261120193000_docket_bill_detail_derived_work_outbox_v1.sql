@@ -219,7 +219,8 @@ BEGIN
     SELECT work.source_bill_id, work.docket_fetched_at
       INTO v_source_bill_id, v_docket_fetched_at
     FROM public.docket_bill_detail_derived_work_v1 work
-    WHERE work.work_id=p_work_id AND work.work_state='leased' AND work.locked_by=p_worker_id;
+    WHERE work.work_id=p_work_id AND work.work_state='leased' AND work.locked_by=p_worker_id
+    FOR UPDATE;
     IF NOT FOUND THEN RETURN false; END IF;
     SELECT EXISTS (
       SELECT 1 FROM public.civic_genome_bill bill
