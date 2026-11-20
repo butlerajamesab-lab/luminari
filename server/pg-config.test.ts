@@ -25,7 +25,11 @@ vi.mock("pg", () => ({
   },
 }));
 
-import { create_database_pool, resolve_database_ssl } from "./pg-config";
+import {
+  create_database_pool,
+  resolve_database_client_lease_timeout_millis,
+  resolve_database_ssl,
+} from "./pg-config";
 
 const original_database_url = process.env.DATABASE_URL;
 
@@ -57,6 +61,16 @@ describe("canonical PostgreSQL pool configuration", () => {
     expect(resolve_database_ssl(local, { NODE_ENV: "test" })).toBe(false);
     expect(resolve_database_ssl("postgresql://postgres:postgres@localhost:5432/app",
       { NODE_ENV: "test" })).toBe(false);
+  });
+
+  it("keeps worker leases above bounded queries without extending web leases", () => {
+    expect(resolve_database_client_lease_timeout_millis(60_000, { LIGHTHOUSE_RUNTIME_ROLE: "web" }))
+      .toBe(60_000);
+    expect(resolve_database_client_lease_timeout_millis(60_000, { LIGHTHOUSE_RUNTIME_ROLE: "worker" }))
+      .toBe(200_000);
+    expect(resolve_database_client_lease_timeout_millis(240_000, { LIGHTHOUSE_RUNTIME_ROLE: "worker" }))
+      .toBe(240_000);
+    expect(resolve_database_client_lease_timeout_millis(undefined, {})).toBe(60_000);
   });
 
   it("uses a client-side timeout without a racing connect listener", () => {
