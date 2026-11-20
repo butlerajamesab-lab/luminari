@@ -15,7 +15,6 @@ import { startBatchRerun, resumeBatchRerun, requestAbort, getActiveBatchIdInMemo
 import { assertActionAllowed } from "./gate-helpers";
 import { hardDeleteCase as canonical_hard_delete_case, hardDeleteDocument as canonical_hard_delete_document } from "./hard-delete-canonical";
 import { getDailySpotlight, getCategorySpotlight, getContextualSpotlights, getDiscoveryCategories, getAllSpotlights, generateShareText } from "./benefits-discovery";
-import { coalitionIntelligenceRouter } from "./routers/coalition-intelligence-router";
 import { legislatorsRouter } from "./routers/legislators-router";
 import { vaFacilitiesRouter } from "./routers/va-facilities-router";
 import { mathEngineRouter } from "./routers/math-engine-router";
@@ -3117,7 +3116,6 @@ import { evidenceConfidenceRouter } from "./routers/evidence-confidence-router";
 import { claimValidationRouter } from "./routers/claim-validation-router";
 import { remedyFeasibilityRouter } from "./routers/remedy-feasibility-router";
 import { proceduralPathEngineRouter } from "./routers/procedural-path-engine-router";
-import { systemHardeningPipelineRouter } from "./routers/system-hardening-pipeline-router";
 import { knowledgeHealthRouter } from "./routers/knowledge-health-router";
 import { enginesRouter } from "./routers/engines-router";
 import { casePatternBridgeRouter } from "./routers/case-pattern-bridge-router";
@@ -3732,8 +3730,6 @@ export const appRouter = router({
   claimValidation: claimValidationRouter,
   remedyFeasibility: remedyFeasibilityRouter,
   proceduralPathEngine: proceduralPathEngineRouter,
-  systemHardeningPipeline: systemHardeningPipelineRouter,
-  coalitionIntelligence: coalitionIntelligenceRouter,
   legislators: legislatorsRouter,
   vaFacilities: vaFacilitiesRouter,
   campaignEngine: campaignEngineRouter,

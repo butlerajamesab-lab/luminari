@@ -1,37 +1,22 @@
 /**
- * Unified Router for all 7 Luminari Engines
+ * Unified Router for the Luminari Engines.
+ *
+ * The Systemic Harm Index and Global Systemic Harm Map sub-routers
+ * were removed with their Mission Control panels in the Gate A
+ * removal (2026-11-19).
  */
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { withEngineTracking, ENGINE_IDS } from "../engine-entrypoint-wrapper";
 
 // Engine imports
-import { calculateHarmIndex, getHarmIndexSummary, getEntityHarmHistory } from "../engines/harm-index-service";
 import { runLitigationCorrelation, getEntityLitigationMatches, getLitigationCorrelationSummary } from "../engines/litigation-correlation-service";
 import { generateRiskForecasts, getRiskForecastSummary } from "../engines/risk-forecast-service";
-import { generateHarmMap, getHarmMapData } from "../engines/harm-map-service";
 import { startIntakeSession, getIntakeSession, getUserSessions, getClarifyingQuestions, getEvidenceGuidance } from "../engines/problem-interpreter-service";
 import { generateShareableLink, accessSharedCase, getCaseShareLinks, revokeShareableLink, getShareAnalytics } from "../engines/case-link-service";
 import { findMatchingAttorneys, addAttorney, getAttorneyRegistry, recordOutcome, getMatchAnalytics } from "../engines/attorney-match-service";
 
 export const enginesRouter = router({
-  // ─── Engine 1: Systemic Harm Index ───
-  harmIndex: router({
-    calculate: protectedProcedure.mutation(async () => {
-      return withEngineTracking({ engineId: ENGINE_IDS.HARM_INDEX, caseId: 0 }, async () => {
-        return await calculateHarmIndex();
-      });
-    }),
-    getSummary: protectedProcedure.query(async () => {
-      return await getHarmIndexSummary();
-    }),
-    getEntityHistory: protectedProcedure
-      .input(z.object({ entityId: z.number() }))
-      .query(async ({ input }) => {
-        return await getEntityHarmHistory(input.entityId);
-      }),
-  }),
-
   // ─── Engine 2: Litigation Correlation ───
   litigation: router({
     runCorrelation: protectedProcedure.mutation(async () => {
@@ -60,18 +45,6 @@ export const enginesRouter = router({
       }),
     getSummary: protectedProcedure.query(async () => {
       return await getRiskForecastSummary();
-    }),
-  }),
-
-  // ─── Engine 4: Global Systemic Harm Map ───
-  harmMap: router({
-    generate: protectedProcedure.mutation(async () => {
-      return withEngineTracking({ engineId: ENGINE_IDS.HARM_MAP, caseId: 0 }, async () => {
-        return await generateHarmMap();
-      });
-    }),
-    getData: protectedProcedure.query(async () => {
-      return await getHarmMapData();
     }),
   }),
 
