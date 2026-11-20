@@ -59,7 +59,7 @@ import { sunamGatedBatchIngest } from "./sunam-gated-batch-ingest";
 import { fullRegistryBatchIngest } from "./full-registry-batch-ingest";
 import { scaledRegistryIngest } from "./scaled-registry-ingest";
 import { fullIntegrationTest } from "./full-integration-test";
-import { activationOutputs, signalFlags, signalRegistry, patternOutputs, strategyOutputs, proceduralOutputs } from "../drizzle/schema";
+import { activationOutputs, signalFlags, signalRegistry, patternOutputs, proceduralOutputs } from "../drizzle/schema";
 
 // Note: governance router is imported above in the meaning-layer section
 
