@@ -39,7 +39,9 @@ function queue_managed_label(label: string): boolean {
 }
 
 function server_timeout_managed_label(label: string): boolean {
-  return queue_managed_label(label) || label.startsWith("canonical_core_");
+  return queue_managed_label(label)
+    || label.startsWith("canonical_core_")
+    || label.startsWith("docket_preserved_archive_");
 }
 
 /**
