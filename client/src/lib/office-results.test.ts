@@ -4,8 +4,10 @@ import {
   group_office_results,
   office_card_fields,
   office_radius_note,
+  office_search_presentation,
   sort_by_distance,
   website_href,
+  type MatchedOfficesResponse,
   type OfficeSearchResult,
 } from "./office-results";
 
@@ -200,5 +202,103 @@ describe("office_radius_note", () => {
     ).toBe(
       "None of the kinds of offices you picked were within 10 miles, so the search widened to 25 miles.",
     );
+  });
+});
+
+describe("office_search_presentation", () => {
+  function matched_response(
+    overrides: Partial<MatchedOfficesResponse> = {},
+  ): MatchedOfficesResponse {
+    return {
+      ok: true,
+      status: "matched",
+      geocoded_address: "915 2nd Ave, Seattle, WA 98174",
+      radius_used_mi: 25,
+      initial_radius_mi: 10,
+      families_not_found: [],
+      results: [
+        result({ family: "ssa", distance_mi: 2 }),
+        result({
+          family: "veterans_affairs",
+          name: "VA Puget Sound Health Care",
+          distance_mi: 20.4,
+        }),
+      ],
+      coverage: {
+        anchored_office_sites: 100,
+        verified_physical_sites: 90,
+        exact_mappable_resources: 95,
+        total_resources: 1000,
+      },
+      ...overrides,
+    };
+  }
+
+  it("keeps the submitted filtered snapshot after the last chip is deselected", () => {
+    // The search was submitted with SSA + VA picked; afterwards the
+    // person deselects every chip. Presentation must still follow
+    // the SUBMITTED (filtered) snapshot: the note explains the
+    // widening as partial coverage and never claims no offices
+    // were within 10 miles while the 2-mile SSA result is shown.
+    const presentation = office_search_presentation({
+      response: matched_response(),
+      submitted_families: ["ssa", "veterans_affairs"],
+      live_families: [],
+    });
+    expect(presentation.filtered).toBe(true);
+    expect(presentation.radius_note).toBe(
+      "Not all the kinds of offices you picked were within 10 miles — the nearest Veterans Affairs site is 20.4 miles away — so the search widened to 25 miles.",
+    );
+    expect(presentation.radius_note).not.toContain(
+      "No offices were within 10 miles",
+    );
+    expect(presentation.selection_changed).toBe(true);
+  });
+
+  it("associates an in-flight response with its submitted families, not the chips as they now stand", () => {
+    // Chips changed to HUD while the SSA + VA search was in flight;
+    // the arriving response is still presented under its own
+    // submitted selection.
+    const presentation = office_search_presentation({
+      response: matched_response(),
+      submitted_families: ["ssa", "veterans_affairs"],
+      live_families: ["hud"],
+    });
+    expect(presentation.filtered).toBe(true);
+    expect(presentation.radius_note).toContain(
+      "Not all the kinds of offices you picked were within 10 miles",
+    );
+    expect(presentation.radius_note).not.toContain(
+      "No offices were within 10 miles",
+    );
+    expect(presentation.selection_changed).toBe(true);
+  });
+
+  it("reports no selection change while the chips match the submission, in any order", () => {
+    const presentation = office_search_presentation({
+      response: matched_response(),
+      submitted_families: ["ssa", "veterans_affairs"],
+      live_families: ["veterans_affairs", "ssa"],
+    });
+    expect(presentation.filtered).toBe(true);
+    expect(presentation.selection_changed).toBe(false);
+  });
+
+  it("keeps an unfiltered snapshot unfiltered when chips are picked afterwards", () => {
+    // Submitted with nothing picked (the ladder widened because
+    // the initial radius genuinely held nothing); picking a chip
+    // afterwards must not reframe the stored response as filtered.
+    const presentation = office_search_presentation({
+      response: matched_response({
+        results: [result({ family: "ssa", distance_mi: 18 })],
+      }),
+      submitted_families: [],
+      live_families: ["ssa"],
+    });
+    expect(presentation.filtered).toBe(false);
+    expect(presentation.radius_note).toBe(
+      "No offices were within 10 miles, so the search widened to 25 miles.",
+    );
+    expect(presentation.selection_changed).toBe(true);
   });
 });

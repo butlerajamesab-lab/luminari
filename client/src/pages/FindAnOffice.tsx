@@ -22,7 +22,7 @@ import {
 import OfficeCard from "@/components/offices/OfficeCard";
 import {
   group_office_results,
-  office_radius_note,
+  office_search_presentation,
   sort_by_distance,
   type NearestOfficesResponse,
   type OfficeSearchResult,
@@ -42,7 +42,19 @@ const tone = {
 type SearchState =
   | { phase: "idle" }
   | { phase: "loading" }
-  | { phase: "done"; response: NearestOfficesResponse }
+  | {
+      phase: "done";
+      response: NearestOfficesResponse;
+      /**
+       * The family selection this search was submitted with, stored
+       * WITH the response. All result presentation (filtered vs.
+       * grouped, the radius note) is driven by this snapshot, never
+       * by the live chip state — chips stay editable after and
+       * during a search, and the response on screen is the answer
+       * to the selection it was submitted with.
+       */
+      submitted_families: string[];
+    }
   | { phase: "error" };
 
 function FamilyChips({
@@ -130,6 +142,11 @@ export default function FindAnOffice() {
     event.preventDefault();
     const trimmed = address.trim();
     if (trimmed.length < 6) return;
+    // Snapshot the selection at submit time: this exact selection
+    // is what the request asks about, so it is what the response
+    // will be presented under — even if the chips change while the
+    // request is in flight.
+    const submitted_families = [...families];
     setSearch({ phase: "loading" });
     try {
       const response = await fetch("/api/offices/nearest", {
@@ -137,11 +154,12 @@ export default function FindAnOffice() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           address: trimmed,
-          families: families.length > 0 ? families : undefined,
+          families:
+            submitted_families.length > 0 ? submitted_families : undefined,
         }),
       });
       const payload = (await response.json()) as NearestOfficesResponse;
-      setSearch({ phase: "done", response: payload });
+      setSearch({ phase: "done", response: payload, submitted_families });
     } catch {
       setSearch({ phase: "error" });
     }
@@ -151,20 +169,25 @@ export default function FindAnOffice() {
     search.phase === "done" && search.response.ok && search.response.status === "matched"
       ? search.response
       : null;
-  const filtered = families.length > 0;
-  // Why the radius widened, stated precisely: a filtered search
-  // widens until every picked family is in reach, so the note names
-  // the families that were not within the initial radius instead of
-  // claiming nothing was (see office_radius_note).
-  const radius_note = matched
-    ? office_radius_note({
-        filtered,
-        radius_used_mi: matched.radius_used_mi,
-        initial_radius_mi: matched.initial_radius_mi,
-        families_not_found: matched.families_not_found,
-        results: matched.results,
-      })
-    : null;
+  // Presentation follows the SUBMITTED snapshot stored with the
+  // response, never the live chips: whether the view is filtered,
+  // and why the radius widened (a filtered search widens until
+  // every picked family is in reach, so the note names the families
+  // that were not within the initial radius instead of claiming
+  // nothing was — see office_radius_note), are properties of the
+  // search that produced these results. Changing the chips leaves
+  // the displayed results untouched under their own snapshot; the
+  // page flags the change and a new search updates them.
+  const presentation =
+    matched && search.phase === "done"
+      ? office_search_presentation({
+          response: matched,
+          submitted_families: search.submitted_families,
+          live_families: families,
+        })
+      : null;
+  const filtered = presentation?.filtered ?? false;
+  const radius_note = presentation?.radius_note ?? null;
 
   return (
     <main
@@ -310,6 +333,33 @@ export default function FindAnOffice() {
             </p>
           )}
         </form>
+
+        {matched && presentation?.selection_changed ? (
+          <section
+            style={{
+              border: `1px solid ${tone.card_border}`,
+              background: tone.card_bg,
+              borderRadius: 14,
+              padding: "1rem",
+              marginBottom: "1rem",
+            }}
+          >
+            <p style={{ margin: 0, lineHeight: 1.7 }}>
+              You changed the kinds of offices selected after this
+              search
+              {search.phase === "done" &&
+              search.submitted_families.length > 0
+                ? ` — these results are for the earlier selection (${search.submitted_families
+                    .map(
+                      (family) =>
+                        OFFICE_FAMILY_META[family]?.label ?? family,
+                    )
+                    .join(", ")})`
+                : " — these results show every kind of office, from before a kind was picked"}
+              . Run the search again to update them.
+            </p>
+          </section>
+        ) : null}
 
         {matched && matched.results.length === 0 ? (
           <section>

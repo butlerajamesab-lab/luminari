@@ -6,10 +6,12 @@ vi.mock("../db", () => ({ getPool: () => ({ query }) }));
 const {
   OFFICE_RESULTS_OVERALL_CAP,
   OFFICE_RESULTS_PER_FAMILY_CAP,
+  OFFICE_SITE_MATCH_TOLERANCE_MI,
   assemble_office_results,
   build_office_coverage_sql,
   build_office_nearest_sql,
   find_nearest_offices,
+  office_site_match_sql,
 } = await import("./office-nearest");
 type catalog_contact =
   import("./resource-directory-unified").catalog_contact;
@@ -90,6 +92,42 @@ describe("nearest-office SQL shape (live schema contract)", () => {
     expect(sql).toMatch(
       /distinct on \(g\.agency_key\)[\s\S]*?order by\s+g\.agency_key,/,
     );
+  });
+
+  it("restricts each family's office candidate to the office's own site", () => {
+    const sql = build_office_nearest_sql();
+    // The site association is applied INSIDE the lateral, before
+    // the per-family pick: an office is a candidate only at the
+    // site it belongs to, never at every location of its entity.
+    const lateral_start = sql.indexOf("join lateral");
+    const lateral_end = sql.indexOf(") office on true");
+    const match_at = sql.indexOf("l.source_pk = a.office_id", lateral_start);
+    expect(lateral_start).toBeGreaterThan(-1);
+    expect(match_at).toBeGreaterThan(lateral_start);
+    expect(match_at).toBeLessThan(lateral_end);
+    // 1. The minted site key: the projection stamps the location
+    //    it mints for an office with the office_id as source_pk.
+    expect(sql).toContain(
+      "l.source_table = 'gov_office_projection_v1' and l.source_pk = a.office_id",
+    );
+    // 2. Coordinate agreement for offices with no minted location
+    //    (tier-A merges): the office's own coordinates must sit
+    //    within the documented tolerance of the site's.
+    expect(sql).toContain("g.lat is not null and g.lng is not null");
+    expect(sql).toContain(`<= ${OFFICE_SITE_MATCH_TOLERANCE_MI}`);
+    expect(OFFICE_SITE_MATCH_TOLERANCE_MI).toBeLessThan(1);
+    // 3. The sole-site fallback for coordinate-less offices is
+    //    guarded by the absence of a minted location and of any
+    //    other geocoded location of the entity.
+    expect(sql).toContain("site_key_loc.source_pk = a.office_id");
+    expect(sql).toContain("other_loc.location_id <> l.location_id");
+  });
+
+  it("coverage counts only sites where a linked office belongs", () => {
+    const sql = build_office_coverage_sql();
+    // Same association as the search: a multi-site entity's other
+    // locations do not inflate the counted population.
+    expect(sql).toContain(office_site_match_sql());
   });
 
   it("coverage counts the same anchored population the search reads", () => {
@@ -415,5 +453,250 @@ describe("find_nearest_offices", () => {
       families: ["ssa", "not_a_family", "ssa"],
     });
     expect(seen_params[0][3]).toEqual(["ssa"]);
+  });
+});
+
+describe("find_nearest_offices — two-location entity (site association)", () => {
+  beforeEach(() => {
+    query.mockReset();
+  });
+
+  // One entity with TWO catalog sites: an SSA office in Seattle and
+  // a VA office in Tacoma (the dedupe-merge shape). Each office's
+  // minted location carries the office_id as its source_pk — the
+  // true site key. The mocked pool emulates the documented SQL
+  // semantics over this fixture: candidates are per (location,
+  // family) and an office is a candidate only at its own site
+  // (minted key → coordinate tolerance → sole-site fallback), so a
+  // VA candidate can never materialize at the Seattle address.
+  const ENTITY_ID = "44444444-4444-4444-8444-444444444444";
+  const SEATTLE = { latitude: 47.6062, longitude: -122.3321 };
+  const TACOMA = { latitude: 47.2529, longitude: -122.4443 };
+
+  type fixture_location = {
+    location_id: string;
+    address_line1: string;
+    city: string;
+    state: string;
+    postal_code: string;
+    latitude: number;
+    longitude: number;
+    source_table: string | null;
+    source_pk: string | null;
+  };
+  type fixture_office = {
+    office_id: string;
+    agency_key: string;
+    lat: number | null;
+    lng: number | null;
+    hours: string | null;
+    phone_raw: string | null;
+    url: string | null;
+    email: string | null;
+  };
+
+  const locations: fixture_location[] = [
+    {
+      location_id: "loc-seattle",
+      address_line1: "915 2nd Ave",
+      city: "Seattle",
+      state: "WA",
+      postal_code: "98174",
+      ...SEATTLE,
+      source_table: "gov_office_projection_v1",
+      source_pk: "ssa-seattle-office",
+    },
+    {
+      location_id: "loc-tacoma",
+      address_line1: "1715 Pacific Ave",
+      city: "Tacoma",
+      state: "WA",
+      postal_code: "98402",
+      ...TACOMA,
+      source_table: "gov_office_projection_v1",
+      source_pk: "va-tacoma-office",
+    },
+  ];
+  const offices: fixture_office[] = [
+    {
+      office_id: "ssa-seattle-office",
+      agency_key: "ssa",
+      lat: SEATTLE.latitude,
+      lng: SEATTLE.longitude,
+      hours: "Mon-Fri 9:00 AM - 4:00 PM",
+      phone_raw: "800-772-1213",
+      url: "https://www.ssa.gov",
+      email: null,
+    },
+    {
+      office_id: "va-tacoma-office",
+      agency_key: "veterans_affairs",
+      lat: TACOMA.latitude,
+      lng: TACOMA.longitude,
+      hours: "Mon-Fri 8:00 AM - 4:30 PM",
+      phone_raw: "253-555-0180",
+      url: "https://www.va.gov/puget-sound-health-care/",
+      email: null,
+    },
+  ];
+
+  function haversine_mi(
+    lat_a: number,
+    lng_a: number,
+    lat_b: number,
+    lng_b: number,
+  ): number {
+    const rad = (deg: number) => (deg * Math.PI) / 180;
+    const arg =
+      Math.cos(rad(lat_a)) *
+        Math.cos(rad(lat_b)) *
+        Math.cos(rad(lng_b) - rad(lng_a)) +
+      Math.sin(rad(lat_a)) * Math.sin(rad(lat_b));
+    return 3959 * Math.acos(Math.min(1, Math.max(-1, arg)));
+  }
+
+  /** The site-association rule office_site_match_sql documents. */
+  function office_belongs_at_site(
+    office: fixture_office,
+    location: fixture_location,
+  ): boolean {
+    if (
+      location.source_table === "gov_office_projection_v1" &&
+      location.source_pk === office.office_id
+    ) {
+      return true;
+    }
+    if (office.lat != null && office.lng != null) {
+      return (
+        haversine_mi(
+          office.lat,
+          office.lng,
+          location.latitude,
+          location.longitude,
+        ) <= OFFICE_SITE_MATCH_TOLERANCE_MI
+      );
+    }
+    const has_minted_site = locations.some(
+      (candidate) =>
+        candidate.source_table === "gov_office_projection_v1" &&
+        candidate.source_pk === office.office_id,
+    );
+    if (has_minted_site) return false;
+    return locations.length === 1;
+  }
+
+  function mock_fixture_pool() {
+    const rows_by_radius = new Map<number, ReturnType<typeof nearest_row>[]>();
+    query.mockImplementation(async (sql: string, params: unknown[]) => {
+      if (sql.includes(CONTACTS_SQL_MARKER)) return { rows: [] };
+      const [search_lat, search_lng, radius, families] = params as [
+        number,
+        number,
+        number,
+        string[] | null,
+      ];
+      const rows: ReturnType<typeof nearest_row>[] = [];
+      for (const location of locations) {
+        const distance = haversine_mi(
+          search_lat,
+          search_lng,
+          location.latitude,
+          location.longitude,
+        );
+        if (distance > radius) continue;
+        for (const office of offices) {
+          if (!office_belongs_at_site(office, location)) continue;
+          if (families && !families.includes(office.agency_key)) continue;
+          rows.push(
+            nearest_row({
+              resource_entity_id: ENTITY_ID,
+              resource_name: "Puget Sound Federal Services",
+              family: office.agency_key,
+              address_line1: location.address_line1,
+              city: location.city,
+              state: location.state,
+              postal_code: location.postal_code,
+              office_hours: office.hours,
+              office_phone: office.phone_raw,
+              office_url: office.url,
+              office_email: office.email,
+              distance_mi: Math.round(distance * 10) / 10,
+            }),
+          );
+        }
+      }
+      rows.sort((a, b) => Number(a.distance_mi) - Number(b.distance_mi));
+      rows_by_radius.set(radius, rows);
+      return { rows };
+    });
+    return rows_by_radius;
+  }
+
+  it("never produces a VA candidate at the Seattle site of a two-site entity", async () => {
+    const rows_by_radius = mock_fixture_pool();
+    const outcome = await find_nearest_offices({
+      latitude: SEATTLE.latitude,
+      longitude: SEATTLE.longitude,
+      families: ["veterans_affairs"],
+    });
+    // At the initial radius the VA family has NO candidate: its
+    // only office belongs to the Tacoma site ~25 miles away. The
+    // pre-fix query returned it at the Seattle address, distance 0,
+    // and stopped there.
+    const at_initial_radius = rows_by_radius.get(10) ?? [];
+    expect(
+      at_initial_radius.some((row) => row.family === "veterans_affairs"),
+    ).toBe(false);
+    expect(outcome.radius_used_mi).toBeGreaterThan(10);
+    // Widened, the VA office is found — at ITS site, with ITS
+    // office's hours and phone.
+    expect(outcome.families_not_found).toEqual([]);
+    expect(outcome.results).toHaveLength(1);
+    const [va] = outcome.results;
+    expect(va.family).toBe("veterans_affairs");
+    expect(va.city).toBe("Tacoma");
+    expect(va.address).toBe("1715 Pacific Ave");
+    expect(va.distance_mi).toBeGreaterThan(10);
+    expect(va.hours).toBe("Mon-Fri 8:00 AM - 4:30 PM");
+    expect(va.phone).toBe("253-555-0180");
+    // No result pairs the VA family with the Seattle site.
+    expect(
+      outcome.results.some(
+        (row) => row.family === "veterans_affairs" && row.city === "Seattle",
+      ),
+    ).toBe(false);
+  });
+
+  it("shows each family at its own site in an unfiltered search", async () => {
+    mock_fixture_pool();
+    // Midpoint between the two sites: both are inside 25 miles,
+    // neither inside 10, so the ladder widens once and returns both.
+    const outcome = await find_nearest_offices({
+      latitude: 47.4296,
+      longitude: -122.3882,
+    });
+    expect(outcome.radius_used_mi).toBe(25);
+    const by_family = new Map(outcome.results.map((row) => [row.family, row]));
+    const ssa = by_family.get("ssa");
+    expect(ssa?.city).toBe("Seattle");
+    expect(ssa?.address).toBe("915 2nd Ave");
+    expect(ssa?.hours).toBe("Mon-Fri 9:00 AM - 4:00 PM");
+    expect(ssa?.phone).toBe("800-772-1213");
+    const va = by_family.get("veterans_affairs");
+    expect(va?.city).toBe("Tacoma");
+    expect(va?.address).toBe("1715 Pacific Ave");
+    expect(va?.hours).toBe("Mon-Fri 8:00 AM - 4:30 PM");
+    expect(va?.phone).toBe("253-555-0180");
+    // No cross-site rows at all.
+    expect(
+      outcome.results.some(
+        (row) => row.family === "veterans_affairs" && row.city === "Seattle",
+      ),
+    ).toBe(false);
+    expect(
+      outcome.results.some(
+        (row) => row.family === "ssa" && row.city === "Tacoma",
+      ),
+    ).toBe(false);
   });
 });

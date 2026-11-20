@@ -27,22 +27,24 @@ export interface OfficeSearchResult {
   url?: string;
 }
 
+export interface MatchedOfficesResponse {
+  ok: true;
+  status: "matched";
+  geocoded_address: string;
+  radius_used_mi: number;
+  initial_radius_mi: number;
+  families_not_found: string[];
+  results: OfficeSearchResult[];
+  coverage: {
+    anchored_office_sites: number;
+    verified_physical_sites: number;
+    exact_mappable_resources: number;
+    total_resources: number;
+  };
+}
+
 export type NearestOfficesResponse =
-  | {
-      ok: true;
-      status: "matched";
-      geocoded_address: string;
-      radius_used_mi: number;
-      initial_radius_mi: number;
-      families_not_found: string[];
-      results: OfficeSearchResult[];
-      coverage: {
-        anchored_office_sites: number;
-        verified_physical_sites: number;
-        exact_mappable_resources: number;
-        total_resources: number;
-      };
-    }
+  | MatchedOfficesResponse
   | {
       ok: true;
       status: "no_match";
@@ -213,4 +215,61 @@ export function office_radius_note(
 /** Website values render as links; bare domains get an https href. */
 export function website_href(url: string): string {
   return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}
+
+export interface OfficeSearchPresentation {
+  /**
+   * True when the SEARCH (not the current chip state) was filtered
+   * to specific families. Grouping and the radius note follow this.
+   */
+  filtered: boolean;
+  /** Why the radius widened, per office_radius_note; null if it didn't. */
+  radius_note: string | null;
+  /**
+   * True when the live chip selection no longer matches the
+   * families the displayed search was submitted with — the page
+   * flags the results as belonging to the earlier selection.
+   */
+  selection_changed: boolean;
+}
+
+/**
+ * How a completed search is presented. EVERYTHING here is driven
+ * by the snapshot stored with the response — the families the
+ * search was SUBMITTED with — never by the live chip state.
+ *
+ * The chips stay editable after (and during) a search, so live
+ * state can diverge from the search on screen: deselecting the
+ * last chip after a filtered search must not flip the stored
+ * response into the unfiltered presentation (whose radius note
+ * can claim no offices were within the initial radius while a
+ * result inside it is displayed), and a response that arrives
+ * after a mid-flight chip change is still the answer to the
+ * selection it was submitted with. A selection change leaves the
+ * displayed results untouched under their own snapshot — the page
+ * says the selection changed and a new search will update them.
+ */
+export function office_search_presentation(input: {
+  response: MatchedOfficesResponse;
+  submitted_families: string[];
+  live_families: string[];
+}): OfficeSearchPresentation {
+  const { response, submitted_families, live_families } = input;
+  const filtered = submitted_families.length > 0;
+  const submitted = new Set(submitted_families);
+  const live = new Set(live_families);
+  const selection_changed =
+    submitted.size !== live.size ||
+    [...submitted].some((family) => !live.has(family));
+  return {
+    filtered,
+    radius_note: office_radius_note({
+      filtered,
+      radius_used_mi: response.radius_used_mi,
+      initial_radius_mi: response.initial_radius_mi,
+      families_not_found: response.families_not_found,
+      results: response.results,
+    }),
+    selection_changed,
+  };
 }

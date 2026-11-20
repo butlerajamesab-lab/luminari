@@ -45,27 +45,116 @@ export const OFFICE_RESULTS_PER_FAMILY_CAP = 25;
 const EARTH_RADIUS_MI = 3959;
 
 /**
+ * How close an office's own coordinates must sit to a catalog
+ * location's coordinates for the office to count as being AT that
+ * site, when the office has no minted site key for the location
+ * (the tier-A merge shape — see office_site_match_sql). Half a mile
+ * is deliberately tight: geocodes of the SAME street address from
+ * different sources (rooftop vs. street interpolation) agree well
+ * within it, while distinct sites — let alone distinct cities,
+ * which are tens of miles apart — never fall inside it. An office
+ * whose coordinates sit farther than this from a location does not
+ * attach to that location, ever.
+ */
+export const OFFICE_SITE_MATCH_TOLERANCE_MI = 0.5;
+
+/**
+ * Haversine distance in miles between two coordinate pairs
+ * (decimal degrees). The acos argument is clamped to [-1, 1]: for
+ * coincident points, floating-point error can push the expression
+ * a hair past 1 and acos would return NaN instead of 0.
+ */
+function haversine_between_sql(
+  lat_a: string,
+  lng_a: string,
+  lat_b: string,
+  lng_b: string,
+) {
+  return `(${EARTH_RADIUS_MI} * acos(least(1, greatest(-1,
+    cos(radians(${lat_a})) * cos(radians(${lat_b})) *
+      cos(radians(${lng_b}) - radians(${lng_a}))
+    + sin(radians(${lat_a})) * sin(radians(${lat_b}))))))`;
+}
+
+/**
  * Haversine distance in miles between the search point ($1 latitude,
- * $2 longitude, decimal degrees) and a row's coordinates. The acos
- * argument is clamped to [-1, 1]: for a point at the search point
- * itself, floating-point error can push the expression a hair past 1
- * and acos would return NaN instead of 0.
+ * $2 longitude, decimal degrees) and a row's coordinates.
  */
 function haversine_mi_sql(latitude_expr: string, longitude_expr: string) {
-  return `(${EARTH_RADIUS_MI} * acos(least(1, greatest(-1,
-    cos(radians($1)) * cos(radians(${latitude_expr})) *
-      cos(radians(${longitude_expr}) - radians($2))
-    + sin(radians($1)) * sin(radians(${latitude_expr}))))))`;
+  return haversine_between_sql("$1", "$2", latitude_expr, longitude_expr);
+}
+
+/**
+ * Does linked office `g` (anchor row `a`) belong at catalog site
+ * `l`? Candidates are per (location, family), and an office is a
+ * candidate ONLY at its own site — an entity with offices at
+ * several sites must never surface one site's office at another
+ * site's address with the first office's hours and phone.
+ *
+ * Site association, strongest evidence first:
+ *
+ * 1. Minted site key (exact). The gov-office projection mints one
+ *    base location per office and stamps it with
+ *    source_table = 'gov_office_projection_v1' and
+ *    source_pk = the office_id (scripts/project-gov-offices.mjs,
+ *    buildLocationInsert). That pair is the office's true site
+ *    key. It survives dedupe: the merge applier moves locations
+ *    and anchor rows onto the surviving entity together, and the
+ *    location keeps its source_pk.
+ * 2. Coordinate agreement (tier-A merges mint no location: the
+ *    office attached to a pre-existing entity by street + ZIP5 +
+ *    state). The office's own coordinates must sit within
+ *    OFFICE_SITE_MATCH_TOLERANCE_MI of the location's coordinates.
+ * 3. Sole-site fallback. An office carrying NO coordinates and no
+ *    minted location among the entity's locations belongs to the
+ *    entity's only geocoded location when there is exactly one —
+ *    the association is unambiguous. With several geocoded
+ *    locations and neither a key nor coordinates, the office
+ *    cannot be placed honestly and is a candidate nowhere: better
+ *    to miss an office than to direct someone to the wrong city
+ *    with another office's hours and phone.
+ *
+ * Aliases are the callers': `a` anchor row, `g` gov_offices row,
+ * `l` catalog location.
+ */
+export function office_site_match_sql(): string {
+  const office_distance = haversine_between_sql(
+    "g.lat::float8",
+    "g.lng::float8",
+    "l.latitude::float8",
+    "l.longitude::float8",
+  );
+  return `(
+    (l.source_table = 'gov_office_projection_v1' and l.source_pk = a.office_id)
+    or (g.lat is not null and g.lng is not null
+        and (${office_distance}) <= ${OFFICE_SITE_MATCH_TOLERANCE_MI})
+    or (g.lat is null
+        and not exists (
+          select 1
+          from public.luminari_resource_locations site_key_loc
+          where site_key_loc.resource_entity_id = l.resource_entity_id
+            and site_key_loc.source_table = 'gov_office_projection_v1'
+            and site_key_loc.source_pk = a.office_id
+        )
+        and not exists (
+          select 1
+          from public.luminari_resource_locations other_loc
+          where other_loc.resource_entity_id = l.resource_entity_id
+            and other_loc.location_id <> l.location_id
+            and other_loc.latitude is not null
+            and other_loc.longitude is not null
+        ))
+  )`;
 }
 
 /**
  * The nearest-office query. One candidate row per (catalog location,
  * office family): the location supplies the exact site and its
  * coordinates; a lateral pick chooses, PER FAMILY, the entity's
- * linked office row of that family that belongs to that site (exact
- * coordinate match first, then smallest coordinate delta, then
- * office_id for determinism) and supplies that family's hours +
- * fallback contact fields from it.
+ * linked office row of that family that belongs to that site (see
+ * office_site_match_sql for how an office is associated with a
+ * site) and supplies that family's hours + fallback contact fields
+ * from it.
  *
  * The pick must be per family, not one office per location: a site
  * can link offices of several families (the projection links offices
@@ -74,6 +163,13 @@ function haversine_mi_sql(latitude_expr: string, longitude_expr: string) {
  * first and filtering by family afterwards would silently drop the
  * site's other families — the requested family would be reported
  * missing at every radius even though its office sits at that site.
+ *
+ * And the pick must be restricted to the office's own site first:
+ * a multi-location entity (Seattle SSA, Tacoma VA after a dedupe
+ * merge) would otherwise return every family at EVERY location —
+ * the Tacoma office rendered at the Seattle address, distance 0,
+ * carrying Tacoma hours and phone, falsely satisfying the family
+ * filter at the smallest radius.
  *
  * Parameters: $1 latitude, $2 longitude, $3 radius miles,
  * $4 requested families (text[] or null), $5 per-family rank cap,
@@ -111,8 +207,12 @@ export function build_office_nearest_sql(): string {
         join public.gov_offices g on g.office_id = a.office_id
         where a.resource_entity_id = c.resource_entity_id
           and g.superseded_by is null
+          and ${office_site_match_sql()}
         order by
           g.agency_key,
+          (case when l.source_table = 'gov_office_projection_v1'
+                  and l.source_pk = a.office_id
+                then 0 else 1 end),
           (case when g.lat is not null and g.lng is not null
                  and g.lat = l.latitude and g.lng = l.longitude
                 then 0 else 1 end),
@@ -145,9 +245,11 @@ export function build_office_nearest_sql(): string {
 
 /**
  * Count of anchored-office catalog sites with exact coordinates —
- * the population this locator can return. Read from the same corpus
- * and joins as the nearest query, so the page's coverage note and
- * its results always describe the same set.
+ * the population this locator can return: a location counts only
+ * when at least one linked office actually belongs at that site
+ * (the same office_site_match_sql association the nearest query
+ * applies), so the page's coverage note and its results always
+ * describe the same set.
  */
 export function build_office_coverage_sql(): string {
   return `
@@ -162,6 +264,7 @@ export function build_office_coverage_sql(): string {
       on a.resource_entity_id = c.resource_entity_id
     join public.gov_offices g on g.office_id = a.office_id
       and g.superseded_by is null
+    where ${office_site_match_sql()}
   `;
 }
 
