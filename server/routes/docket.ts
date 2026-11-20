@@ -12,6 +12,7 @@ import {
 import {
   pick_preferred_legiscan_session,
 } from "../docket-session";
+import { resolve_docket_live_update_eligibility } from "../docket-live-update-eligibility";
 import {
   project_docket_state_cache_to_civic_genome_serialized,
   type civic_genome_projection_result,
@@ -913,7 +914,10 @@ docket_router.get("/archive", async (req, res) => {
     const requested_session_state = normalize_optional_state_code(req.query.session_state);
     const requested_session_id = req.query.session_id == null || req.query.session_id === ""
       ? null : normalize_bill_id(String(req.query.session_id));
-    const current_session_only = requested_session_state === null && requested_session_id === null;
+    const deliberated_category = req.query.category === "deliberated";
+    const current_session_only = requested_session_state === null
+      && requested_session_id === null
+      && !deliberated_category;
     if ((requested_session_state === null) !== (requested_session_id === null)) {
       return res.status(400).json({ok:false,message:"docket_archive_session_filter_incomplete"});
     }
@@ -958,9 +962,26 @@ docket_router.get("/archive", async (req, res) => {
       where.push("upper(coalesce(cache.bill->>'state',''))="+add_param(requested_session_state));
       where.push("(cache.bill->>'session_id')="+add_param(String(requested_session_id)));
     }
+    if (deliberated_category) {
+      // Deliberated includes every record outside a positively verified current
+      // session, plus terminal current-session outcomes. The client applies the
+      // shared lifecycle resolver as the final display classifier.
+      where.push(`(
+        not exists (
+          select 1 from verified_current_sessions current_session
+          where current_session.state=upper(coalesce(cache.bill->>'state',''))
+            and current_session.session_id::text=cache.bill->>'session_id'
+        )
+        or coalesce(cache.bill->>'status','') in ('5','6')
+        or lower(coalesce(cache.bill->>'last_action','')) ~
+          '(^|[;\.\n])[[:space:]]*(chapter(ed)?|enacted|withdrawn|dead|vetoed|expired|approved|signed|became law|postponed indefinitely|indefinitely postponed|failed([[:space:]]+(final passage|to pass))?|adopted|passed([[:space:]]+(final passage|both chambers))?)([.;[:space:]]|$)'
+        or lower(coalesce(cache.bill->>'last_action','')) ~
+          '(signed|approved) by (the )?(governor|president)|(governor|president) signed|bill (has )?(enacted|failed|withdrawn|vetoed|expired|died|dead|been postponed indefinitely|indefinitely postponed)'
+      )`);
+    }
     const scope_where = [...where];
     const count_params = [...params];
-    const current_session_cte = current_session_only
+    const current_session_cte = current_session_only || deliberated_category
       ? `with verified_current_sessions as (
           select distinct upper(session_cache.state) as state, session_cache.session_id
           from public.docket_bill_state_cache session_cache
@@ -1294,6 +1315,57 @@ docket_router.get("/bill/:bill_id", async (req, res) => {
         error: "background_runtime_required",
         message: "No cached Docket bill is available while refresh work is paused.",
         runtime_role: resolve_lighthouse_runtime_role(),
+      });
+    }
+
+    // A stale or missing detail may use LegiScan getBill only when the bill is
+    // found in a positively verified current session and has no terminal outcome.
+    // Historical bulk snapshots remain on their separate, read-only path above.
+    const state_caches = await read_all_state_cache();
+    const candidate = state_caches
+      .map(state_cache => {
+        const listed_bill = state_cache.bills.find(item => Number(item.bill_id) === bill_id);
+        const detail_state = String(cached?.bill?.state ?? "").toUpperCase();
+        if (!listed_bill && detail_state && detail_state !== state_cache.state.toUpperCase()) return null;
+        if (!listed_bill && !detail_state) return null;
+        return {
+          state_cache,
+          summary: listed_bill
+            ? { ...listed_bill, ...(cached?.bill ?? {}) }
+            : cached?.bill ?? null,
+          session_id: Number(
+            listed_bill?.session_id
+              ?? cached?.bill?.session_id
+              ?? (listed_bill ? state_cache.session_id : NaN),
+          ),
+        };
+      })
+      .find(item => item !== null && Number.isSafeInteger(item.session_id) && item.session_id > 0);
+    const eligibility = candidate
+      ? resolve_docket_live_update_eligibility({
+          summary: candidate.summary,
+          session_id: candidate.session_id,
+          sessions: candidate.state_cache.sessions,
+        })
+      : { eligible: false, reason: "current_session_unverified" as const };
+
+    if (!eligibility.eligible) {
+      if (cached) {
+        return res.json({
+          ok: true,
+          source: "cache_live_refresh_held",
+          bill_id,
+          fetched_at: cached.fetched_at,
+          refresh_state: "stale",
+          refresh_reason: eligibility.reason,
+          bill: cached.bill,
+        });
+      }
+      return res.status(409).json({
+        ok: false,
+        error: "docket_live_bill_update_not_eligible",
+        reason: eligibility.reason,
+        message: "Live bill refresh is limited to verified current-session bills without a terminal outcome.",
       });
     }
 
