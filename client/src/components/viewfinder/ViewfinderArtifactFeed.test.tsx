@@ -62,7 +62,7 @@ describe("Viewfinder canonical feed", () => {
     renderToStaticMarkup(<AnomalyViewfinder />);
     expect(state.listQuery).toHaveBeenCalledWith(
       { domain: "live_data", limit: 50, offset: 0, query: undefined },
-      expect.objectContaining({ refetchInterval: 30_000, refetchOnWindowFocus: true, refetchOnReconnect: true, staleTime: 0 }),
+      expect.objectContaining({ refetchInterval: 86_400_000, refetchOnWindowFocus: true, refetchOnReconnect: true, staleTime: 300_000 }),
     );
     state.search = "?signal_domain=legal_pattern";
     renderToStaticMarkup(<AnomalyViewfinder />);

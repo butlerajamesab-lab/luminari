@@ -4,7 +4,15 @@ import type { AppRouter } from "../../../../server/routers";
 import { trpc } from "@/lib/trpc";
 import { SignalEvidenceDetails } from "@/components/signal-architecture/SignalEvidenceDetails";
 
-export const VIEWFINDER_REFRESH_MS = 30_000;
+// Refresh cadence (Alexander, 2026-11-19): the viewfinder's data
+// changes when new material is uploaded, on ingestion timescales —
+// never on a 30-second churn. Auto-refresh at most once a day;
+// returning to the tab or reconnecting refreshes once the cached
+// copy is a few minutes old; a manual reload refreshes anytime.
+// Only the live queries below use this cadence — nothing else on
+// the page redraws.
+export const VIEWFINDER_REFRESH_MS = 86_400_000;
+export const VIEWFINDER_STALE_MS = 300_000;
 const PAGE_SIZE = 50;
 type Domain = "live_data" | "legal_pattern";
 type Artifact = inferRouterOutputs<AppRouter>["enforcementIntel"]["list_signal_artifacts"]["items"][number];
@@ -34,7 +42,7 @@ export function ViewfinderEvidence({ item }: { item: Artifact }) {
   const detail = trpc.enforcementIntel.get_signal_artifact.useQuery(
     { domain: item.domain_code, record_id: item.record_id },
     {
-      staleTime: 0,
+      staleTime: VIEWFINDER_STALE_MS,
       refetchInterval: VIEWFINDER_REFRESH_MS,
       refetchOnWindowFocus: true,
     },
@@ -99,7 +107,7 @@ export function ViewfinderArtifactFeed({ domain }: { domain: Domain }) {
   const feed = trpc.enforcementIntel.list_signal_artifacts.useQuery(
     { domain, limit: PAGE_SIZE, offset, query: search || undefined },
     {
-      staleTime: 0,
+      staleTime: VIEWFINDER_STALE_MS,
       refetchInterval: VIEWFINDER_REFRESH_MS,
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
@@ -142,7 +150,7 @@ export function ViewfinderArtifactFeed({ domain }: { domain: Domain }) {
         <button type="button" disabled={feed.isFetching} onClick={() => { void feed.refetch(); }}>{feed.isFetching ? "Refreshing…" : "Refresh now"}</button>
       </div>
       <div className="vf-freshness" role="status">
-        Checks every 30 seconds while visible, and when you return. Last successful check: {formatViewfinderDate(data?.checked_at)}.
+        Checks once a day while open, and when you return after a few minutes away — or use Refresh now anytime. Last successful check: {formatViewfinderDate(data?.checked_at)}.
         {feed.fetchStatus === "paused" ? " Connection paused; showing the last successful result." : ""}
       </div>
       {feed.error ? <div className="vf-error" role="alert">Refresh failed. {accessDenied ? "Your session no longer has access. Sign in again to view detections." : data ? "Showing the last successful result; it may be out of date." : "The live feed is unavailable."} Use Refresh now to retry.</div> : null}

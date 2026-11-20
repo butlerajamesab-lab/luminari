@@ -5,7 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { SignalArtifactContext } from "@/components/signal-architecture/SignalArtifactContext";
 import { useAuth } from "@/core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
-import { ViewfinderArtifactFeed, VIEWFINDER_REFRESH_MS, formatViewfinderDate } from "@/components/viewfinder/ViewfinderArtifactFeed";
+import { ViewfinderArtifactFeed, VIEWFINDER_REFRESH_MS, VIEWFINDER_STALE_MS, formatViewfinderDate } from "@/components/viewfinder/ViewfinderArtifactFeed";
 
 /* ═══════════════════════════════════════════════════════════════════════
    LUMINARI — ANOMALY VIEWFINDER
@@ -307,7 +307,7 @@ export default function AnomalyViewfinder() {
   const [sortKey, setSortKey] = useState<SortKey>("name");
 
   const viewfinderQuery = trpc.resourceDirectory.viewfinderStates.useQuery(undefined, {
-    staleTime: 0,
+    staleTime: VIEWFINDER_STALE_MS,
     refetchInterval: VIEWFINDER_REFRESH_MS,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
@@ -368,7 +368,7 @@ export default function AnomalyViewfinder() {
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <StatusPill tone={v.green}>{viewfinderQuery.isLoading ? "Loading jurisdictions" : viewfinderQuery.error ? "Jurisdiction refresh unavailable" : `${liveStates.length} jurisdiction profiles`}</StatusPill>
-              <StatusPill tone={v.blue}>Auto-refresh · 30 seconds</StatusPill>
+              <StatusPill tone={v.blue}>Refreshes daily · Refresh now anytime</StatusPill>
               <StatusPill tone={v.amber}>Unknown stays Unknown</StatusPill>
             </div>
           </div>
@@ -395,7 +395,7 @@ export default function AnomalyViewfinder() {
 
         {mode === "spotlight" || mode === "compare" ? (
           <div style={{ color: v.smoke, fontSize: 12, lineHeight: 1.6, marginBottom: 18 }} role="status">
-            Checks every 30 seconds while visible. Last successful check: {formatViewfinderDate(viewfinderQuery.dataUpdatedAt ? new Date(viewfinderQuery.dataUpdatedAt).toISOString() : null)}.
+            Checks once a day while open, and again when you return after a few minutes away — or use Refresh now anytime. Last successful check: {formatViewfinderDate(viewfinderQuery.dataUpdatedAt ? new Date(viewfinderQuery.dataUpdatedAt).toISOString() : null)}.
             {viewfinderQuery.fetchStatus === "paused" ? " Connection paused; showing the last successful result." : ""}
             <button disabled={viewfinderQuery.isFetching} onClick={() => { void viewfinderQuery.refetch(); }} style={{ marginLeft: 12, background: v.surface2, color: v.gold, border: `1px solid ${v.borderLit}`, borderRadius: 7, padding: "6px 10px", cursor: "pointer" }}>{viewfinderQuery.isFetching ? "Refreshing…" : "Refresh now"}</button>
           </div>
@@ -512,7 +512,7 @@ export default function AnomalyViewfinder() {
                 ["4 · Corpus fallbacks stay visible", "A jurisdiction without a promoted profile can use current corpus evidence where supported. That path is labeled Corpus fallback, including Colorado. A refresh checks the latest stored projection; it does not certify that every underlying source has changed or been reverified."],
                 ["5 · Anomalies use the canonical Atlas detections", "The Anomalies tab reads the same current live-data records as Signal Registry: measured recurrence, concentration, spikes, and unresolved-record conditions. Each record shows its actual rule and engine version, verification state, review state, detection time, and source freshness. A candidate is a lead for review, not a confirmed finding."],
                 ["6 · Patterns use the canonical Prism records", "The Patterns tab reads the same current legal-pattern records as Signal Registry. Inspect evidence to see source references, recorded statistics, and input and record hashes. The old ten narrative cards are no longer the data source. The separate Cross-Case Patterns workspace uses deterministic signature matching and evidence occurrences from your cases; these are distinct methods, not interchangeable counts."],
-                ["7 · Live updates and complete browsing", "Both feeds check for current records every 30 seconds while visible, on return to the page, and on reconnection. Search covers the complete feed. Pages contain up to 50 records with total counts and Next/Previous controls; there is no ten-result ceiling. Detection time belongs to the source record and never changes just because the page refreshed. Failed refreshes are labeled, and evidence access follows the existing sign-in boundary."],
+                ["7 · Live updates and complete browsing", "Both feeds check for current records once a day while open, on return to the page after a few minutes away, and on reconnection; Refresh now checks immediately, anytime. Search covers the complete feed. Pages contain up to 50 records with total counts and Next/Previous controls; there is no ten-result ceiling. Detection time belongs to the source record and never changes just because the page refreshed. Failed refreshes are labeled, and evidence access follows the existing sign-in boundary."],
                 ["8 · Inspect evidence before making a decision", "Open a detection to read its saved source observations, comparison statistics, and expected-versus-observed text checks. Saved examples may cover only part of the detected population; their coverage is shown explicitly. A matching source hash establishes record identity, not independent corroboration. Viewing evidence requires no case link. Case links save context and do not approve the method or verify the result."],
               ].map(([title, body]) => (
                 <div key={title} style={{ background: v.surface, border: `1px solid ${v.border}`, borderRadius: 12, padding: 18 }}>
