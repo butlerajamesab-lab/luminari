@@ -962,6 +962,19 @@ docket_router.get("/archive", async (req, res) => {
       where.push("upper(coalesce(cache.bill->>'state',''))="+add_param(requested_session_state));
       where.push("(cache.bill->>'session_id')="+add_param(String(requested_session_id)));
     }
+    const action_date_expr = "public.docket_bill_latest_action_date_v1(cache.bill)";
+    const latest_action_expr = `coalesce(
+      (select history_item->>'action'
+         from jsonb_array_elements(
+           case when jsonb_typeof(cache.bill->'history')='array'
+                then cache.bill->'history' else '[]'::jsonb end
+         ) with ordinality as history(history_item,position)
+        where history_item->>'date'=${action_date_expr}
+        order by case when history_item->>'importance'='1' then 1 else 0 end desc,
+                 position desc
+        limit 1),
+      cache.bill->>'last_action'
+    )`;
     if (deliberated_category) {
       // Deliberated includes sessions with explicit prior/sine-die evidence,
       // plus terminal outcomes in the verified current session.
@@ -972,9 +985,9 @@ docket_router.get("/archive", async (req, res) => {
             and prior_session.session_id=cache.bill->>'session_id'
         )
         or coalesce(cache.bill->>'status','') in ('5','6')
-        or lower(coalesce(cache.bill->>'last_action','')) ~
+        or lower(coalesce(${latest_action_expr},'')) ~
           '(^|[;\\.\\n])[[:space:]]*(chapter(ed)?|enacted|withdrawn|dead|vetoed|expired|approved|signed|became law|postponed indefinitely|indefinitely postponed|failed([[:space:]]+(final passage|to pass))?)([.;[:space:]]|$)'
-        or lower(coalesce(cache.bill->>'last_action','')) ~
+        or lower(coalesce(${latest_action_expr},'')) ~
           '(signed|approved) by (the )?(governor|president)|(governor|president) signed|bill (has )?(enacted|failed|withdrawn|vetoed|expired|died|dead|been postponed indefinitely|indefinitely postponed)'
       )`);
     }
@@ -1018,7 +1031,6 @@ docket_router.get("/archive", async (req, res) => {
            on current_session.state=upper(coalesce(cache.bill->>'state',''))
           and current_session.session_id::text=cache.bill->>'session_id'`
       : "";
-    const action_date_expr = "public.docket_bill_latest_action_date_v1(cache.bill)";
     if (after_id !== null) {
       const id_param = add_param(after_id);
       if (after_date) {
@@ -1069,18 +1081,7 @@ docket_router.get("/archive", async (req, res) => {
             coalesce(cache.bill->>'url',cache.bill->>'state_link') as url,
             cache.bill->>'status' as status,
             cache.bill->>'status_date' as status_date,
-            coalesce(
-              (select history_item->>'action'
-                 from jsonb_array_elements(
-                   case when jsonb_typeof(cache.bill->'history')='array'
-                        then cache.bill->'history' else '[]'::jsonb end
-                 ) with ordinality as history(history_item,position)
-                where history_item->>'date'=${action_date_expr}
-                order by case when history_item->>'importance'='1' then 1 else 0 end desc,
-                         position desc
-                limit 1),
-              cache.bill->>'last_action'
-            ) as last_action,
+            ${latest_action_expr} as last_action,
             ${action_date_expr} as last_action_date,
             cache.bill->>'effective_date' as effective_date,
             coalesce(cache.bill #>> '{session,session_title}',
@@ -1346,15 +1347,20 @@ docket_router.get("/bill/:bill_id", async (req, res) => {
         const detail_state = String(cached?.bill?.state ?? "").toUpperCase();
         if (!listed_bill && detail_state && detail_state !== state_cache.state.toUpperCase()) return null;
         if (!listed_bill && !detail_state) return null;
+        const summary = listed_bill
+          ? {
+              ...(cached?.bill ?? {}),
+              ...Object.fromEntries(
+                Object.entries(listed_bill).filter(([, value]) => value !== null && value !== undefined),
+              ),
+            }
+          : cached?.bill ?? null;
         return {
           state_cache,
-          summary: listed_bill
-            ? { ...listed_bill, ...(cached?.bill ?? {}) }
-            : cached?.bill ?? null,
-          session_id: Number(
-            cached?.bill?.session_id
-              ?? (listed_bill ? state_cache.session_id : NaN),
-          ),
+          summary,
+          session_id: listed_bill
+            ? state_cache.session_id
+            : Number(cached?.bill?.session_id ?? NaN),
         };
       })
       .find(item =>
