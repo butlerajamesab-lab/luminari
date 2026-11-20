@@ -176,10 +176,10 @@ export async function getPatternOutputs(filters?: { limit?: number }) {
   return (rows as unknown as any[]) || [];
 }
 
-export async function getStrategyOutputs(filters?: { limit?: number }) {
+export async function getStrategyPaths(filters?: { limit?: number }) {
   const limit = filters?.limit || 200;
   const [rows] = await db.execute(sql`
-    SELECT * FROM strategy_outputs ORDER BY id DESC LIMIT ${limit}
+    SELECT * FROM strategy_paths ORDER BY created_at DESC LIMIT ${limit}
   `);
   return (rows as unknown as any[]) || [];
 }
