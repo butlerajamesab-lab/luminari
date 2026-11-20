@@ -636,7 +636,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
       if (archive_view === "undeliberated") {
         return session_is_current === true && !resolution.is_terminal;
       }
-      return session_is_current !== true || resolution.is_terminal;
+      return session_is_current === false || resolution.is_terminal;
     }); // Undeliberated is verified current-session work; Deliberated is prior-session or terminal.
 
   const unverified_current_session_rows = archive_rows.filter(row => row.session_is_current == null);
