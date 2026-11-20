@@ -19,6 +19,7 @@ PRODUCTION_RECEIPTS = (
     # Exact Supabase-assigned identity for the installed October 8 Viewfinder SQL.
     Path("supabase/verification/production_migration_receipts_20261018_addendum.tsv"),
     Path("supabase/verification/production_migration_receipts_20261028_addendum.tsv"),
+    Path("supabase/verification/production_migration_receipts_20261115_addendum.tsv"),
 )
 # executable_md5 is exported from each ordered production statement array by
 # trimming trailing whitespace, restoring a missing top-level terminator,
@@ -475,6 +476,49 @@ APPROVED_REPOSITORY_ONLY = {
         "20261110300000_dedupe_merge_ledger_v1.sql",
         "89facd0cfe2a73e138a128166eb30342fdfd2407",
     ),
+    # 2026-11-18 user-approved forward-only Docket lifecycle-history lookup
+    # correction. Exact Git blob is locked here so pending SQL cannot drift
+    # before independently reviewed/receipt-bound production installation.
+    # This entry does not waive the migration install or acceptance gate.
+    "20261118010000": (
+        "20261118010000_docket_history_sha256_scoped_lookup.sql",
+        "5fd4e1c06571431c3ea8c321d716591fabe6d7fe",
+    ),
+    # 2026-11-18 forward-only Docket -> Genome scoped trigger proposal.
+    # Repo-only until separately certified/approved production install.
+    # Pin the immutable Git blob, and DO NOT mark installed in the ledger.
+    # The live source trigger functions must also pass the distinct SHA256
+    # preflight in this SQL file before any production DDL is permitted.
+    "20261118063000": (
+        "20261118063000_docket_genome_trigger_indexed_scope.sql",
+        "9dec655da0368ed382dd8c8941582d44a8b2d717",
+    ),
+    # Public Docket corpus browse/read indexes, repository-only until
+    # explicitly reviewed and approved for production installation.
+    "20261118090000": (
+        "20261118090000_docket_corpus_indexed_public_read.sql",
+        "c7142606f1d5e84415d717e7dca71413c9f72801",
+    ),
+    # Docket action-date ordering and provider session-currentness substrate.
+    # Repository-only until exact-head review, migration replay, and separate
+    # production installation approval. This pin does not mark it installed.
+    "20261119010000": (
+        "20261119010000_docket_history_session_ordering.sql",
+        "efdea9e78157fb0299fe5111b35f0101bbe21a2b",
+    ),
+    # Follow-up function search_path hardening, applied as a separate
+    # forward-only receipt after the post-install security advisor flagged it.
+    "20261119052953": (
+        "20261119052953_docket_history_action_date_search_path.sql",
+        "6f9a7827d362fad231b2f42b5649697d9688c9bb",
+    ),
+    # Genome version-spine no-op guard. Repository-only pending the
+    # separately approved production migration; pin the exact SQL blob and
+    # do not imply that the trigger change is installed in production.
+    "20261119110000": (
+        "20261119110000_docket_genome_spine_noop_update_guard.sql",
+        "2d5af7a6b42b244632556073a7df5dab81050dc8",
+    ),
     # Restored production migration (legal authority catalog
     # materialized view). Applied in the live production ledger on
     # 2026-10-20 and verified there first-hand 2026-11-11, but absent
@@ -488,6 +532,12 @@ APPROVED_REPOSITORY_ONLY = {
     "20261020111915": (
         "20261020111915_materialize_legal_authority_catalog_v2_20261020.sql",
         "7202fedb8b7cf1ba67a40a994797e4f54b010b9d",
+    ),
+    # Docket detail derived-work outbox candidate. Repository-only until its
+    # migration is separately reviewed and approved for production installation.
+    "20261120193000": (
+        "20261120193000_docket_bill_detail_derived_work_outbox_v1.sql",
+        "6b7a48eb1e24c155c84cabbc98e56bd75b03ef65",
     ),
 }
 
