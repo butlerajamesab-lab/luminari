@@ -1348,8 +1348,7 @@ docket_router.get("/bill/:bill_id", async (req, res) => {
             ? { ...listed_bill, ...(cached?.bill ?? {}) }
             : cached?.bill ?? null,
           session_id: Number(
-            listed_bill?.session_id
-              ?? cached?.bill?.session_id
+            cached?.bill?.session_id
               ?? (listed_bill ? state_cache.session_id : NaN),
           ),
         };
