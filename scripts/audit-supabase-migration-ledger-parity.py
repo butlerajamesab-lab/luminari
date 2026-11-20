@@ -26,6 +26,20 @@ PRODUCTION_RECEIPTS = (
 # joining statements with one blank line, and ending the file with one newline.
 # The sole comment-only receipt (20260517000000) intentionally gets no terminator.
 APPROVED_REPOSITORY_ONLY = {
+    # Dedupe merge ledger (duplicate catalog record merges:
+    # one row per absorbed entity, full row snapshots for
+    # mechanical reversal). Repository-only pending the
+    # separately approved production installation that follows
+    # the merge. Exact Git blob pinned; no production
+    # installation or ledger rewrite is implied by this entry.
+    # (Placed at the head of the dict: this branch forked before
+    # the 2026-11-18/19 registrations landed mid-dict on main,
+    # and a head placement keeps the two registration sets in
+    # disjoint merge regions.)
+    "20261110300000": (
+        "20261110300000_dedupe_merge_ledger_v1.sql",
+        "89facd0cfe2a73e138a128166eb30342fdfd2407",
+    ),
     "20260501203517": (
         "20260501203517_fresh_branch_signal_severity_foundation.sql",
         "8a13b1a07ae5c0b897392fe400e052e1bda2e48d",
