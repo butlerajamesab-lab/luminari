@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { PDFParse } from "pdf-parse";
 
 import { getPool } from "./db";
+import { accept_docket_bill_detail } from "./docket-bill-detail-acceptance";
+import { resolve_docket_live_update_eligibility } from "./docket-live-update-eligibility";
 import { get_bill } from "./services/legiscan";
 import {
   ingest_docket_bill_to_rosetta_source,
@@ -156,21 +158,53 @@ async function load_or_refresh_cached_docket_bill(
   const existing = rows[0];
   if (existing && as_record(existing.bill)) return existing;
 
+  const session_context = await pool.query<{
+    state: string;
+    session_id: number;
+    sessions: unknown;
+    bills: unknown;
+  }>(
+    `select state, session_id, sessions, bills
+       from public.docket_bill_state_cache state_cache
+      where state_cache.fetched_at >= now()-interval '24 hours'
+        and exists (
+          select 1 from jsonb_array_elements(
+            case when jsonb_typeof(state_cache.bills)='array'
+                 then state_cache.bills else '[]'::jsonb end
+          ) as bill_items(bill_summary)
+          where bill_summary->>'bill_id'=$1::text
+        )
+      order by state_cache.fetched_at desc
+      limit 1`,
+    [source_bill_id],
+  );
+  const context = session_context.rows[0];
+  const summaries = Array.isArray(context?.bills) ? context.bills : [];
+  const summary = summaries.find(item =>
+    as_record(item) && Number(item.bill_id) === source_bill_id,
+  );
+  const session_id = Number(as_record(summary)?.session_id ?? context?.session_id);
+  const eligibility = context && Number.isSafeInteger(session_id) && session_id > 0
+    ? resolve_docket_live_update_eligibility({
+        summary,
+        session_id,
+        sessions: context.sessions,
+      })
+    : { eligible: false, reason: "current_session_unverified" as const };
+  if (!eligibility.eligible) {
+    throw new Error(`docket_live_bill_update_not_eligible:${eligibility.reason}`);
+  }
+
   const refreshed = await get_bill(source_bill_id);
   if (!as_record(refreshed)) throw new Error("docket_bill_detail_refresh_invalid");
   const fetched_at = new Date().toISOString();
 
-  await pool.query(
-    `insert into public.docket_bill_detail_cache
-       (bill_id, bill, fetched_at, source, created_at, updated_at)
-     values ($1, $2::jsonb, $3::timestamptz, 'legiscan_get_bill', now(), now())
-     on conflict (bill_id) do update
-       set bill = excluded.bill,
-           fetched_at = excluded.fetched_at,
-           source = excluded.source,
-           updated_at = now()`,
-    [source_bill_id, JSON.stringify(refreshed), fetched_at],
-  );
+  await accept_docket_bill_detail({
+    bill_id: source_bill_id,
+    bill: refreshed as docket_bill_payload,
+    source: "legiscan_get_bill_rosetta_extraction",
+    label: "docket_rosetta_extraction_cache_detail",
+  });
 
   return {
     bill: refreshed as docket_bill_payload,
