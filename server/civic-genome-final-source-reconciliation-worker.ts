@@ -1,5 +1,6 @@
 import { query_with_diagnostics } from "./db";
 import { accept_docket_bill_detail } from "./docket-bill-detail-acceptance";
+import { resolve_docket_live_update_eligibility } from "./docket-live-update-eligibility";
 import { get_bill, type legiscan_bill_detail } from "./services/legiscan";
 import { background_feature_enabled } from "./runtime-role";
 
@@ -27,6 +28,8 @@ export type final_source_reconciliation_result = {
   genome_bill_id: string;
   final_version_present: boolean;
   text_version_count: number;
+  refresh_state?: "held" | "refreshed";
+  refresh_reason?: string;
 };
 
 let timer: NodeJS.Timeout | null = null;
@@ -180,9 +183,49 @@ async function read_result(
 export async function reconcile_civic_genome_final_source_candidate(
   candidate: final_source_reconciliation_candidate,
 ): Promise<final_source_reconciliation_result> {
+  const context = await query_with_diagnostics<{
+    session_id: number;
+    sessions: unknown;
+    bills: unknown;
+  }>(
+    `select session_id, sessions, bills
+       from public.docket_bill_state_cache
+      where state=$1
+        and session_id::text=$2
+        and fetched_at >= now()-interval '24 hours'
+      limit 1`,
+    [candidate.state_code, candidate.session_key],
+    {
+      label: "civic_genome_final_source_reconciliation_session_evidence",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+  const state = context.rows[0];
+  const bills = Array.isArray(state?.bills) ? state.bills : [];
+  const summary = bills.find(item => Number(as_record(item)?.bill_id) === candidate.source_bill_id);
+  const eligibility = state
+    ? resolve_docket_live_update_eligibility({
+        summary,
+        session_id: state.session_id,
+        sessions: state.sessions,
+      })
+    : { eligible: false, reason: "current_session_unverified" as const };
+
+  if (!eligibility.eligible) {
+    return {
+      ...(await read_result(candidate)),
+      refresh_state: "held",
+      refresh_reason: eligibility.reason,
+    };
+  }
+
   const bill = await get_bill(candidate.source_bill_id);
   await cache_bill_detail(candidate.source_bill_id, bill);
-  return read_result(candidate);
+  return {
+    ...(await read_result(candidate)),
+    refresh_state: "refreshed",
+  };
 }
 
 export async function run_civic_genome_final_source_reconciliation_cycle(): Promise<void> {
@@ -200,7 +243,11 @@ export async function run_civic_genome_final_source_reconciliation_cycle(): Prom
     await Promise.all(candidates.map(async candidate => {
       try {
         const result = await reconcile_civic_genome_final_source_candidate(candidate);
-        failure_cooldown_until.delete(candidate.source_bill_id);
+        if (result.refresh_state === "held") {
+          failure_cooldown_until.set(candidate.source_bill_id, Date.now() + FAILURE_COOLDOWN_MS);
+        } else {
+          failure_cooldown_until.delete(candidate.source_bill_id);
+        }
         console.log("[CivicGenomeFinalSource] checked", {
           source_bill_id: result.source_bill_id,
           genome_bill_id: result.genome_bill_id,
@@ -209,9 +256,13 @@ export async function run_civic_genome_final_source_reconciliation_cycle(): Prom
           bill_number: candidate.source_bill_number,
           final_version_present: result.final_version_present,
           text_version_count: result.text_version_count,
+          refresh_state: result.refresh_state ?? "not_reported",
+          refresh_reason: result.refresh_reason ?? null,
           outcome: result.final_version_present
             ? "final_source_registered"
-            : "official_final_source_not_yet_available",
+            : result.refresh_state === "held"
+              ? "live_refresh_held"
+              : "official_final_source_not_yet_available",
         });
       } catch (error) {
         failure_cooldown_until.set(candidate.source_bill_id, Date.now() + FAILURE_COOLDOWN_MS);
