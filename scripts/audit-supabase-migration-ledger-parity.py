@@ -26,6 +26,18 @@ PRODUCTION_RECEIPTS = (
 # joining statements with one blank line, and ending the file with one newline.
 # The sole comment-only receipt (20260517000000) intentionally gets no terminator.
 APPROVED_REPOSITORY_ONLY = {
+    # Tribal TDHE crosswalk (tribe <-> housing entity pairs
+    # from the BIA TDHE contact list; v7 hand-check-gated clean
+    # set of 314 rows). Repository-only pending the separately
+    # approved production installation that follows the merge.
+    # Exact Git blob pinned; no production installation or
+    # ledger rewrite is implied by this entry. (Head placement:
+    # keeps this registration in a region other branches have
+    # not touched, per the 2026-11-20 dedupe merge lesson.)
+    "20261120150000": (
+        "20261120150000_tribal_tdhe_crosswalk_v1.sql",
+        "2fac58a2b8fd5bc785d53c62f82177413e996b3f",
+    ),
     # Dedupe merge ledger (duplicate catalog record merges:
     # one row per absorbed entity, full row snapshots for
     # mechanical reversal). Repository-only pending the
