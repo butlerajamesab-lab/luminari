@@ -181,7 +181,7 @@ async function load_or_refresh_cached_docket_bill(
   const context = session_context.rows[0];
   const summaries = Array.isArray(context?.bills) ? context.bills : [];
   const summary = summaries.find(item =>
-    as_record(item) && Number(item.bill_id) === source_bill_id,
+    Number(as_record(item)?.bill_id) === source_bill_id,
   );
   const session_id = Number(as_record(summary)?.session_id ?? context?.session_id);
   const eligibility = context && Number.isSafeInteger(session_id) && session_id > 0
