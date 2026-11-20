@@ -1288,9 +1288,13 @@ docket_router.get("/bill/:bill_id", async (req, res) => {
     const bill_id = normalize_bill_id(req.params.bill_id);
     const cached = await read_bill_detail_cache(bill_id);
 
-    // An archive snapshot is a preserved provider observation, not a live getBill
-    // response. Never spend LegiScan credits just because its local import clock ages.
-    if (cached && cached.source === "legiscan_bulk_json") {
+    // Keep bulk snapshots read-only unless the cached bill is stale and active
+    // workers can verify it for the current-session live refresh path below.
+    if (
+      cached
+      && cached.source === "legiscan_bulk_json"
+      && (is_fresh(cached.fetched_at, bill_detail_cache_ttl_ms) || !background_workers_allowed())
+    ) {
       return res.json({
         ok: true,
         source: "legiscan_bulk_json_cache",
