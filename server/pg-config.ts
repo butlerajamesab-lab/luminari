@@ -25,6 +25,22 @@ type database_pool_options = {
   application_name?: string;
 };
 
+/**
+ * The derived-work worker permits a single bounded database query to run for
+ * up to 180 seconds. Give its checked-out client enough lease time to reach
+ * that query's own timeout and cleanly record a retry; keep the shorter leak
+ * guard on the public web process.
+ */
+export function resolve_database_client_lease_timeout_millis(
+  configured_timeout_millis: number | undefined,
+  environment: { LIGHTHOUSE_RUNTIME_ROLE?: string } = process.env,
+): number {
+  const configured = configured_timeout_millis ?? 60_000;
+  return environment.LIGHTHOUSE_RUNTIME_ROLE === "worker"
+    ? Math.max(configured, 200_000)
+    : configured;
+}
+
 export function get_database_url(): string | undefined {
   return process.env.DATABASE_URL?.trim() || undefined;
 }
@@ -102,7 +118,9 @@ export function create_database_pool(options: database_pool_options = {}): Pool 
   const max_uses = options.max_uses ?? 7500;
   const keep_alive = options.keep_alive ?? true;
   const query_timeout_millis = options.query_timeout_millis;
-  const client_lease_timeout_millis = options.client_lease_timeout_millis ?? 60_000;
+  const client_lease_timeout_millis = resolve_database_client_lease_timeout_millis(
+    options.client_lease_timeout_millis,
+  );
 
   const pool = new Pool({
     connectionString: sanitized_connection_string,
