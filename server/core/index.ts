@@ -36,6 +36,7 @@ import {
 import { systemVisibilityRouter } from "../routes/system-visibility-router";
 import { conveyorRouter } from "../routes/conveyor-router";
 import { civicMapRouter } from "../routes/civic-map-router";
+import { officesRouter } from "../routes/offices-router";
 
 let pipelineRunnerInterval: NodeJS.Timer | null = null;
 
@@ -96,6 +97,7 @@ async function startServer() {
   app.use("/api/conveyor", conveyorRouter);
   // CivicMap rendering API — preview/detail/bounds, snake_case contracts
   app.use("/api/civic-map", civicMapRouter);
+  app.use("/api/offices", officesRouter);
   // tRPC API
   app.use(
     "/api/trpc",

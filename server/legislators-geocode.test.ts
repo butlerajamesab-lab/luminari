@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   lookupAddressDistricts,
+  lookupAddressPoint,
+  parseCensusCoordinates,
   parseCensusGeographies,
 } from "./legislators-geocode";
 
@@ -137,6 +139,136 @@ describe("lookupAddressDistricts", () => {
       throw new Error("network down");
     }) as unknown as typeof fetch;
     expect(await lookupAddressDistricts("600 4th Ave, Seattle, WA", impl)).toEqual({
+      status: "unavailable",
+    });
+  });
+});
+
+/**
+ * Coordinates fixtures: the geographies response carries the matched
+ * point on every address match as coordinates { x: longitude,
+ * y: latitude }. Values below are the Census-returned point shape for
+ * the same Seattle address as the district fixtures.
+ */
+const seattlePointPayload = {
+  result: {
+    addressMatches: [
+      {
+        matchedAddress: "600 4TH AVE, SEATTLE, WA, 98104",
+        coordinates: { x: -122.330062, y: 47.606453 },
+        geographies: seattlePayload.result.addressMatches[0].geographies,
+      },
+    ],
+  },
+};
+
+describe("parseCensusCoordinates", () => {
+  it("reads the matched point as latitude and longitude", () => {
+    expect(parseCensusCoordinates(seattlePointPayload)).toEqual({
+      matchedAddress: "600 4TH AVE, SEATTLE, WA, 98104",
+      latitude: 47.606453,
+      longitude: -122.330062,
+    });
+  });
+
+  it("returns null when the payload holds no address matches", () => {
+    expect(
+      parseCensusCoordinates({ result: { addressMatches: [] } }),
+    ).toBeNull();
+  });
+
+  it("returns null when the match carries no usable coordinates", () => {
+    expect(
+      parseCensusCoordinates({
+        result: { addressMatches: [{ matchedAddress: "X" }] },
+      }),
+    ).toBeNull();
+    expect(
+      parseCensusCoordinates({
+        result: {
+          addressMatches: [
+            { matchedAddress: "X", coordinates: { x: "east", y: null } },
+          ],
+        },
+      }),
+    ).toBeNull();
+  });
+
+  it("returns null for out-of-range coordinates instead of a wrong point", () => {
+    expect(
+      parseCensusCoordinates({
+        result: {
+          addressMatches: [
+            { matchedAddress: "X", coordinates: { x: -190.5, y: 47.6 } },
+          ],
+        },
+      }),
+    ).toBeNull();
+    expect(
+      parseCensusCoordinates({
+        result: {
+          addressMatches: [
+            { matchedAddress: "X", coordinates: { x: -122.3, y: 95.1 } },
+          ],
+        },
+      }),
+    ).toBeNull();
+  });
+
+  it("returns null for malformed payloads instead of guessing", () => {
+    expect(parseCensusCoordinates(null)).toBeNull();
+    expect(parseCensusCoordinates({})).toBeNull();
+    expect(parseCensusCoordinates({ result: {} })).toBeNull();
+  });
+});
+
+describe("lookupAddressPoint", () => {
+  it("resolves a matched address to its Census point via the same endpoint", async () => {
+    const { impl, calls } = fakeFetch(seattlePointPayload);
+    const outcome = await lookupAddressPoint(
+      "600 4th Ave, Seattle, WA 98104",
+      impl,
+    );
+    expect(outcome).toEqual({
+      status: "matched",
+      match: {
+        matchedAddress: "600 4TH AVE, SEATTLE, WA, 98104",
+        latitude: 47.606453,
+        longitude: -122.330062,
+      },
+    });
+    const url = new URL(calls[0]);
+    expect(url.pathname).toBe("/geocoder/geographies/onelineaddress");
+    expect(url.searchParams.get("benchmark")).toBe("Public_AR_Current");
+    expect(url.searchParams.get("vintage")).toBe("Current_Current");
+  });
+
+  it("reports no_match when the geocoder matches nothing", async () => {
+    const { impl } = fakeFetch({ result: { addressMatches: [] } });
+    expect(
+      await lookupAddressPoint("1 Nowhere Lane, Zzz, ZZ 00000", impl),
+    ).toEqual({ status: "no_match" });
+  });
+
+  it("reports no_match when a match carries no coordinates — never a guessed point", async () => {
+    const { impl } = fakeFetch(seattlePayload);
+    expect(
+      await lookupAddressPoint("600 4th Ave, Seattle, WA 98104", impl),
+    ).toEqual({ status: "no_match" });
+  });
+
+  it("reports unavailable on a non-200 response", async () => {
+    const { impl } = fakeFetch({}, false, 500);
+    expect(await lookupAddressPoint("600 4th Ave, Seattle, WA", impl)).toEqual({
+      status: "unavailable",
+    });
+  });
+
+  it("reports unavailable when the fetch itself fails", async () => {
+    const impl = (async () => {
+      throw new Error("network down");
+    }) as unknown as typeof fetch;
+    expect(await lookupAddressPoint("600 4th Ave, Seattle, WA", impl)).toEqual({
       status: "unavailable",
     });
   });
