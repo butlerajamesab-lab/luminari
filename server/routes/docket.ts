@@ -996,7 +996,37 @@ docket_router.get("/archive", async (req, res) => {
       }
     }
     const limit_param = add_param(limit+1);
-    const select = `${current_session_cte}
+    const current_session_page_candidates = current_session_only
+      ? `, current_session_page_candidates as (
+          select candidate_cache.bill_id
+          from verified_current_sessions current_session
+          cross join lateral (
+            select candidate_cache.bill_id
+            from public.docket_bill_detail_cache candidate_cache
+            where current_session.state=upper(coalesce(candidate_cache.bill->>'state',''))
+              and current_session.session_id::text=candidate_cache.bill->>'session_id'
+              ${where.length
+                ? "and "+where.map(condition=>condition.replaceAll("cache.","candidate_cache.")).join(" and ")
+                : ""}
+            order by public.docket_bill_latest_action_date_v1(candidate_cache.bill) desc nulls last,
+                     candidate_cache.bill_id asc
+            limit ${limit_param}
+          ) candidate_cache
+        )`
+      : "";
+    const page_from = current_session_only
+      ? `from current_session_page_candidates selected_page
+       join public.docket_bill_detail_cache cache on cache.bill_id=selected_page.bill_id
+       left join public.docket_bill_state_cache session_cache
+         on upper(session_cache.state)=upper(coalesce(cache.bill->>'state',''))`
+      : `from public.docket_bill_detail_cache cache
+       ${current_session_join}
+       left join public.docket_bill_state_cache session_cache
+         on upper(session_cache.state)=upper(coalesce(cache.bill->>'state',''))`;
+    const page_where = !current_session_only && where.length
+      ? "where "+where.join(" and ")
+      : "";
+    const select = `${current_session_cte}${current_session_page_candidates}
        select cache.bill_id,
             upper(coalesce(cache.bill->>'state','')) as state,
             coalesce(cache.bill->>'bill_number',cache.bill->>'number','') as bill_number,
@@ -1045,11 +1075,8 @@ docket_router.get("/archive", async (req, res) => {
             end as session_is_current,
             session_cache.fetched_at as current_session_fetched_at,
             cache.fetched_at,'detail_cache'::text as corpus_source,0 as match_rank
-       from public.docket_bill_detail_cache cache
-       ${current_session_join}
-       left join public.docket_bill_state_cache session_cache
-         on upper(session_cache.state)=upper(coalesce(cache.bill->>'state',''))
-      ${where.length ? "where "+where.join(" and ") : ""}
+       ${page_from}
+      ${page_where}
       order by ${action_date_expr} desc nulls last,cache.bill_id asc
       limit ${limit_param}`;
     const count_query = `${current_session_cte}
