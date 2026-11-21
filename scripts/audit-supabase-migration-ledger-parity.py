@@ -26,17 +26,18 @@ PRODUCTION_RECEIPTS = (
 # joining statements with one blank line, and ending the file with one newline.
 # The sole comment-only receipt (20260517000000) intentionally gets no terminator.
 APPROVED_REPOSITORY_ONLY = {
-    # Tribal TDHE crosswalk (tribe <-> housing entity pairs
-    # from the BIA TDHE contact list; v7 hand-check-gated clean
-    # set of 314 rows). Repository-only pending the separately
-    # approved production installation that follows the merge.
-    # Exact Git blob pinned; no production installation or
-    # ledger rewrite is implied by this entry. (Head placement:
-    # keeps this registration in a region other branches have
-    # not touched, per the 2026-11-20 dedupe merge lesson.)
-    "20261120150000": (
-        "20261120150000_tribal_tdhe_crosswalk_v1.sql",
-        "2fac58a2b8fd5bc785d53c62f82177413e996b3f",
+    # Gate B Kernel 1 alerting substrate (alert_subscriptions /
+    # alert_events / alert_delivery_log, exactly as the drizzle
+    # schema already declared them; no CREATE TABLE ever existed).
+    # Repository-only pending the separately approved production
+    # installation that follows the merge. Exact Git blob pinned;
+    # no production installation or ledger rewrite is implied by
+    # this entry. (Placed at the head of the dict, per the dedupe
+    # entry's convention, to keep registration sets in disjoint
+    # merge regions.)
+    "20261120203000": (
+        "20261120203000_gateb_k1_alerting_substrate.sql",
+        "14f098a9042b9d41f9fea029da9615c32d64e768",
     ),
     # Dedupe merge ledger (duplicate catalog record merges:
     # one row per absorbed entity, full row snapshots for
