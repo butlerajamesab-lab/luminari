@@ -12,6 +12,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { StationNav } from "@/components/station-nav";
 import LegislatorCard, {
   chamberDisplay,
 } from "@/components/legislators/LegislatorCard";
@@ -440,6 +441,10 @@ export default function Legislators() {
           Contact details shown here are the officials&apos; own published
           details — nothing is invented.
         </p>
+
+        <div style={{ marginBottom: "1.5rem" }}>
+          <StationNav />
+        </div>
 
         <section
           style={{

@@ -20,6 +20,7 @@ import {
   OFFICE_FAMILY_META,
 } from "@shared/office-families";
 import OfficeCard from "@/components/offices/OfficeCard";
+import { StationNav } from "@/components/station-nav";
 import {
   group_office_results,
   office_search_presentation,
@@ -219,6 +220,10 @@ export default function FindAnOffice() {
           , with the contact details its own record carries — nothing is
           invented.
         </p>
+
+        <div style={{ marginBottom: "1.5rem" }}>
+          <StationNav />
+        </div>
 
         {matched ? (
           <section

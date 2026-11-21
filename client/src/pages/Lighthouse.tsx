@@ -47,6 +47,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useWorldIndex } from "@/hooks/useWorldIndex";
+import { StationNav } from "@/components/station-nav";
 
 /* ═══════════════════════════════════════════════════════════════════════
    THE LIGHTHOUSE — Community Hub
@@ -1877,6 +1878,10 @@ export default function Lighthouse() {
               </p>
             </div>
           )}
+        </div>
+
+        <div style={{ marginBottom: 40 }}>
+          <StationNav />
         </div>
 
         {/* ── Platform Entry Points ── */}

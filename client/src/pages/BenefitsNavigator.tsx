@@ -36,6 +36,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { FlagArea } from "@/components/CommitToCase";
 import { NextStepBar } from "@/components/NextStepBar";
+import { StationNav } from "@/components/station-nav";
 import { Benefits_directory_categories, Benefits_resource_sections } from "@/components/benefits/BenefitsResourceSections";
 import Benefits_registry_programs from "@/components/benefits/BenefitsRegistryPrograms";
 
@@ -499,57 +500,6 @@ function StateSelector({
 }
 
 
-const REAL_MODULE_LINKS = [
-  { label: "Workshop Floor", href: "/workshop", icon: Wrench, station: "Pick a station. Move freely." },
-  { label: "Control Room / Lighthouse", href: "/control-room", icon: Shield, station: "Case command" },
-  { label: "Lighthouse Hub", href: "/lighthouse", icon: Landmark, station: "Community Board" },
-  { label: "CivicMap", href: "/civic-map", icon: Map, station: "Mapped resources" },
-  { label: "Legal Library", href: "/legal-library", icon: Scale, station: "Doctrine" },
-  { label: "Anomaly Viewfinder", href: "/viewfinder", icon: Brain, station: "Signals" },
-  { label: "FOIA Tracker", href: "/foia", icon: FileText, station: "Requests" },
-  { label: "Case Resolution", href: "/resolve", icon: CheckCircle2, station: "Repair Bench" },
-  { label: "Guided Intake", href: "/guided-intake", icon: HelpCircle, station: "Repair Bench" },
-  { label: "Upload Evidence", href: "/upload", icon: UploadCloud, station: "Evidence Lab" },
-  { label: "Resource Directory", href: "/resources", icon: FolderOpen, station: "Community Board" },
-  { label: "LumenSend", href: "/lumensend", icon: Send, station: "Shop Office" },
-  { label: "Filing Generator", href: "/filing-generator", icon: ClipboardList, station: "Shop Office" },
-  { label: "Case Dashboard", href: "/workbench", icon: Building2, station: "Case workspace" },
-];
-
-function BenefitsStationNav() {
-  return (
-    <Card className="bg-card/50 border-border/50 overflow-hidden">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Wrench className="w-4 h-4 text-primary" />
-          Workshop Floor navigation
-        </CardTitle>
-        <p className="text-xs text-muted-foreground">
-          Pick a station. Move freely. Every station connects to the others.
-        </p>
-      </CardHeader>
-      <CardContent className="pt-1">
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 print:flex-wrap">
-          {REAL_MODULE_LINKS.map((link) => {
-            const Icon = link.icon;
-            return (
-              <Link key={link.href} href={link.href}>
-                <a className="min-w-max rounded-lg border border-border/50 bg-background/40 px-3 py-2 text-left hover:border-primary/40 hover:bg-primary/5 transition-colors">
-                  <span className="flex items-center gap-2 text-xs font-medium text-foreground">
-                    <Icon className="w-3.5 h-3.5 text-primary/80" />
-                    {link.label}
-                  </span>
-                  <span className="block text-[10px] text-muted-foreground mt-0.5">{link.station}</span>
-                </a>
-              </Link>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 /* ─── Main Benefits Navigator Page ─── */
 
 export default function BenefitsNavigator() {
@@ -773,7 +723,7 @@ export default function BenefitsNavigator() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-        <BenefitsStationNav />
+        <StationNav />
         <Benefits_case_actions case_id={case_id} state_code={selectedState} />
         <Benefits_cascade_navigator case_id={case_id} state_code={selectedState} initial_scenario_id={params.get("cascade")} on_benefit_search={(query, resource_query) => {
           setSituationText(query);
