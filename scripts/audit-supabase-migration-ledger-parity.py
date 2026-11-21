@@ -26,6 +26,18 @@ PRODUCTION_RECEIPTS = (
 # joining statements with one blank line, and ending the file with one newline.
 # The sole comment-only receipt (20260517000000) intentionally gets no terminator.
 APPROVED_REPOSITORY_ONLY = {
+    # Tribal TDHE crosswalk (tribe <-> housing entity pairs
+    # from the BIA TDHE contact list; v7 hand-check-gated clean
+    # set of 314 rows). Repository-only pending the separately
+    # approved production installation that follows the merge.
+    # Exact Git blob pinned; no production installation or
+    # ledger rewrite is implied by this entry. (Head placement:
+    # keeps this registration in a region other branches have
+    # not touched, per the 2026-11-20 dedupe merge lesson.)
+    "20261120150000": (
+        "20261120150000_tribal_tdhe_crosswalk_v1.sql",
+        "2fac58a2b8fd5bc785d53c62f82177413e996b3f",
+    ),
     # Dedupe merge ledger (duplicate catalog record merges:
     # one row per absorbed entity, full row snapshots for
     # mechanical reversal). Repository-only pending the
@@ -47,11 +59,10 @@ APPROVED_REPOSITORY_ONLY = {
     # installation that follows the merge. Exact Git blob pinned;
     # no production installation or ledger rewrite is implied by
     # this entry. (Placed directly after the dedupe entry, NOT at
-    # the head of the dict: the TDHE registration landed at the
-    # head on main the same day, and two insertions at the
-    # identical head anchor merge-resolve by silently dropping
-    # one of them — verified on the merged tree 2026-11-20. This
-    # spot is untouched on main, keeping the sets disjoint.)
+    # the head of the dict: the TDHE registration sits at the head
+    # on main, and two registrations at the identical head anchor
+    # collide — verified on merged trees 2026-11-20. This spot
+    # keeps the sets disjoint.)
     "20261120203000": (
         "20261120203000_gateb_k1_alerting_substrate.sql",
         "14f098a9042b9d41f9fea029da9615c32d64e768",
