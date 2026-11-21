@@ -19,6 +19,13 @@
  * filled in — a district the Census did not return stays null here,
  * and the router additionally drops any returned district that has no
  * roster behind it in the base before the page may select it.
+ *
+ * The Find-an-Office locator (F3) resolves the same address to its
+ * coordinates through this same module: one Census Geocoder, one
+ * benchmark/vintage pin, one fetch path — parseCensusCoordinates and
+ * lookupAddressPoint below read the coordinates the geographies
+ * response already carries on every match. There is no second
+ * geocoder.
  */
 
 export interface GeocodeMatch {
@@ -35,6 +42,19 @@ export interface GeocodeMatch {
 
 export type GeocodeOutcome =
   | { status: "matched"; match: GeocodeMatch }
+  | { status: "no_match" }
+  | { status: "unavailable" };
+
+export interface GeocodePointMatch {
+  matchedAddress: string;
+  /** Latitude in decimal degrees, exactly as the Census returned it. */
+  latitude: number;
+  /** Longitude in decimal degrees, exactly as the Census returned it. */
+  longitude: number;
+}
+
+export type GeocodePointOutcome =
+  | { status: "matched"; match: GeocodePointMatch }
   | { status: "no_match" }
   | { status: "unavailable" };
 
@@ -137,18 +157,58 @@ export function parseCensusGeographies(payload: unknown): GeocodeMatch | null {
   };
 }
 
+/**
+ * Parse a Census Geocoder geographies payload into the matched
+ * address's coordinates. Pure: returns null when the payload holds no
+ * usable match. The geographies response carries the coordinates on
+ * every address match ({ x: longitude, y: latitude }); only finite,
+ * in-range values are accepted — anything else is no match at all,
+ * never a guessed point.
+ */
+export function parseCensusCoordinates(
+  payload: unknown,
+): GeocodePointMatch | null {
+  const root = payload as {
+    result?: { addressMatches?: unknown };
+  } | null;
+  const matches = root?.result?.addressMatches;
+  if (!Array.isArray(matches) || matches.length === 0) {
+    return null;
+  }
+  const first = matches[0] as {
+    matchedAddress?: string;
+    coordinates?: { x?: unknown; y?: unknown };
+  };
+  const x = Number(first?.coordinates?.x);
+  const y = Number(first?.coordinates?.y);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    return null;
+  }
+  if (x < -180 || x > 180 || y < -90 || y > 90) {
+    return null;
+  }
+  return {
+    matchedAddress: first.matchedAddress ?? "",
+    latitude: y,
+    longitude: x,
+  };
+}
+
 const GEOCODER_URL =
   "https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress";
 
 /**
- * Resolve one street address to its districts via the Census Geocoder.
- * The address is sent to the Census Bureau for this single lookup and
- * is never stored or logged here.
+ * The one Census Geocoder call both lookups share: same endpoint,
+ * same pinned benchmark and vintage, same timeout. The address is
+ * sent to the Census Bureau for this single lookup and is never
+ * stored or logged here. Returns the parsed payload, or null when
+ * the service failed (non-200, network error, bad JSON) — callers
+ * report that as unavailable rather than guessing.
  */
-export async function lookupAddressDistricts(
+async function fetchCensusGeocoderPayload(
   address: string,
   fetchImpl: typeof fetch = fetch,
-): Promise<GeocodeOutcome> {
+): Promise<unknown | null> {
   const url = new URL(GEOCODER_URL);
   url.searchParams.set("address", address);
   url.searchParams.set("benchmark", "Public_AR_Current");
@@ -162,14 +222,48 @@ export async function lookupAddressDistricts(
       signal: controller.signal,
     });
     if (!response.ok) {
-      return { status: "unavailable" };
+      return null;
     }
-    const payload: unknown = await response.json();
-    const match = parseCensusGeographies(payload);
-    return match ? { status: "matched", match } : { status: "no_match" };
+    return await response.json();
   } catch {
-    return { status: "unavailable" };
+    return null;
   } finally {
     clearTimeout(timeout);
   }
+}
+
+/**
+ * Resolve one street address to its districts via the Census Geocoder.
+ * The address is sent to the Census Bureau for this single lookup and
+ * is never stored or logged here.
+ */
+export async function lookupAddressDistricts(
+  address: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<GeocodeOutcome> {
+  const payload = await fetchCensusGeocoderPayload(address, fetchImpl);
+  if (payload === null) {
+    return { status: "unavailable" };
+  }
+  const match = parseCensusGeographies(payload);
+  return match ? { status: "matched", match } : { status: "no_match" };
+}
+
+/**
+ * Resolve one street address to its coordinates via the same Census
+ * Geocoder call the legislators hub makes (see
+ * fetchCensusGeocoderPayload). Honest shapes only: matched with the
+ * Census-returned point, no_match, or unavailable — a locator must
+ * never fall back to a guessed point.
+ */
+export async function lookupAddressPoint(
+  address: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<GeocodePointOutcome> {
+  const payload = await fetchCensusGeocoderPayload(address, fetchImpl);
+  if (payload === null) {
+    return { status: "unavailable" };
+  }
+  const match = parseCensusCoordinates(payload);
+  return match ? { status: "matched", match } : { status: "no_match" };
 }

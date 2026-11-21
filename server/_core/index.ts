@@ -15,6 +15,7 @@ import { sessionMiddleware } from "./session-middleware";
 import { systemVisibilityRouter } from "../routes/system-visibility-router";
 import { conveyorRouter } from "../routes/conveyor-router";
 import { civicMapRouter } from "../routes/civic-map-router";
+import { officesRouter } from "../routes/offices-router";
 import { atlasProxyRouter } from "../routes/atlas-proxy-router";
 import { atlas_domain3_receipt_router } from "../routes/atlas-domain3-receipt-router";
 import { corpus_footprint_router } from "../routes/corpus-footprint-router";
@@ -237,6 +238,7 @@ async function startServer() {
   app.use("/api/system", requireExpressAdminOrSystemReadToken, systemVisibilityRouter);
   app.use("/api/conveyor", requireExpressAdmin, conveyorRouter);
   app.use("/api/civic-map", civicMapRouter);
+  app.use("/api/offices", officesRouter);
   app.use("/api/atlas", atlasProxyRouter);
   app.use("/api/atlas-domain3", atlas_domain3_receipt_router);
   app.use("/api/ingestion-control", requireExpressAdmin);
