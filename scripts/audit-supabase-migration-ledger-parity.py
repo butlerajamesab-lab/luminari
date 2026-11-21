@@ -26,19 +26,6 @@ PRODUCTION_RECEIPTS = (
 # joining statements with one blank line, and ending the file with one newline.
 # The sole comment-only receipt (20260517000000) intentionally gets no terminator.
 APPROVED_REPOSITORY_ONLY = {
-    # Gate B Kernel 1 alerting substrate (alert_subscriptions /
-    # alert_events / alert_delivery_log, exactly as the drizzle
-    # schema already declared them; no CREATE TABLE ever existed).
-    # Repository-only pending the separately approved production
-    # installation that follows the merge. Exact Git blob pinned;
-    # no production installation or ledger rewrite is implied by
-    # this entry. (Placed at the head of the dict, per the dedupe
-    # entry's convention, to keep registration sets in disjoint
-    # merge regions.)
-    "20261120203000": (
-        "20261120203000_gateb_k1_alerting_substrate.sql",
-        "14f098a9042b9d41f9fea029da9615c32d64e768",
-    ),
     # Dedupe merge ledger (duplicate catalog record merges:
     # one row per absorbed entity, full row snapshots for
     # mechanical reversal). Repository-only pending the
@@ -52,6 +39,22 @@ APPROVED_REPOSITORY_ONLY = {
     "20261110300000": (
         "20261110300000_dedupe_merge_ledger_v1.sql",
         "89facd0cfe2a73e138a128166eb30342fdfd2407",
+    ),
+    # Gate B Kernel 1 alerting substrate (alert_subscriptions /
+    # alert_events / alert_delivery_log, exactly as the drizzle
+    # schema already declared them; no CREATE TABLE ever existed).
+    # Repository-only pending the separately approved production
+    # installation that follows the merge. Exact Git blob pinned;
+    # no production installation or ledger rewrite is implied by
+    # this entry. (Placed directly after the dedupe entry, NOT at
+    # the head of the dict: the TDHE registration landed at the
+    # head on main the same day, and two insertions at the
+    # identical head anchor merge-resolve by silently dropping
+    # one of them — verified on the merged tree 2026-11-20. This
+    # spot is untouched on main, keeping the sets disjoint.)
+    "20261120203000": (
+        "20261120203000_gateb_k1_alerting_substrate.sql",
+        "14f098a9042b9d41f9fea029da9615c32d64e768",
     ),
     "20260501203517": (
         "20260501203517_fresh_branch_signal_severity_foundation.sql",
