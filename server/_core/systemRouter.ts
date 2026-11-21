@@ -38,16 +38,32 @@ export const systemRouter = router({
    */
   stats: publicProcedure.query(async () => {
     try {
+      // Governed signal counts read the true store — public.live_data_signals,
+      // the same relation the Signal Governance dashboard reads via
+      // canonical-live-signal-queries.ts — with the same definitions:
+      // pending = current observation candidates awaiting review,
+      // approved = current promoted signals. (This procedure previously
+      // counted the legacy detected_signals table by signal_status /
+      // verification_status columns that table does not have, so the
+      // query threw on every call and the catch below zeroed every
+      // counter, registry included.) Rejected is a recorded decision, so
+      // it is counted over all rows with governance_status = 'rejected',
+      // current or superseded.
       const { rows: signalRows } = await getPool().query(
-        `SELECT COALESCE(signal_status::text, verification_status::text, 'pending') AS status, COUNT(*)::int AS cnt
-         FROM detected_signals
-         GROUP BY COALESCE(signal_status::text, verification_status::text, 'pending')`
+        `SELECT governance_status::text AS status, COUNT(*)::int AS cnt
+         FROM live_data_signals
+         WHERE is_current = true
+         GROUP BY governance_status`
       );
 
       const signalMap: Record<string, number> = {};
       for (const row of signalRows as any[]) {
         signalMap[row.status] = Number(row.cnt ?? 0);
       }
+
+      const { rows: rejectedRows } = await getPool().query(
+        `SELECT COUNT(*)::int AS cnt FROM live_data_signals WHERE governance_status = 'rejected'`
+      );
 
       const [formsRegistry, resources, registryPrograms, registrySignals] = await Promise.all([
         countTable("forms_registry"),
@@ -57,10 +73,10 @@ export const systemRouter = router({
       ]);
       const registry = formsRegistry + resources + registryPrograms + registrySignals;
 
-      const approved = (signalMap["approved"] ?? 0) + (signalMap["verified"] ?? 0) + (signalMap["active"] ?? 0);
-      const rejected = (signalMap["rejected"] ?? 0) + (signalMap["dismissed"] ?? 0) + (signalMap["inactive"] ?? 0);
+      const pending = signalMap["observation_candidate"] ?? 0;
+      const approved = signalMap["promoted"] ?? 0;
+      const rejected = Number((rejectedRows as any[])[0]?.cnt ?? 0);
       const total = Object.values(signalMap).reduce((a, b) => a + b, 0);
-      const pending = Math.max(0, total - approved - rejected);
 
       return {
         signals: { pending, approved, rejected, total },

@@ -1847,6 +1847,106 @@ function KnowledgeExplorerPanel() {
   );
 }
 
+/* ── Review Alerts (Gate B Kernel 1: governed candidate alerting) ── */
+function ReviewAlertsCard() {
+  const utils = trpc.useUtils();
+  const [form, setForm] = useState({ streamId: "", jurisdictionId: "" });
+  const awaiting = trpc.governedAlerting.awaitingReviewCount.useQuery(undefined, { refetchInterval: 30000 });
+  const subs = trpc.governedAlerting.subscriptions.useQuery();
+  const deliveries = trpc.governedAlerting.deliveries.useQuery({ limit: 10 });
+  const runEvaluation = trpc.governedAlerting.runEvaluation.useMutation({
+    onSuccess: () => { utils.governedAlerting.deliveries.invalidate(); utils.governedAlerting.awaitingReviewCount.invalidate(); },
+  });
+  const createSub = trpc.governedAlerting.createSubscription.useMutation({
+    onSuccess: () => { utils.governedAlerting.subscriptions.invalidate(); setForm({ streamId: "", jurisdictionId: "" }); },
+  });
+  const deleteSub = trpc.governedAlerting.deleteSubscription.useMutation({
+    onSuccess: () => utils.governedAlerting.subscriptions.invalidate(),
+  });
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Bell className="h-4 w-4 text-amber-400" />
+            Review Alerts
+            <Badge variant="secondary" className="text-xs">{awaiting.data?.count ?? 0} awaiting review</Badge>
+          </CardTitle>
+          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => runEvaluation.mutate()} disabled={runEvaluation.isPending}>
+            <Zap className="h-3 w-3 mr-1" /> Run alert check
+          </Button>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Alerts fire only on new governed candidates awaiting review — current observation candidates in live_data_signals.
+          {runEvaluation.data && (
+            <> Last check: {runEvaluation.data.delivered} delivered, {runEvaluation.data.skippedDuplicates} duplicates skipped.</>
+          )}
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          <input
+            type="text"
+            placeholder="Stream ID (blank = all streams)"
+            value={form.streamId}
+            onChange={(e) => setForm(f => ({ ...f, streamId: e.target.value }))}
+            className="flex-1 min-w-[180px] rounded-md border border-border bg-background px-3 py-1.5 text-xs"
+          />
+          <input
+            type="text"
+            placeholder="Jurisdiction ID (blank = all)"
+            value={form.jurisdictionId}
+            onChange={(e) => setForm(f => ({ ...f, jurisdictionId: e.target.value }))}
+            className="flex-1 min-w-[180px] rounded-md border border-border bg-background px-3 py-1.5 text-xs"
+          />
+          <Button size="sm" className="h-8 text-xs" onClick={() => createSub.mutate({
+            streamId: form.streamId.trim() || undefined,
+            jurisdictionId: form.jurisdictionId.trim() || undefined,
+          })}>
+            <Plus className="h-3 w-3 mr-1" /> Subscribe
+          </Button>
+        </div>
+
+        <div className="space-y-1">
+          {(subs.data ?? []).map((s: any) => (
+            <div key={s.id} className="flex items-center justify-between text-xs py-1.5 border-b border-border/30">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-[10px]">#{s.id}</Badge>
+                <span>{s.streamId || "all streams"}{s.jurisdictionId ? ` · ${s.jurisdictionId}` : ""}</span>
+                <span className="text-muted-foreground">via {s.channel}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge className={s.isPaused ? "bg-red-500/20 text-red-400" : "bg-emerald-500/20 text-emerald-400"}>{s.isPaused ? "Paused" : "Active"}</Badge>
+                <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => deleteSub.mutate({ subscriptionId: s.id })}>Remove</Button>
+              </div>
+            </div>
+          ))}
+          {(subs.data ?? []).length === 0 && <p className="text-xs text-muted-foreground">No review subscriptions yet — subscribed reviewers are alerted when new candidates await review.</p>}
+        </div>
+
+        <div className="space-y-1">
+          <div className="text-xs font-medium text-muted-foreground">Recent deliveries</div>
+          {(deliveries.data ?? []).map((d: any) => (
+            <div key={d.deliveryId} className="flex items-center justify-between text-xs py-1.5 border-b border-border/30">
+              <div className="min-w-0">
+                <span className="font-medium truncate">{d.title || d.signalId}</span>
+                <span className="text-muted-foreground"> · {d.streamId || ""}</span>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className="text-muted-foreground">{d.channel} → {d.recipient}</span>
+                <Badge variant="outline" className="text-[10px]">{d.status}</Badge>
+                <span className="text-muted-foreground">{d.sentAt ? new Date(d.sentAt).toLocaleString() : ""}</span>
+              </div>
+            </div>
+          ))}
+          {(deliveries.data ?? []).length === 0 && <p className="text-xs text-muted-foreground">No alert deliveries recorded yet.</p>}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 /* ── Signal Governance Panel ── */
 function SignalGovernancePanel() {
   const [selectedSignalId, setSelectedSignalId] = useState<string | null>(null);
@@ -2065,6 +2165,9 @@ function SignalGovernancePanel() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Review Alerts — Gate B Kernel 1 */}
+      <ReviewAlertsCard />
     </div>
   );
 }
