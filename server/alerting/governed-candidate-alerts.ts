@@ -207,20 +207,48 @@ export async function countAwaitingReview(): Promise<number> {
   return Number(result.rows[0]?.cnt ?? 0);
 }
 
-export async function listAwaitingReviewCandidates(
-  limit = 1000,
+/** Page size for candidate fetches — one page of the newest-first scan. */
+export const CANDIDATE_PAGE_SIZE = 1000;
+
+async function listAwaitingReviewCandidatesPage(
+  limit: number,
+  offset: number,
 ): Promise<GovernedCandidate[]> {
-  const capped = Math.min(Math.max(limit, 1), 1000);
   const result = await pool.query(
     `select live_data_signal_id, signal_hash, title, primary_stream_id,
             jurisdiction_id, severity, governance_status, is_current, detected_at
        from public.live_data_signals
       where is_current = true and governance_status = $1
       order by detected_at desc, live_data_signal_id desc
-      limit $2`,
-    [AWAITING_REVIEW_GOVERNANCE_STATUS, capped],
+      limit $2 offset $3`,
+    [AWAITING_REVIEW_GOVERNANCE_STATUS, limit, offset],
   );
   return (result.rows as LiveSignalRow[]).map(rowToCandidate);
+}
+
+export async function listAwaitingReviewCandidates(
+  limit = CANDIDATE_PAGE_SIZE,
+): Promise<GovernedCandidate[]> {
+  const capped = Math.min(Math.max(limit, 1), CANDIDATE_PAGE_SIZE);
+  return listAwaitingReviewCandidatesPage(capped, 0);
+}
+
+/**
+ * Every awaiting-review candidate, paged newest-first until the scan
+ * is exhausted. The evaluation pass must see the whole eligible set:
+ * fetching only the newest page starves older candidates — once the
+ * newest page is alerted, the planner dedupes it to an empty plan and
+ * nothing older is ever reached. The (detected_at, live_data_signal_id)
+ * ordering is total, so pages are stable within a pass; the planner
+ * sorts again for its own deterministic output order.
+ */
+export async function listAllAwaitingReviewCandidates(): Promise<GovernedCandidate[]> {
+  const all: GovernedCandidate[] = [];
+  for (let offset = 0; ; offset += CANDIDATE_PAGE_SIZE) {
+    const page = await listAwaitingReviewCandidatesPage(CANDIDATE_PAGE_SIZE, offset);
+    all.push(...page);
+    if (page.length < CANDIDATE_PAGE_SIZE) return all;
+  }
 }
 
 // ─── I/O: subscriptions & delivery log (alerting substrate) ──────────
@@ -315,9 +343,40 @@ async function loadExistingAlertKeys(): Promise<Set<string>> {
   return keys;
 }
 
-function isUniqueViolation(err: unknown): boolean {
-  const text = err instanceof Error ? `${err.message} ${(err as { code?: string }).code ?? ""}` : String(err);
-  return text.includes("23505") || text.includes("idx_ae_governed_candidate_unique");
+/**
+ * True when an insert failed because the governed-candidate alert
+ * already exists (partial unique index idx_ae_governed_candidate_unique).
+ *
+ * The node-postgres Drizzle adapter wraps PG errors in
+ * DrizzleQueryError: the 23505 code and the constraint name live on the
+ * wrapped error's `cause`, not on the wrapper itself, so detection
+ * walks the cause chain and checks each layer's code / constraint /
+ * message. Within this module the only inserts are into alert_events
+ * and alert_delivery_log, and the governed index is the only unique
+ * constraint either write can hit — a 23505 anywhere in the chain is
+ * the duplicate.
+ */
+export function isUniqueViolation(err: unknown): boolean {
+  let current: unknown = err;
+  for (let depth = 0; depth < 6 && current != null; depth += 1) {
+    if (typeof current !== "object") break;
+    const layer = current as {
+      code?: unknown;
+      constraint?: unknown;
+      message?: unknown;
+      cause?: unknown;
+    };
+    if (layer.code === "23505") return true;
+    if (layer.constraint === "idx_ae_governed_candidate_unique") return true;
+    if (
+      typeof layer.message === "string" &&
+      layer.message.includes("idx_ae_governed_candidate_unique")
+    ) {
+      return true;
+    }
+    current = layer.cause;
+  }
+  return false;
 }
 
 // ─── Evaluation pass ─────────────────────────────────────────────────
@@ -331,18 +390,26 @@ export interface GovernedAlertingRunResult {
 }
 
 /**
- * One evaluation pass: read the true candidate store, plan with the
- * pure core, and record one alert event + one delivery-log row per
- * planned alert. Re-running the pass records nothing new — the plan is
- * empty once every (subscription, candidate) pair has alerted, and the
- * partial unique index idx_ae_governed_candidate_unique enforces the
- * same guarantee at the database level.
+ * One evaluation pass: read the true candidate store (all pages — see
+ * listAllAwaitingReviewCandidates), plan with the pure core, and
+ * record one alert event + one delivery-log row per planned alert.
+ * Each pair is written in a single transaction: if the delivery-log
+ * insert fails, the event rolls back with it, so the candidate stays
+ * un-alerted and a later pass retries it — an event without a delivery
+ * record would otherwise mark the candidate alerted forever
+ * (loadExistingAlertKeys reads events). Re-running the pass records
+ * nothing new — the plan is empty once every (subscription, candidate)
+ * pair has alerted, and the partial unique index
+ * idx_ae_governed_candidate_unique enforces the same guarantee at the
+ * database level; a concurrent pass that wins the race surfaces as a
+ * unique violation inside the transaction and is counted as a skipped
+ * duplicate, never an abort.
  */
 export async function runGovernedCandidateAlerting(
   now: number = Date.now(),
 ): Promise<GovernedAlertingRunResult> {
   const [candidates, subscriptions, existingAlertKeys] = await Promise.all([
-    listAwaitingReviewCandidates(1000),
+    listAllAwaitingReviewCandidates(),
     listReviewSubscriptions(),
     loadExistingAlertKeys(),
   ]);
@@ -357,33 +424,35 @@ export async function runGovernedCandidateAlerting(
   let skippedDuplicates = 0;
   for (const item of planned) {
     try {
-      const [event] = await db
-        .insert(alertEvents)
-        .values({
-          subscriptionId: item.subscriptionId,
-          alertType: GOVERNED_CANDIDATE_ALERT_TYPE,
-          triggerSource: GOVERNED_CANDIDATE_TRIGGER_SOURCE,
-          severity: item.severity,
-          message: item.message,
-          metadata: {
-            signalId: item.signalId,
-            signalHash: item.signalHash,
-            streamId: item.streamId,
-            jurisdictionId: item.jurisdictionId,
-            title: item.title,
-            detectedAt: item.detectedAt,
-          },
-          createdAt: now,
-          sentAt: now,
-        })
-        .returning({ id: alertEvents.id });
+      await db.transaction(async (tx: any) => {
+        const [event] = await tx
+          .insert(alertEvents)
+          .values({
+            subscriptionId: item.subscriptionId,
+            alertType: GOVERNED_CANDIDATE_ALERT_TYPE,
+            triggerSource: GOVERNED_CANDIDATE_TRIGGER_SOURCE,
+            severity: item.severity,
+            message: item.message,
+            metadata: {
+              signalId: item.signalId,
+              signalHash: item.signalHash,
+              streamId: item.streamId,
+              jurisdictionId: item.jurisdictionId,
+              title: item.title,
+              detectedAt: item.detectedAt,
+            },
+            createdAt: now,
+            sentAt: now,
+          })
+          .returning({ id: alertEvents.id });
 
-      await db.insert(alertDeliveryLog).values({
-        alertId: event.id,
-        channel: item.channel,
-        recipient: item.userId,
-        status: "delivered",
-        sentAt: now,
+        await tx.insert(alertDeliveryLog).values({
+          alertId: event.id,
+          channel: item.channel,
+          recipient: item.userId,
+          status: "delivered",
+          sentAt: now,
+        });
       });
       delivered += 1;
     } catch (err) {
