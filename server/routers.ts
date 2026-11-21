@@ -3094,6 +3094,7 @@ import { batch_source_router } from "./routers/batch-source-router";
 import { ingestionRouter } from "./routers/ingestion";
 import { knowledgeBackboneRouter } from "./routers/knowledge-backbone";
 import { signalGovernanceRouter } from "./routers/signal-governance";
+import { governedAlertingRouter } from "./routers/governed-alerting";
 import { integrity_routing_router } from "./routers/integrity-routing";
 import { workbenchRouter } from "./routers/workbench";
 import { remedyRouter } from "./routers/remedy";
@@ -3705,6 +3706,7 @@ export const appRouter = router({
   batch_sources: batch_source_router,
   knowledgeBackbone: knowledgeBackboneRouter,
   signalGovernance: signalGovernanceRouter,
+  governedAlerting: governedAlertingRouter,
   integrity_routing: integrity_routing_router,
   meaningLayer: meaningLayerRouter,
   unifiedOutput: unifiedOutputRouter,

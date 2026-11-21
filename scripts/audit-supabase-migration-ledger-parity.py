@@ -52,6 +52,21 @@ APPROVED_REPOSITORY_ONLY = {
         "20261110300000_dedupe_merge_ledger_v1.sql",
         "89facd0cfe2a73e138a128166eb30342fdfd2407",
     ),
+    # Gate B Kernel 1 alerting substrate (alert_subscriptions /
+    # alert_events / alert_delivery_log, exactly as the drizzle
+    # schema already declared them; no CREATE TABLE ever existed).
+    # Repository-only pending the separately approved production
+    # installation that follows the merge. Exact Git blob pinned;
+    # no production installation or ledger rewrite is implied by
+    # this entry. (Placed directly after the dedupe entry, NOT at
+    # the head of the dict: the TDHE registration sits at the head
+    # on main, and two registrations at the identical head anchor
+    # collide — verified on merged trees 2026-11-20. This spot
+    # keeps the sets disjoint.)
+    "20261120203000": (
+        "20261120203000_gateb_k1_alerting_substrate.sql",
+        "14f098a9042b9d41f9fea029da9615c32d64e768",
+    ),
     "20260501203517": (
         "20260501203517_fresh_branch_signal_severity_foundation.sql",
         "8a13b1a07ae5c0b897392fe400e052e1bda2e48d",
