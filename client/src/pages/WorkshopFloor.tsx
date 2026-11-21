@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/core/hooks/useAuth";
 import { useLocation, useSearch } from "wouter";
 import { useCase } from "@/contexts/CaseContext";
+import { StationNav } from "@/components/station-nav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -238,6 +239,11 @@ export default function WorkshopFloor() {
         <p className="text-sm" style={{ color: ws.muted }}>
           Every station connects to the others. Start wherever feels right.
         </p>
+      </div>
+
+      {/* ── Station cross-links ──────────────────────────────── */}
+      <div className="max-w-6xl mx-auto px-4 pb-8">
+        <StationNav />
       </div>
 
       {/* ── Station Grid ────────────────────────────────────────── */}

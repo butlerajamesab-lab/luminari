@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { ArrowLeft, BookOpen, Compass, FileText, Home, Landmark, LayoutDashboard, MapPinned, Route, Wrench } from "lucide-react";
+import { StationNav } from "@/components/station-nav";
 
 const navItems = [
   { href: "/lighthouse", label: "Lighthouse", icon: Home },
@@ -87,6 +88,10 @@ export default function CivicMap() {
           ))}
         </nav>
       </header>
+
+      <div className="border-b border-border px-4 py-3">
+        <StationNav />
+      </div>
 
       <div ref={shellRef} className="min-h-0 flex-1">
         {frameReady && (

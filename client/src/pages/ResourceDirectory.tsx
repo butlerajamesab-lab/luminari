@@ -34,6 +34,7 @@ import {
   visibleDirectoryCategories,
 } from "@/lib/directory-search";
 import { Link, useLocation } from "wouter";
+import { StationNav } from "@/components/station-nav";
 
 type Contact = {
   contact_point_id: string;
@@ -770,6 +771,10 @@ export default function ResourceDirectory() {
             </div>
           </div>
         </section>
+
+        <div className="mx-auto max-w-7xl px-4 pt-8 sm:px-6">
+          <StationNav />
+        </div>
 
         <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
           <div className="mb-5 flex items-end justify-between gap-4">

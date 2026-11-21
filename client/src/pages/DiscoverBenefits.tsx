@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { StationNav } from "@/components/station-nav";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -174,6 +175,7 @@ export default function DiscoverBenefits() {
       </header>
 
       <main className="mx-auto max-w-7xl space-y-10 px-4 py-8 sm:px-6">
+        <StationNav />
         <section>
           <div className="mb-4 flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-amber-400" />
