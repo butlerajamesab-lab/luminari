@@ -1,4 +1,4 @@
--- FORWARD-ONLY REPOSITORY CANDIDATE. NOT INSTALLED IN PRODUCTION.
+-- FORWARD-ONLY. INSTALLED IN PRODUCTION (Lighthouse) 2026-11-20 as migration version 20261120204040.
 -- Keep canonical Docket detail acceptance atomic and move its expensive
 -- lifecycle/version side effects to a durable, idempotent worker queue.
 -- This migration does not authorize Rosetta execution or Genome publication.
