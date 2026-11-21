@@ -241,18 +241,13 @@ function ClickToReadFloatingButton() {
   };
 
   return (
+    // Positioning is class-based so the offset can respond to the viewport:
+    // below md the toggle sits at bottom-20, above the mobile bottom nav,
+    // instead of covering its left-most item; at md+ it keeps the standard
+    // 1.5rem corner offset. The wrapper stays pointer-events-none; only the
+    // buttons inside opt back in (see their inline styles below).
     <div
-      style={{
-        position: "fixed",
-        bottom: "1.5rem",
-        left: "1.5rem",
-        zIndex: 99999,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-start",
-        gap: "0.5rem",
-        pointerEvents: "none",
-      }}
+      className="fixed bottom-20 left-4 z-[99999] flex flex-col items-start gap-2 pointer-events-none md:bottom-6 md:left-6"
       aria-label="Accessibility controls"
     >
       {/* Tooltip when just enabled */}

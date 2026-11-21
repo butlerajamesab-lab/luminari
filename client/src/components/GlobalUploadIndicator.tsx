@@ -82,7 +82,7 @@ export default function GlobalUploadIndicator() {
   if (visibleSessions.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-80 bg-card border border-border rounded-lg shadow-lg overflow-hidden">
+    <div className="fixed bottom-36 right-6 z-50 w-80 bg-card border border-border rounded-lg shadow-lg overflow-hidden md:bottom-24">
       {/* Header */}
       <button
         className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors"
