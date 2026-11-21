@@ -86,19 +86,19 @@ export function LuminariHelper() {
       {!onDashboard && (
         <button
           onClick={() => navigate("/dashboard")}
-          className="fixed bottom-6 right-20 z-50 flex h-12 items-center gap-2 rounded-full border border-cyan-400/25 bg-slate-950/95 px-3 text-cyan-200 shadow-lg backdrop-blur transition hover:border-cyan-300/50 hover:bg-slate-900"
+          className="fixed bottom-20 right-20 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-cyan-400/25 bg-slate-950/95 text-cyan-200 shadow-lg backdrop-blur transition hover:border-cyan-300/50 hover:bg-slate-900 md:bottom-6"
           aria-label="Return to Dashboard"
           title="Return to Dashboard"
         >
           <LayoutDashboard className="h-5 w-5" />
-          <span className="hidden sm:inline text-xs font-semibold">Dashboard</span>
         </button>
       )}
 
-      {/* Floating helper button */}
+      {/* Floating helper button. Below md it sits at bottom-20 so the cluster
+          stacks ABOVE the mobile bottom nav instead of covering its items. */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed bottom-6 right-6 z-50 flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-all duration-300 ${
+        className={`fixed bottom-20 right-6 z-50 flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-all duration-300 md:bottom-6 ${
           isOpen
             ? "bg-muted text-muted-foreground rotate-0"
             : "bg-primary text-primary-foreground hover:scale-110"
@@ -110,7 +110,7 @@ export function LuminariHelper() {
 
       {/* Panel */}
       {isOpen && (
-        <div className="fixed bottom-20 right-6 z-50 w-80 max-h-[28rem] rounded-xl border border-border/50 bg-card shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 fade-in duration-200">
+        <div className="fixed bottom-36 right-6 z-50 w-80 max-h-[28rem] rounded-xl border border-border/50 bg-card shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 fade-in duration-200 md:bottom-20">
           {/* Header */}
           <div className="px-4 py-3 border-b border-border/50 bg-primary/5">
             <div className="flex items-center gap-2">
