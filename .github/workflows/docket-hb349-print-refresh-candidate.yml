@@ -1,0 +1,26 @@
+name: Docket exact-print refresh candidate (no API)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/docket-hb349-print-refresh-candidate.yml'
+      - 'lib/docket-hb349-print-refresh-guard.mjs'
+      - 'scripts/docket-hb349-print-refresh.mjs'
+      - 'tests/docket-hb349-print-refresh-guard.test.mjs'
+      - 'docs/docket-hb349-print-refresh-candidate.md'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  candidate-no-provider:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check without database or LegiScan key
+        run: node --check lib/docket-hb349-print-refresh-guard.mjs && node --check scripts/docket-hb349-print-refresh.mjs
+      - name: Synthetic source-identity and no-credit acceptance
+        run: node --test tests/docket-hb349-print-refresh-guard.test.mjs
