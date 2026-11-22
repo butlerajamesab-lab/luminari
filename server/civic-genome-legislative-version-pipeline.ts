@@ -966,6 +966,14 @@ export async function extract_version_source(
       ? PROVIDER_COPY_FALLBACK_VERSION
       : null,
   ].filter(Boolean).join(":");
+  // Postgres text cannot hold U+0000; some official PDFs (MO House, DC
+  // Council) extract with embedded NULs. Remove them before hashing so the
+  // stored text and its content hash agree; the raw bytes stay proven by
+  // source_byte_hash and the count is recorded in source_metadata.
+  const extracted_nul_character_count = (source_text.match(/\u0000/g) ?? []).length;
+  if (extracted_nul_character_count > 0) {
+    source_text = source_text.replace(/\u0000/g, "");
+  }
   const source_content_hash = sha256(source_text);
 
   return {
@@ -1016,6 +1024,9 @@ export async function extract_version_source(
       raw_source_charset,
       raw_source_charset_source,
       stored_text_charset: "UTF-8",
+      ...(extracted_nul_character_count > 0
+        ? { extracted_nul_character_count }
+        : {}),
       source_url_rewritten: source_url !== selected_source_url,
       source_fetch_mode,
       provider_copy_fallback_used: source_fetch_mode === "provider_copy_fallback",
