@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../_core/trpc";
+import {
+  assertGateContentAccess,
+  protectedProcedure,
+  publicProcedure,
+  router,
+} from "../_core/trpc";
 import { getPool } from "../db";
 import {
   get_canonical_live_signal_summary,
@@ -117,7 +122,16 @@ export const adminDashboardRouter = router({
   }),
 
   /* Current Atlas Domain 3 signals only. Legacy detected_signals stay historical. */
-  structuralSignals: publicProcedure.query(async () => {
+  /* Gate B Kernel 2 exposure closure (2026-11-20): structuralSignals and
+     findingsBySeverity were publicProcedure returning current governed
+     signals' titles — including unreviewed observation candidates —
+     to anonymous callers. Their only callers are Mission Control
+     surfaces (operator-facing), so both are now protected and assert
+     gate-content access, like the unified and signalGovernance
+     closures. The other procedures in this router read case/document/
+     pipeline data, not governed signal content, and are unchanged. */
+  structuralSignals: protectedProcedure.query(async ({ ctx }) => {
+    assertGateContentAccess(ctx);
     const summary = await get_canonical_live_signal_summary();
     const critical = await get_canonical_live_signals({ limit: 100 });
 
@@ -209,9 +223,10 @@ export const adminDashboardRouter = router({
     };
   }),
 
-  findingsBySeverity: publicProcedure
+  findingsBySeverity: protectedProcedure
     .input(z.object({ severity: z.string().optional() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      assertGateContentAccess(ctx);
       const rows = await get_canonical_live_signals({
         severity: input.severity,
         limit: 50,

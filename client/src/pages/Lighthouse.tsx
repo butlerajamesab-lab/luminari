@@ -1574,6 +1574,24 @@ function StateQuickLookup() {
             >
               <Eye size={12} /> View Anomalies
             </button>
+            <button
+              onClick={() => navigate(`/signals`)}
+              style={{
+                background: "rgba(52,211,153,0.12)",
+                border: `1px solid rgba(52,211,153,0.3)`,
+                borderRadius: 6,
+                padding: "8px 16px",
+                color: "#34d399",
+                fontFamily: fontMono,
+                fontSize: 11,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <BookOpen size={12} /> Published Signals
+            </button>
           </div>
 
           {/* Help contacts preview */}

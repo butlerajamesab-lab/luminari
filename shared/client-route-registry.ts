@@ -62,6 +62,7 @@ export const REGISTERED_CLIENT_ROUTE_PATTERNS = [
   "/lighthouse",
   "/civic-map",
   "/viewfinder",
+  "/signals",
   "/docket",
   "/docket/:slug",
   "/civic-genome",

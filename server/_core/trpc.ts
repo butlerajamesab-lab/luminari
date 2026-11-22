@@ -166,3 +166,27 @@ const requireAdmin = t.middleware(async (opts) => {
 });
 
 export const adminProcedure = t.procedure.use(requireAdmin);
+
+/**
+ * Gate-content guard (Gate B Kernel 2 exposure closure, 2026-11-20).
+ *
+ * The single-operator public-read fallback above synthesizes an
+ * operator user for anonymous QUERIES under listed router prefixes
+ * when SINGLE_OPERATOR_PUBLIC_READ=1. That mode must never become a
+ * public path to unreviewed governed content: procedures that return
+ * observation-candidate / review-hold signal content call this guard
+ * first, so candidate content requires a real authenticated session
+ * even when the fallback is enabled. (The synthesized user is the
+ * only one carrying login_method "single_operator_public_read"; a
+ * real operator session is unaffected.)
+ */
+export function assertGateContentAccess(ctx: {
+  user?: RuntimeUser | null;
+}): void {
+  if (!ctx.user || ctx.user.login_method === "single_operator_public_read") {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: UNAUTHED_ERR_MSG,
+    });
+  }
+}

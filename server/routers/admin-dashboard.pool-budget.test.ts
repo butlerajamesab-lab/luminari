@@ -49,7 +49,13 @@ describe("Mission Control admin dashboard pool budget", () => {
   });
 
   it("keeps the four first-paint read models to one active query each", async () => {
-    const caller = adminDashboardRouter.createCaller({} as any);
+    // Gate B Kernel 2: structuralSignals is protected now (it serves
+    // governed signal content), so the caller carries a real operator
+    // session. The budget under test is unchanged.
+    const caller = adminDashboardRouter.createCaller({
+      user: { id: 1, role: "admin", login_method: "oauth" },
+      auth: { auth_status: "authenticated" },
+    } as any);
 
     await Promise.all([
       caller.systemHealth(),

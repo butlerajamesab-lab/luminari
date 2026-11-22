@@ -131,6 +131,7 @@ function validateEventType(eventType: string): void {
     "data_stream_created", "data_stream_deleted", "data_stream_config_changed",
     "population_rule_change", "strategy_path_updated",
     "pattern_candidate_status_changed", "pattern_strategy_boost",
+    "signal_published", "signal_unpublished",
   ];
   if (!VALID_TYPES.includes(eventType)) {
     throw new Error(`Unknown governance event type: "${eventType}". Valid types: ${VALID_TYPES.join(", ")}`);

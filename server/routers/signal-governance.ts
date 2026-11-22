@@ -7,7 +7,12 @@
  */
 
 import { z } from "zod";
-import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
+import {
+  assertGateContentAccess,
+  protectedProcedure,
+  publicProcedure,
+  router,
+} from "../_core/trpc";
 import {
   getEscalationSummary,
   getProvenance,
@@ -31,8 +36,20 @@ export const signalGovernanceRouter = router({
   /**
    * Signal Dashboard — current governed Atlas Domain 3 records. Observation
    * candidates and promoted canonical signals remain explicitly distinct.
+   *
+   * Gate B Kernel 2 exposure closure (Alexander's decision, 2026-11-20):
+   * this was a publicProcedure returning unreviewed candidates'
+   * titles/explanations/entity ids/evidence refs to anonymous callers,
+   * bypassing the human review gate. Its only caller is Mission
+   * Control's Signal Governance panel (an operator surface), so it is
+   * now protected. The public read of signals is
+   * signalPublication.listPublished / getPublished (promoted +
+   * published only, field-whitelisted). The resolver additionally
+   * asserts gate-content access, so the single-operator public-read
+   * fallback (which lists the "signalGovernance." prefix) cannot
+   * carry candidate content to anonymous callers when enabled.
    */
-  dashboard: publicProcedure
+  dashboard: protectedProcedure
     .input(z.object({
       datasetId: z.string().optional(),
       severityLevel: z.string().optional(),
@@ -42,7 +59,8 @@ export const signalGovernanceRouter = router({
       limit: z.number().min(1).max(100).optional(),
       offset: z.number().min(0).optional(),
     }).optional())
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      assertGateContentAccess(ctx);
       const signals = await get_canonical_live_signals({
         stream_id: input?.datasetId,
         severity: input?.severityLevel,

@@ -883,6 +883,9 @@ export const GOVERNANCE_EVENT_TYPES = [
   // Pattern governance
   "pattern_candidate_status_changed", // Pattern candidate promoted/rejected/dormant
   "pattern_strategy_boost",     // Pattern analysis updated strategy path confidence
+  // Signal publication (Gate B Kernel 2 — a governed act distinct from promotion)
+  "signal_published",           // Promoted signal published to the public surface
+  "signal_unpublished",         // Published signal withdrawn from the public surface
 ] as const;
 
 export type GovernanceEventType = typeof GOVERNANCE_EVENT_TYPES[number];
@@ -8798,6 +8801,32 @@ export const alertDeliveryLog = pgTable("alert_delivery_log", {
 ]);
 
 export type AlertDeliveryLogRow = typeof alertDeliveryLog.$inferSelect;
+
+/**
+ * Signal Publications — Gate B Kernel 2 (Transparency).
+ *
+ * The record of the publication act: a governed decision, distinct
+ * from promotion, to place one promoted signal's plain-language
+ * explainer on the public surface. Created by migration
+ * 20261120210000_gateb_k2_signal_publications.sql. The migration also
+ * carries the partial unique index idx_sp_one_active_per_signal (one
+ * active publication per signal), which drizzle does not declare.
+ * publishedBy stores the SHA-256 actor hash, never a raw identity.
+ */
+export const signalPublications = pgTable("signal_publications", {
+  id: serial("id").primaryKey(),
+  liveDataSignalId: uuid("live_data_signal_id").notNull(),
+  signalHash: varchar("signal_hash", { length: 64 }).notNull(),
+  publishedAt: bigint("published_at", { mode: "number" }).notNull(),
+  publishedBy: varchar("published_by", { length: 64 }).notNull(),
+  unpublishedAt: bigint("unpublished_at", { mode: "number" }),
+  governanceSeqNo: bigint("governance_seq_no", { mode: "number" }),
+}, (t) => [
+  index("idx_sp_signal").on(t.liveDataSignalId),
+  index("idx_sp_published_at").on(t.publishedAt),
+]);
+
+export type SignalPublicationRow = typeof signalPublications.$inferSelect;
 
 export const systemMapNodes = pgTable("system_map_nodes", {
   id: serial("id").primaryKey(),

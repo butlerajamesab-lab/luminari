@@ -67,6 +67,17 @@ APPROVED_REPOSITORY_ONLY = {
         "20261120203000_gateb_k1_alerting_substrate.sql",
         "14f098a9042b9d41f9fea029da9615c32d64e768",
     ),
+    # Gate B Kernel 2 signal publications (the publication-act
+    # record: one row per publish act on a promoted signal).
+    # Repository-only pending the separately approved production
+    # installation that follows the merge. Exact Git blob pinned;
+    # no production installation or ledger rewrite is implied by
+    # this entry. (Placed directly after the Kernel 1 entry, a
+    # region no other registration uses.)
+    "20261120210000": (
+        "20261120210000_gateb_k2_signal_publications.sql",
+        "ce73a06c1226675429b05872aa1927d04c58f55d",
+    ),
     "20260501203517": (
         "20260501203517_fresh_branch_signal_severity_foundation.sql",
         "8a13b1a07ae5c0b897392fe400e052e1bda2e48d",
