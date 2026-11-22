@@ -328,8 +328,16 @@ function StateChamberSection({
   );
 }
 
+// A link such as /legislators?state=WA (from the Docket Room) opens with
+// that state chosen; anything else starts with no state, as before.
+function initial_state_from_link(): string {
+  if (typeof window === "undefined") return "";
+  const requested = new URLSearchParams(window.location.search).get("state");
+  return requested && /^[A-Za-z]{2}$/.test(requested) ? requested.toUpperCase() : "";
+}
+
 export default function Legislators() {
-  const [state, setState] = useState("");
+  const [state, setState] = useState(initial_state_from_link);
   const [level, setLevel] = useState<Level>("federal");
   const [federalDistrict, setFederalDistrict] = useState("");
 
@@ -401,6 +409,14 @@ export default function Legislators() {
   const statesData = statesQuery.data as
     | { states: { code: string; name: string }[] }
     | undefined;
+
+  // A state code from the link that this directory does not cover (for
+  // example "US") falls back to "Choose your state" instead of a blank pick.
+  useEffect(() => {
+    if (state && statesData && !statesData.states.some((entry) => entry.code === state)) {
+      setState("");
+    }
+  }, [state, statesData]);
   const metaData = metaQuery.data as
     | {
         totalMembers: number;
