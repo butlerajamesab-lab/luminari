@@ -164,7 +164,10 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
-          <Toaster />
+          {/* Toasts render top-center: the default bottom-right corner is
+              where the floating helper button lives, and Loading / success
+              messages used to land underneath it (owner report 2026-11-22). */}
+          <Toaster position="top-center" />
           <PlainLanguageProvider>
             <CaseProvider>
               {/* App-root content wrapper. pb-20 is the bottom safe space for

@@ -50,8 +50,21 @@ describe("StationNav", () => {
       expect(html).toContain(`href="${link.href}"`);
       expect(html).toContain(link.label);
     }
-    expect(html).toContain("Workshop Floor navigation");
-    expect(html).toContain("Pick a station. Move freely. Every station connects to the others.");
+  });
+
+  it("carries no header of its own — the page already has a title (less is more)", () => {
+    const html = render_markup(<StationNav />);
+    expect(html).not.toContain("Workshop Floor navigation");
+    expect(html).not.toContain("Pick a station. Move freely. Every station connects to the others.");
+    // No per-chip station subtitles either — a chip is icon + name only.
+    expect(html).not.toContain("Case command");
+    expect(html).not.toContain("Community Board");
+    expect(html).not.toContain("Repair Bench");
+  });
+
+  it("names the control-room station plainly, not as a second Lighthouse", () => {
+    const controlRoom = STATION_LINKS.find((link) => link.href === "/control-room");
+    expect(controlRoom?.label).toBe("Control Room");
   });
 
   it("marks the current station aria-current with the active style", () => {

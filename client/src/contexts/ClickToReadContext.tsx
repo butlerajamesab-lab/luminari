@@ -18,7 +18,7 @@ import {
   useRef,
   type ReactNode,
 } from "react";
-import { Volume2, VolumeX, Square } from "lucide-react";
+import { Square } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────
 interface ClickToReadContextValue {
@@ -226,123 +226,44 @@ export function ClickToReadProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// ── Floating Toggle Button ─────────────────────────────────────────────
+// ── Floating stop control ──────────────────────────────────────────────
+// The enable/disable toggle lives in the Luminari Helper panel (owner
+// direction 2026-11-22: less is more — the permanent floating speaker
+// button covered page text). The only control that still floats is Stop
+// reading, and only while speech is actually playing: it is transient,
+// and it has to be reachable the moment someone wants the reading stopped.
 function ClickToReadFloatingButton() {
-  const { enabled, toggle, isSpeaking, stop } = useClickToRead();
-  const [expanded, setExpanded] = useState(false);
-  const [justEnabled, setJustEnabled] = useState(false);
+  const { isSpeaking, stop } = useClickToRead();
 
-  const handleToggle = () => {
-    if (!enabled) {
-      setJustEnabled(true);
-      setTimeout(() => setJustEnabled(false), 3000);
-    }
-    toggle();
-  };
+  if (!isSpeaking) return null;
 
   return (
-    // Positioning is class-based so the offset can respond to the viewport:
-    // below md the toggle sits at bottom-20, above the mobile bottom nav,
-    // instead of covering its left-most item; at md+ it keeps the standard
-    // 1.5rem corner offset. The wrapper stays pointer-events-none; only the
-    // buttons inside opt back in (see their inline styles below).
     <div
-      className="fixed bottom-20 left-4 z-[99999] flex flex-col items-start gap-2 pointer-events-none md:bottom-6 md:left-6"
+      className="fixed bottom-20 left-4 z-[99999] md:bottom-6 md:left-6"
       aria-label="Accessibility controls"
     >
-      {/* Tooltip when just enabled */}
-      {justEnabled && (
-        <div
-          style={{
-            background: "rgba(15,20,30,0.95)",
-            border: "1px solid rgba(74,140,199,0.4)",
-            borderRadius: "8px",
-            padding: "0.6rem 0.9rem",
-            fontSize: "0.75rem",
-            color: "#e8ecf0",
-            maxWidth: "220px",
-            lineHeight: 1.5,
-            pointerEvents: "none",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
-          }}
-          role="status"
-          aria-live="polite"
-        >
-          <strong style={{ color: "#58a6ff" }}>Click-to-read on.</strong>
-          <br />
-          Tap any text to hear it.
-          <br />
-          Double-tap to read the full section.
-        </div>
-      )}
-
-      {/* Speaking indicator */}
-      {isSpeaking && (
-        <button
-          onClick={stop}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.4rem",
-            background: "rgba(74,140,199,0.15)",
-            border: "1px solid rgba(74,140,199,0.4)",
-            borderRadius: "20px",
-            padding: "0.35rem 0.75rem",
-            fontSize: "0.72rem",
-            color: "#58a6ff",
-            cursor: "pointer",
-            pointerEvents: "all",
-            fontFamily: "'IBM Plex Mono', monospace",
-            letterSpacing: "0.03em",
-            whiteSpace: "nowrap",
-          }}
-          aria-label="Stop reading"
-          title="Stop reading"
-        >
-          <Square size={10} />
-          Stop reading
-        </button>
-      )}
-
-      {/* Main toggle button */}
       <button
-        onClick={handleToggle}
+        onClick={stop}
         style={{
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
-          width: "2.75rem",
-          height: "2.75rem",
-          borderRadius: "50%",
-          border: enabled
-            ? "2px solid rgba(74,140,199,0.6)"
-            : "2px solid rgba(255,255,255,0.12)",
-          background: enabled
-            ? "rgba(74,140,199,0.18)"
-            : "rgba(15,20,30,0.85)",
-          color: enabled ? "#58a6ff" : "rgba(255,255,255,0.4)",
+          gap: "0.4rem",
+          background: "rgba(74,140,199,0.15)",
+          border: "1px solid rgba(74,140,199,0.4)",
+          borderRadius: "20px",
+          padding: "0.35rem 0.75rem",
+          fontSize: "0.72rem",
+          color: "#58a6ff",
           cursor: "pointer",
-          pointerEvents: "all",
-          transition: "all 0.2s ease",
-          boxShadow: enabled
-            ? "0 0 0 4px rgba(74,140,199,0.12), 0 4px 16px rgba(0,0,0,0.4)"
-            : "0 2px 12px rgba(0,0,0,0.3)",
+          fontFamily: "'IBM Plex Mono', monospace",
+          letterSpacing: "0.03em",
+          whiteSpace: "nowrap",
         }}
-        aria-label={enabled ? "Click-to-read enabled. Click to disable." : "Enable click-to-read accessibility mode"}
-        aria-pressed={enabled}
-        title={enabled ? "Click-to-read: ON — tap any text to hear it" : "Enable click-to-read accessibility"}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLElement).style.transform = "scale(1.08)";
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLElement).style.transform = "scale(1)";
-        }}
+        aria-label="Stop reading"
+        title="Stop reading"
       >
-        {enabled ? (
-          <Volume2 size={18} />
-        ) : (
-          <VolumeX size={18} />
-        )}
+        <Square size={10} />
+        Stop reading
       </button>
     </div>
   );

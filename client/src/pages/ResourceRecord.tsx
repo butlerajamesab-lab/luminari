@@ -103,16 +103,25 @@ function title_case(value: string | null | undefined): string {
     .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
-function format_address(location: ResourceLocation | undefined): string | null {
+export function format_address(location: ResourceLocation | undefined): string | null {
   if (!location) return null;
+  const lines = [location.address_line1, location.address_line2].filter(Boolean) as string[];
   const locality = [location.city, location.state, location.postal_code]
     .filter(Boolean)
     .join(" ");
-  const parts = [
-    location.address_line1,
-    location.address_line2,
-    locality || location.county,
-  ].filter(Boolean);
+  // Some source records carry the whole address — city, state and ZIP
+  // included — inside address_line1. Appending the locality again printed
+  // it twice ("…, Phoenix, AZ 85004, Phoenix AZ 85004", owner screenshot
+  // 2026-11-22). When the lines already contain the locality, keep them
+  // as they are.
+  const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const locality_already_present =
+    locality !== "" && normalize(lines.join(" ")).includes(normalize(locality));
+  const parts = [...lines];
+  if (!locality_already_present) {
+    const tail = locality || location.county;
+    if (tail) parts.push(tail);
+  }
   return parts.length ? parts.join(", ") : null;
 }
 

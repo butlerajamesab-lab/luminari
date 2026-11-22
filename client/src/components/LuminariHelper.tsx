@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/core/hooks/useAuth";
+import { useClickToRead } from "@/contexts/ClickToReadContext";
 import { useLocation } from "wouter";
 import {
   MessageCircleQuestion,
@@ -14,6 +15,8 @@ import {
   Sparkles,
   ChevronDown,
   LayoutDashboard,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -38,6 +41,7 @@ const QUICK_TIPS = [
 export function LuminariHelper() {
   const { user } = useAuth();
   const [location, navigate] = useLocation();
+  const { enabled: readAloudEnabled, toggle: toggleReadAloud } = useClickToRead();
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState<"menu" | "form" | "tips">("menu");
   const [feedbackType, setFeedbackType] = useState<typeof FEEDBACK_TYPES[number]["id"]>("question");
@@ -81,21 +85,11 @@ export function LuminariHelper() {
 
   return (
     <>
-      {/* Global control escape. The helper is mounted outside individual page
-          shells, so Dashboard stays reachable even when a page has no local nav. */}
-      {!onDashboard && (
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="fixed bottom-20 right-20 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-cyan-400/25 bg-slate-950/95 text-cyan-200 shadow-lg backdrop-blur transition hover:border-cyan-300/50 hover:bg-slate-900 md:bottom-6"
-          aria-label="Return to Dashboard"
-          title="Return to Dashboard"
-        >
-          <LayoutDashboard className="h-5 w-5" />
-        </button>
-      )}
-
-      {/* Floating helper button. Below md it sits at bottom-20 so the cluster
-          stacks ABOVE the mobile bottom nav instead of covering its items. */}
+      {/* The ONE floating button (owner direction 2026-11-22: less is more).
+          Everything it used to share the corner with — the Dashboard escape
+          and the read-aloud toggle — now lives as rows inside its panel.
+          Below md it sits at bottom-20, above the mobile bottom nav,
+          instead of covering its items. */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`fixed bottom-20 right-6 z-50 flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-all duration-300 md:bottom-6 ${
@@ -134,6 +128,47 @@ export function LuminariHelper() {
                     Public browsing is open. Sign in only when you need to submit feedback or make a change.
                   </p>
                 )}
+                {/* Global control escape. The helper is mounted outside
+                    individual page shells, so Dashboard stays reachable even
+                    when a page has no local nav — as this panel's first row
+                    rather than a second floating button. */}
+                {!onDashboard && (
+                  <button
+                    onClick={() => {
+                      navigate("/dashboard");
+                      setIsOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 transition-colors text-left group"
+                  >
+                    <LayoutDashboard className="h-4 w-4 text-cyan-300 shrink-0" />
+                    <span className="text-sm group-hover:text-foreground">Return to Dashboard</span>
+                  </button>
+                )}
+                {/* Read-aloud (click-to-read) toggle — the same control that
+                    used to float at bottom-left over page text. While speech
+                    is playing, the Stop reading pill still floats; nothing
+                    else does. */}
+                <button
+                  onClick={toggleReadAloud}
+                  aria-pressed={readAloudEnabled}
+                  className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 transition-colors text-left group"
+                >
+                  {readAloudEnabled ? (
+                    <Volume2 className="h-4 w-4 text-sky-400 shrink-0" />
+                  ) : (
+                    <VolumeX className="h-4 w-4 text-muted-foreground shrink-0" />
+                  )}
+                  <span className="text-sm group-hover:text-foreground">Read aloud</span>
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    {readAloudEnabled ? "On" : "Off"}
+                  </span>
+                </button>
+                {readAloudEnabled && (
+                  <p className="px-2.5 pb-1 text-xs text-muted-foreground">
+                    Tap any text to hear it. Double-tap to read the full section.
+                  </p>
+                )}
+                <div className="border-t border-border/30 my-2" />
                 {user && FEEDBACK_TYPES.map((type) => {
                   const Icon = type.icon;
                   return (

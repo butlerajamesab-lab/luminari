@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "wouter";
-import { ArrowLeft, MapPinned } from "lucide-react";
+import { MapPinned } from "lucide-react";
 import { StationNav } from "@/components/station-nav";
 
 // Navigation on this page is the shared StationNav strip only. A page-local
@@ -54,11 +53,6 @@ export default function CivicMap() {
     <div className="flex h-screen flex-col bg-background text-foreground">
       <header className="z-10 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-background/95 px-4 py-2 shadow-sm backdrop-blur">
         <div className="flex min-w-0 items-center gap-3">
-          <Link href="/lighthouse" className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" />
-            Lighthouse
-          </Link>
-          <div className="h-5 w-px bg-border" />
           <div className="flex min-w-0 items-center gap-2">
             <MapPinned className="h-4 w-4 text-cyan-400" />
             <div className="min-w-0">
