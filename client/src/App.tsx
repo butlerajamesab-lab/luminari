@@ -65,6 +65,7 @@ import MissionControlIntake from "./pages/MissionControlIntake";
 import Lighthouse from "./pages/Lighthouse";
 import CivicMap from "./pages/CivicMap";
 import AnomalyViewfinder from "./pages/AnomalyViewfinder";
+import PublishedSignals from "./pages/PublishedSignals";
 import docket_room_page from "./pages/DocketRoom";
 import CivicGenome from "./pages/CivicGenome";
 import LumenSend from "./pages/LumenSend";
@@ -203,6 +204,7 @@ function App() {
                 <Route path="/lighthouse" component={Lighthouse} />
                 <Route path="/civic-map" component={CivicMap} />
                 <Route path="/viewfinder" component={AnomalyViewfinder} />
+                <Route path="/signals" component={PublishedSignals} />
                 <Route path="/docket" component={docket_room_page} />
                 <Route path="/docket/:slug" component={docket_room_page} />
                 <Route path="/civic-genome" component={CivicGenome} />
