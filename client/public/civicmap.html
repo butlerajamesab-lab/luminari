@@ -601,8 +601,9 @@
 
     .status {
       position: fixed;
-      right: 18px;
-      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 84px;
       z-index: 850;
       display: flex;
       max-width: min(460px, calc(100vw - 36px));
@@ -633,7 +634,6 @@
     }
 
     .leaflet-control-zoom {
-      margin-top: 72px !important;
       border: 1px solid var(--border) !important;
       border-radius: 11px !important;
       overflow: hidden;
@@ -645,6 +645,14 @@
       border-bottom: 1px solid var(--border) !important;
       background: var(--panel-solid) !important;
       color: white !important;
+    }
+
+    /* The zoom control sits in the map's top-right corner, but the fixed
+       topbar owns the top 58px of the frame (56px on small screens) — the
+       corner container is offset by that height so the control clears the
+       topbar instead of sliding underneath it. */
+    .leaflet-top.leaflet-right {
+      margin-top: 62px;
     }
 
     .leaflet-control-attribution {
@@ -775,8 +783,8 @@
         display: none;
       }
 
-      .leaflet-control-zoom {
-        margin-top: 68px !important;
+      .leaflet-top.leaflet-right {
+        margin-top: 60px;
       }
     }
   </style>
@@ -1043,13 +1051,17 @@
       }
 
       map = L.map("map", {
-        zoomControl: true,
+        zoomControl: false,
         minZoom: 2,
         worldCopyJump: false,
         maxBounds: [[-85, -180], [85, 180]],
         maxBoundsViscosity: 1,
         preferCanvas: true,
       }).setView([38.5, -96.5], 4);
+
+      // Zoom lives at the map's top-right: the top-left belongs to the
+      // control panel, whose header the default corner used to cover.
+      L.control.zoom({ position: "topright" }).addTo(map);
 
       // CARTO raster basemaps now require a free API key (see
       // carto.com/basemaps/apikey). Resolution order: the ?carto_key= URL

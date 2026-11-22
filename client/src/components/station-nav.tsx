@@ -17,21 +17,20 @@ import {
   Vote,
   Wrench,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 /**
- * The canonical Workshop Floor station list.
+ * The canonical station list.
  *
  * Every person-facing hub renders the same strip (see StationNav below) so
- * a person can move from any station to any other — "Pick a station. Move
- * freely. Every station connects to the others." Keep this list as the one
+ * a person can move from any station to any other. Keep this list as the one
  * source of truth: every href must stay registered in
  * shared/client-route-registry.ts (enforced by station-nav.test.tsx).
  */
 export const STATION_LINKS = [
   { label: "Workshop Floor", href: "/workshop", icon: Wrench, station: "Pick a station. Move freely." },
-  { label: "Control Room / Lighthouse", href: "/control-room", icon: Shield, station: "Case command" },
+  { label: "Control Room", href: "/control-room", icon: Shield, station: "Case command" },
   { label: "Lighthouse Hub", href: "/lighthouse", icon: Landmark, station: "Community Board" },
   { label: "CivicMap", href: "/civic-map", icon: Map, station: "Mapped resources" },
   { label: "Legal Library", href: "/legal-library", icon: Scale, station: "Doctrine" },
@@ -51,48 +50,46 @@ export const STATION_LINKS = [
 export type StationLink = (typeof STATION_LINKS)[number];
 
 /**
- * The shared Workshop Floor station strip. Renders on every person-facing
- * hub; the station for the page being viewed is marked aria-current="page"
- * with a visible active style, and stays a link like every other station.
+ * The shared station strip. Renders on every person-facing hub as one slim
+ * row of chips — no header of its own: the page already carries its own
+ * title, so the strip names nothing and brands nothing (owner direction
+ * 2026-11-22: "less is more"). The station for the page being viewed is
+ * marked aria-current="page" with a visible active style, and stays a link
+ * like every other station. The right-edge fade is the scroll cue: the row
+ * scrolls sideways on narrow screens.
  */
 export function StationNav() {
   const [location] = useLocation();
   return (
     <Card className="bg-card/50 border-border/50 overflow-hidden">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Wrench className="w-4 h-4 text-primary" />
-          Workshop Floor navigation
-        </CardTitle>
-        <p className="text-xs text-muted-foreground">
-          Pick a station. Move freely. Every station connects to the others.
-        </p>
-      </CardHeader>
-      <CardContent className="pt-1">
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 print:flex-wrap">
-          {STATION_LINKS.map((link) => {
-            const Icon = link.icon;
-            const isCurrent = location === link.href;
-            return (
-              <Link key={link.href} href={link.href}>
-                <a
-                  aria-current={isCurrent ? "page" : undefined}
-                  className={cn(
-                    "min-w-max rounded-lg border px-3 py-2 text-left transition-colors",
-                    isCurrent
-                      ? "border-primary/60 bg-primary/10"
-                      : "border-border/50 bg-background/40 hover:border-primary/40 hover:bg-primary/5",
-                  )}
-                >
-                  <span className="flex items-center gap-2 text-xs font-medium text-foreground">
+      <CardContent className="p-2">
+        <div className="relative">
+          <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 print:flex-wrap">
+            {STATION_LINKS.map((link) => {
+              const Icon = link.icon;
+              const isCurrent = location === link.href;
+              return (
+                <Link key={link.href} href={link.href}>
+                  <a
+                    aria-current={isCurrent ? "page" : undefined}
+                    className={cn(
+                      "flex min-w-max items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-medium transition-colors",
+                      isCurrent
+                        ? "border-primary/60 bg-primary/10 text-foreground"
+                        : "border-border/50 bg-background/40 text-foreground/80 hover:border-primary/40 hover:bg-primary/5 hover:text-foreground",
+                    )}
+                  >
                     <Icon className="w-3.5 h-3.5 text-primary/80" />
                     {link.label}
-                  </span>
-                  <span className="block text-[10px] text-muted-foreground mt-0.5">{link.station}</span>
-                </a>
-              </Link>
-            );
-          })}
+                  </a>
+                </Link>
+              );
+            })}
+          </div>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-card to-transparent print:hidden"
+          />
         </div>
       </CardContent>
     </Card>

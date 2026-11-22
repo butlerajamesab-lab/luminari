@@ -103,16 +103,32 @@ function title_case(value: string | null | undefined): string {
     .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
-function format_address(location: ResourceLocation | undefined): string | null {
+export function format_address(location: ResourceLocation | undefined): string | null {
   if (!location) return null;
+  const lines = [location.address_line1, location.address_line2].filter(Boolean) as string[];
   const locality = [location.city, location.state, location.postal_code]
     .filter(Boolean)
     .join(" ");
-  const parts = [
-    location.address_line1,
-    location.address_line2,
-    locality || location.county,
-  ].filter(Boolean);
+  // Some source records carry the whole address — city, state and ZIP
+  // included — inside address_line1. Appending the locality again printed
+  // it twice ("…, Phoenix, AZ 85004, Phoenix AZ 85004", owner screenshot
+  // 2026-11-22). When the lines already contain the locality, keep them
+  // as they are. The match is on whole tokens in sequence, never a raw
+  // substring: "IN" must not be found inside "Main".
+  const tokens_of = (value: string) =>
+    value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(" ").filter(Boolean);
+  const line_tokens = tokens_of(lines.join(" "));
+  const locality_tokens = tokens_of(locality);
+  const locality_already_present =
+    locality_tokens.length > 0 &&
+    line_tokens.some((_, start) =>
+      locality_tokens.every((token, offset) => line_tokens[start + offset] === token),
+    );
+  const parts = [...lines];
+  if (!locality_already_present) {
+    const tail = locality || location.county;
+    if (tail) parts.push(tail);
+  }
   return parts.length ? parts.join(", ") : null;
 }
 
