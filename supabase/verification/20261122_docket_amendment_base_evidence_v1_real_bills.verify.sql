@@ -91,6 +91,12 @@ begin
   exception when insufficient_privilege then null;
   end;
 
+  begin
+    truncate public.docket_amendment_base_receipt;
+    raise exception 'amendment_base_receipt_truncate_not_refused';
+  exception when insufficient_privilege then null;
+  end;
+
   raise notice 'docket_amendment_base_evidence_v1 real-bill acceptance passed (OK SB206, IN HB1348, CO SB015)';
 end
 $acceptance$;

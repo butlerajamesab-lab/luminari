@@ -41,6 +41,33 @@ create trigger docket_amendment_base_receipt_append_only
   before update or delete on public.docket_amendment_base_receipt
   for each row execute function public.docket_amendment_base_receipt_append_only();
 
+-- TRUNCATE bypasses row triggers: refuse it with a statement trigger, and give the service role
+-- only SELECT and INSERT (same hardening as 20261104090500_docket_legiscan_receipt_append_only_acl).
+drop trigger if exists docket_amendment_base_receipt_no_truncate on public.docket_amendment_base_receipt;
+create trigger docket_amendment_base_receipt_no_truncate
+  before truncate on public.docket_amendment_base_receipt
+  for each statement execute function public.docket_amendment_base_receipt_append_only();
+alter table public.docket_amendment_base_receipt enable row level security;
+do $acl$
+declare v_role text;
+begin
+  execute 'revoke all on public.docket_amendment_base_receipt from public';
+  foreach v_role in array array['anon','authenticated','service_role'] loop
+    if exists (select 1 from pg_roles where rolname = v_role) then
+      execute format('revoke all on public.docket_amendment_base_receipt from %I', v_role);
+    end if;
+  end loop;
+  if exists (select 1 from pg_roles where rolname = 'service_role') then
+    execute 'grant select, insert on public.docket_amendment_base_receipt to service_role';
+    if has_table_privilege('service_role','public.docket_amendment_base_receipt','update')
+       or has_table_privilege('service_role','public.docket_amendment_base_receipt','delete')
+       or has_table_privilege('service_role','public.docket_amendment_base_receipt','truncate') then
+      raise exception 'docket_amendment_base_receipt_service_role_not_append_only';
+    end if;
+  end if;
+end
+$acl$;
+
 create or replace function public.docket_amendment_base_evidence_v1(p_source_bill_id integer)
 returns table (source_document_key text, base_key text, method text, reason text, evidence jsonb)
 language sql stable set search_path = '' as $$

@@ -601,7 +601,7 @@ APPROVED_REPOSITORY_ONLY = {
     # Exact Git blob pinned; no production installation or ledger rewrite.
     "20261122120000": (
         "20261122120000_docket_amendment_base_evidence_v1.sql",
-        "9b9bd4f311a606bae0b2d87f4ad5bdff5ff5f3df",
+        "fc248f681b8f4c05f61137cb5d830381592c7fea",
     ),
 }
 
