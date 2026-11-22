@@ -283,7 +283,7 @@ function MobileJourneyBanner({
 
 /* ─── Collapsible Section Component ─── */
 
-function CollapsibleNavSection({
+export function CollapsibleNavSection({
   section,
   isOpen,
   onToggle,
@@ -306,7 +306,13 @@ function CollapsibleNavSection({
   const itemCount = section.items.length;
 
   return (
-    <SidebarMenu className="px-2 py-0">
+    // shrink-0 is load-bearing: index.css globally forces `.flex { min-height: 0 }`,
+    // which makes these lists shrinkable flex items of SidebarContent. Without
+    // shrink-0 the column flexbox compresses each open section below its content
+    // height and the items overflow on top of the following sections (the
+    // sidebar pile-up). A section list must always take its full content height;
+    // SidebarContent is the only thing allowed to scroll.
+    <SidebarMenu className="px-2 py-0 shrink-0">
       {/* Section header — clickable toggle */}
       {!isCollapsed && (
         <button
@@ -387,7 +393,7 @@ function CollapsibleNavSection({
 
 /* ─── Integrity Section (special — has badge) ─── */
 
-function IntegritySection({
+export function IntegritySection({
   location,
   setLocation,
   isCollapsed,
@@ -410,7 +416,9 @@ function IntegritySection({
   const hasActiveItem = integrityActive || auditActive || extractionActive;
 
   return (
-    <SidebarMenu className="px-2 py-0">
+    // shrink-0: see CollapsibleNavSection — section lists must never be
+    // compressed by the SidebarContent flex column.
+    <SidebarMenu className="px-2 py-0 shrink-0">
       {!isCollapsed && (
         <button
           onClick={onToggle}
@@ -457,7 +465,10 @@ function IntegritySection({
               )}
             </SidebarMenuButton>
           </SidebarMenuItem>
-          {investigateItems.filter((item: NavItem) => ['/extraction-failures', '/audit', '/integrity'].includes(item.path)).map((item) => {
+          {/* /integrity is intentionally NOT in this filter: the hardcoded
+              "Integrity & Resolutions" item above already renders that path.
+              Including it here rendered /integrity twice in this section. */}
+          {investigateItems.filter((item: NavItem) => ['/extraction-failures', '/audit'].includes(item.path)).map((item) => {
             const isActive = location === item.path;
             return (
               <SidebarMenuItem key={item.path}>
@@ -505,40 +516,58 @@ function DesktopLayoutContent({
     setActiveLens(lens);
     setStoredLens(lens);
   }, []);
-  // Collapsible section state
+  // Collapsible section state. `sectionState` holds the user's explicit
+  // choices and is the ONLY section state ever written to localStorage (via
+  // toggleSection). Sections auto-expanded because they contain the active
+  // route live in `sessionSections` instead: they open for this session only
+  // and are never persisted. (The previous implementation saved the
+  // auto-expansion on every navigation, so the persisted layout kept growing
+  // more open sections and sections the user had closed came back open on
+  // the next visit.)
   const [sectionState, setSectionState] = useState<Record<string, boolean>>(loadSectionState);
+  const [sessionSections, setSessionSections] = useState<Record<string, boolean>>({});
+
+  const isSectionOpen = useCallback((section: NavSection) => {
+    if (section.id in sessionSections) return sessionSections[section.id];
+    return sectionState[section.id] ?? section.defaultOpen ?? false;
+  }, [sectionState, sessionSections]);
 
   const toggleSection = useCallback((id: string) => {
-    setSectionState(prev => {
-      const next = { ...prev, [id]: !prev[id] };
-      saveSectionState(next);
-      return next;
+    // Flip the *effective* open state (a session auto-expansion may be what
+    // is currently open) and record the result as the user's persisted
+    // choice; the session override for this section is consumed.
+    const section = [...allNavSections, adminSection].find(s => s.id === id);
+    const current = (id in sessionSections)
+      ? sessionSections[id]
+      : (sectionState[id] ?? section?.defaultOpen ?? false);
+    const next = { ...sectionState, [id]: !current };
+    setSectionState(next);
+    saveSectionState(next);
+    setSessionSections(prev => {
+      if (!(id in prev)) return prev;
+      const copy = { ...prev };
+      delete copy[id];
+      return copy;
     });
-  }, []);
+  }, [sectionState, sessionSections]);
 
-  // Auto-expand section containing active route
+  // Auto-expand the section containing the active route — session only,
+  // never persisted (see state comment above). The /integrity, /audit and
+  // /extraction-failures routes are items of the Investigate section, so
+  // this loop already covers them; the old special case wrote an
+  // "integrity" key that no rendered component consumes.
   useEffect(() => {
     const allSections = [...allNavSections, adminSection];
     for (const section of allSections) {
       const hasActive = section.items.some(
         item => location === item.path || location.startsWith(item.path + "/")
       );
-      if (hasActive && !sectionState[section.id]) {
-        setSectionState(prev => {
-          const next = { ...prev, [section.id]: true };
-          saveSectionState(next);
-          return next;
-        });
+      if (hasActive) {
+        if (!isSectionOpen(section)) {
+          setSessionSections(prev => (prev[section.id] ? prev : { ...prev, [section.id]: true }));
+        }
         break;
       }
-    }
-    // Also check integrity special items
-    if (["/integrity", "/extraction-failures", "/audit"].includes(location) && !sectionState["integrity"]) {
-      setSectionState(prev => {
-        const next = { ...prev, integrity: true };
-        saveSectionState(next);
-        return next;
-      });
     }
   }, [location]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -637,7 +666,9 @@ function DesktopLayoutContent({
             </div>
           </SidebarHeader>
 
-          <SidebarContent className="gap-0 overflow-y-auto">
+          {/* overscroll-contain: wheel/trackpad scrolling at the top/bottom
+              of the nav must not chain through to the page behind. */}
+          <SidebarContent className="gap-0 overflow-y-auto overscroll-contain">
             {/* Case Selector */}
             {!isCollapsed && (
               <div className="px-3 py-2">
@@ -681,7 +712,7 @@ function DesktopLayoutContent({
             )}
 
             {/* Control Room — top-level nav item */}
-            <SidebarMenu>
+            <SidebarMenu className="shrink-0">
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => setLocation("/control-room")}
@@ -710,7 +741,7 @@ function DesktopLayoutContent({
               <CollapsibleNavSection
                 key={section.id}
                 section={section}
-                isOpen={sectionState[section.id] ?? section.defaultOpen ?? false}
+                isOpen={isSectionOpen(section)}
                 onToggle={() => toggleSection(section.id)}
                 location={location}
                 setLocation={setLocation}
@@ -722,7 +753,7 @@ function DesktopLayoutContent({
             {/* Admin Tools — always visible for testing */}
             <CollapsibleNavSection
               section={adminSection}
-              isOpen={sectionState["admin"] ?? false}
+              isOpen={isSectionOpen(adminSection)}
               onToggle={() => toggleSection("admin")}
               location={location}
               setLocation={setLocation}
@@ -731,94 +762,147 @@ function DesktopLayoutContent({
             />
           </SidebarContent>
 
-          <SidebarFooter className="p-3 space-y-2">
-            <button
-              onClick={() => { window.location.href = "/welcome"; }}
-              className="flex items-center gap-2.5 w-full rounded-lg px-3 py-2.5 bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors text-left group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2"
-            >
-              <Heart className="h-4 w-4 text-primary shrink-0" />
-              <div className="group-data-[collapsible=icon]:hidden">
-                <p className="text-xs font-medium text-primary leading-none">Guided View</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">Step-by-step help</p>
-              </div>
-            </button>
-            {/* Lens Selector */}
-            <div className={`${isCollapsed ? 'px-0' : 'px-1'}`}>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 w-full rounded-lg px-3 py-2 bg-muted/40 border border-border/50 hover:bg-muted/60 transition-colors text-left group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2">
-                    <Eye className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-[11px] text-muted-foreground group-data-[collapsible=icon]:hidden">
-                      {activeLens.charAt(0).toUpperCase() + activeLens.slice(1)} Lens
-                    </span>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-44">
-                  {LENS_OPTIONS.map((lens) => (
-                    <DropdownMenuItem
-                      key={lens}
-                      onClick={() => handleLensChange(lens)}
-                      className={`cursor-pointer text-xs ${activeLens === lens ? 'bg-accent' : ''}`}
+          <SidebarFooter className="p-2 space-y-2">
+            {/* View controls — compact tab strip. Guided View, the lens
+                selector and Plain Language used to be three full-width blocks
+                (plus a separate bell row) that took roughly half the sidebar
+                and squeezed the nav scroll area; they are now a single slim
+                row of tabs — an icon-only stack when the sidebar is collapsed.
+                Handlers are unchanged: Guided View still goes to /welcome,
+                the lens menu still calls handleLensChange, and Plain Language
+                still calls the same context toggle. */}
+            {isCollapsed ? (
+              <div className="flex flex-col items-center gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => { window.location.href = "/welcome"; }}
+                      className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/20 text-primary hover:bg-primary/15 transition-colors"
+                      aria-label="Guided View"
                     >
-                      <span>{lens.charAt(0).toUpperCase() + lens.slice(1)}</span>
-                      {activeLens === lens && <CheckCircle2 className="h-3 w-3 ml-auto text-primary" />}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            <PlainLanguageToggle collapsed={isCollapsed} />
-            {user && (
-              <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'px-1'}`}>
-                <NotificationBell />
+                      <Heart className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p className="text-xs">Guided View</p>
+                    <p className="text-[10px] text-muted-foreground">Step-by-step help</p>
+                  </TooltipContent>
+                </Tooltip>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className="flex h-8 w-8 items-center justify-center rounded-md bg-muted/40 border border-border/50 hover:bg-muted/60 transition-colors"
+                      aria-label={`${activeLens.charAt(0).toUpperCase() + activeLens.slice(1)} Lens`}
+                    >
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-44">
+                    {LENS_OPTIONS.map((lens) => (
+                      <DropdownMenuItem
+                        key={lens}
+                        onClick={() => handleLensChange(lens)}
+                        className={`cursor-pointer text-xs ${activeLens === lens ? 'bg-accent' : ''}`}
+                      >
+                        <span>{lens.charAt(0).toUpperCase() + lens.slice(1)}</span>
+                        {activeLens === lens && <CheckCircle2 className="h-3 w-3 ml-auto text-primary" />}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <PlainLanguageToggle collapsed />
+              </div>
+            ) : (
+              <div className="flex items-stretch gap-1" role="group" aria-label="View controls">
+                <button
+                  onClick={() => { window.location.href = "/welcome"; }}
+                  className="flex flex-1 min-w-0 items-center justify-center gap-1.5 rounded-md px-1.5 py-1.5 bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors"
+                  title="Guided View — step-by-step help"
+                >
+                  <Heart className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span className="text-[11px] font-medium text-primary truncate">Guided View</span>
+                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className="flex flex-1 min-w-0 items-center justify-center gap-1.5 rounded-md px-1.5 py-1.5 bg-muted/40 border border-border/50 hover:bg-muted/60 transition-colors"
+                      title="Change lens"
+                    >
+                      <Eye className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="text-[11px] text-muted-foreground truncate">
+                        {activeLens.charAt(0).toUpperCase() + activeLens.slice(1)} Lens
+                      </span>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-44">
+                    {LENS_OPTIONS.map((lens) => (
+                      <DropdownMenuItem
+                        key={lens}
+                        onClick={() => handleLensChange(lens)}
+                        className={`cursor-pointer text-xs ${activeLens === lens ? 'bg-accent' : ''}`}
+                      >
+                        <span>{lens.charAt(0).toUpperCase() + lens.slice(1)}</span>
+                        {activeLens === lens && <CheckCircle2 className="h-3 w-3 ml-auto text-primary" />}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <PlainLanguageToggle variant="tab" />
               </div>
             )}
-            {user ? <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 rounded-md px-1 py-1 hover:bg-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  <Avatar className="h-8 w-8 border shrink-0">
-                    <AvatarFallback className="text-xs font-medium bg-primary/10 text-primary">
-                      {user?.name?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
-                    <p className="text-sm font-medium truncate leading-none">
-                      {user?.name || "-"}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate mt-1">
-                      {user?.email || "-"}
-                    </p>
-                  </div>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem
-                  onClick={() => { window.location.href = "/welcome"; }}
-                  className="cursor-pointer"
-                >
-                  <Heart className="mr-2 h-4 w-4" />
-                  <span>Guided View</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => resetTour()}
-                  className="cursor-pointer"
-                >
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  <span>Replay Tour</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={logout}
-                  className="cursor-pointer text-destructive focus:text-destructive"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu> : (
+            {/* User row — one compact row: profile menu with the notification
+                bell beside it instead of on its own row. */}
+            {user ? (
+              <div className={`flex ${isCollapsed ? 'flex-col items-center gap-1' : 'items-center gap-1'}`}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex flex-1 min-w-0 items-center gap-2.5 rounded-md px-1 py-1 hover:bg-accent/50 transition-colors text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                      <Avatar className="h-8 w-8 border shrink-0">
+                        <AvatarFallback className="text-xs font-medium bg-primary/10 text-primary">
+                          {user?.name?.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
+                        <p className="text-[13px] font-medium truncate leading-none">
+                          {user?.name || "-"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+                          {user?.email || "-"}
+                        </p>
+                      </div>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem
+                      onClick={() => { window.location.href = "/welcome"; }}
+                      className="cursor-pointer"
+                    >
+                      <Heart className="mr-2 h-4 w-4" />
+                      <span>Guided View</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => resetTour()}
+                      className="cursor-pointer"
+                    >
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      <span>Replay Tour</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={logout}
+                      className="cursor-pointer text-destructive focus:text-destructive"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Sign out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <NotificationBell />
+              </div>
+            ) : (
               <button
                 type="button"
                 onClick={() => { window.location.href = getLoginUrl(); }}
-                className="flex w-full items-center gap-3 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-left hover:bg-primary/10 transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2"
+                className="flex w-full items-center gap-2.5 rounded-md border border-primary/20 bg-primary/5 px-2.5 py-1.5 text-left hover:bg-primary/10 transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2"
               >
                 <Eye className="h-4 w-4 shrink-0 text-primary" />
                 <span className="min-w-0 group-data-[collapsible=icon]:hidden">
@@ -830,11 +914,24 @@ function DesktopLayoutContent({
           </SidebarFooter>
         </Sidebar>
 
-        {/* Resize handle */}
+        {/* Resize handle. This used to be `absolute … h-full` inside the
+            relative wrapper div above — but that wrapper's only in-flow child
+            is the sidebar's empty gap div (the visible sidebar container is
+            position:fixed and contributes no height), so the handle's height
+            depended on flex-stretch side effects from sibling content and in
+            practice collapsed to ~0px: present in the DOM, impossible to
+            grab. It is now fixed to the viewport, pinned to the sidebar's
+            right edge via --sidebar-width, with an 8px full-height hit area
+            (the visible line stays 1px). */}
         {!isCollapsed && (
           <div
-            className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize z-50 group"
+            className="fixed inset-y-0 w-2 cursor-col-resize z-50 group"
+            style={{ left: "calc(var(--sidebar-width) - 4px)" }}
             onMouseDown={() => setIsResizing(true)}
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize sidebar"
+            title="Drag to resize sidebar"
           >
             <div className="w-px h-full bg-border group-hover:bg-primary/50 transition-colors mx-auto" />
           </div>
@@ -852,7 +949,9 @@ function DesktopLayoutContent({
             onNavigate={setLocation}
           />
         )}
-        <main className="flex-1 p-6">
+        {/* pb-20: bottom safe space so page footers and pagers can scroll
+            clear of the fixed bottom-right helper cluster. */}
+        <main className="flex-1 p-6 pb-20">
           {showContinuityPanel ? (
             <div className="mb-4">
               <CaseIntakeContinuityPanel

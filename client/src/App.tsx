@@ -167,6 +167,11 @@ function App() {
           <Toaster />
           <PlainLanguageProvider>
             <CaseProvider>
+              {/* App-root content wrapper. pb-20 is the bottom safe space for
+                  the routes that render outside DashboardLayout (which pads
+                  its own main): page footers and pagers can scroll clear of
+                  the fixed bottom-corner helper cluster. */}
+              <div className="pb-20">
               <Switch>
                 <Route path="/oauth/consent" component={OAuthConsent} />
                 <Route path="/welcome" component={Welcome} />
@@ -254,6 +259,7 @@ function App() {
                 <Route path="/business-analytics" component={BusinessAnalytics} />
                 <Route><DashboardRouter /></Route>
               </Switch>
+              </div>
               <MobileBottomNav />
               <GlobalUploadIndicator />
               <LuminariHelper />

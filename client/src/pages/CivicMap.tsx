@@ -1,18 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
-import { ArrowLeft, BookOpen, Compass, FileText, Home, Landmark, LayoutDashboard, MapPinned, Route, Wrench } from "lucide-react";
+import { ArrowLeft, MapPinned } from "lucide-react";
 import { StationNav } from "@/components/station-nav";
 
-const navItems = [
-  { href: "/lighthouse", label: "Lighthouse", icon: Home },
-  { href: "/guided-intake", label: "Start / Intake", icon: Route },
-  { href: "/cases", label: "My Case", icon: FileText },
-  { href: "/workshop", label: "Workshop", icon: Wrench },
-  { href: "/legal-library", label: "Legal Library", icon: BookOpen },
-  { href: "/viewfinder", label: "Viewfinder", icon: Compass },
-  { href: "/docket", label: "Docket Room", icon: Landmark },
-  { href: "/mission-control", label: "Mission Control", icon: LayoutDashboard },
-];
+// Navigation on this page is the shared StationNav strip only. A page-local
+// navItems row that duplicated the strip used to render in the header; it was
+// removed so the page carries exactly one navigation row.
 
 // The basemap key arrives from the Render environment
 // (VITE_CARTO_BASEMAP_KEY) and is forwarded to the map frame as a query
@@ -75,18 +68,6 @@ export default function CivicMap() {
           </div>
         </div>
 
-        <nav className="flex max-w-full items-center gap-1 overflow-x-auto">
-          {navItems.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border/70 bg-card/70 px-2.5 py-1.5 text-xs text-muted-foreground hover:border-cyan-500/50 hover:bg-cyan-500/10 hover:text-cyan-200"
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {label}
-            </Link>
-          ))}
-        </nav>
       </header>
 
       <div className="border-b border-border px-4 py-3">

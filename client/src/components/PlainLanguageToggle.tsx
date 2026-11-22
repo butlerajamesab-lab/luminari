@@ -10,9 +10,36 @@ import {
 /**
  * Toggle button for plain language mode.
  * Shows in sidebar footer or header area.
+ *
+ * Variants:
+ * - default: full-width labelled button (expanded footer / header use)
+ * - collapsed: icon-only button with tooltip (collapsed sidebar)
+ * - tab: compact flex tab for the sidebar footer's view-controls tab strip
+ * All variants call the exact same context `toggle`.
  */
-export default function PlainLanguageToggle({ collapsed = false }: { collapsed?: boolean }) {
+export default function PlainLanguageToggle({ collapsed = false, variant }: { collapsed?: boolean; variant?: "tab" }) {
   const { enabled, toggle } = usePlainLanguage();
+
+  if (variant === "tab") {
+    return (
+      <button
+        type="button"
+        onClick={toggle}
+        aria-pressed={enabled}
+        title={enabled
+          ? "Plain Language: ON — rewrites legal jargon into accessible language"
+          : "Plain Language: OFF — rewrites legal jargon into accessible language"}
+        className={`flex flex-1 min-w-0 items-center justify-center gap-1.5 rounded-md px-1.5 py-1.5 border transition-colors ${
+          enabled
+            ? "bg-primary/15 text-primary border-primary/30 hover:bg-primary/25"
+            : "bg-muted/40 text-muted-foreground border-border/50 hover:bg-muted/60"
+        }`}
+      >
+        {enabled ? <BookOpenCheck className="h-3.5 w-3.5 shrink-0" /> : <BookOpen className="h-3.5 w-3.5 shrink-0" />}
+        <span className="text-[11px] font-medium truncate">Plain Language</span>
+      </button>
+    );
+  }
 
   if (collapsed) {
     return (
