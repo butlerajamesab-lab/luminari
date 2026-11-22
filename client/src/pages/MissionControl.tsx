@@ -1979,7 +1979,10 @@ function PublicationCard() {
           Publication is a second governed act, separate from promotion: only a current promoted signal can be
           published, and publishing places its plain-language explainer on the public page. Every publish and
           unpublish is written to the governance log with your rationale. A rationale is required — at least
-          10 characters and 3 words, saying why this signal is being published or withdrawn.
+          10 characters and 3 words, saying why this signal is being published or withdrawn. A signal whose
+          entity attribution is not resolved yet cannot be published: its working entity name rides inside the
+          explainer prose itself, so the row shows the reason instead of a Publish button until attribution
+          is resolved.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -2008,6 +2011,9 @@ function PublicationCard() {
                       <Badge className={isPublished ? "bg-emerald-500/20 text-emerald-300 text-[10px]" : "bg-slate-500/20 text-slate-300 text-[10px]"}>
                         {isPublished ? "Published" : pub.state === "unpublished" ? "Unpublished" : "Not published"}
                       </Badge>
+                      {item.publicSafe === false && (
+                        <Badge className="bg-amber-500/20 text-amber-300 text-[10px]">Not public-safe</Badge>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground">{sig.explanation}</p>
                     <div className="mt-1.5 space-y-0.5 text-[10px] text-muted-foreground">
@@ -2035,6 +2041,10 @@ function PublicationCard() {
                         onClick={() => unpublish.mutate({ signalId: sig.signalId, rationale: rationale.trim() })}>
                         Unpublish
                       </Button>
+                    ) : item.publicSafe === false ? (
+                      <span className="block max-w-[190px] text-[11px] leading-snug text-amber-300">
+                        Not public-safe yet — {item.publicSafeReason}
+                      </span>
                     ) : (
                       <Button size="sm" className="h-7 text-xs" disabled={!rationaleValid || busy}
                         onClick={() => publish.mutate({ signalId: sig.signalId, rationale: rationale.trim() })}>

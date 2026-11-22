@@ -30,6 +30,21 @@
  *   entity_resolution_status is 'resolved' (the name is taken from
  *   the row's own supporting_statistics — never from legacy stores).
  *
+ * Public-safety (Codex Finding 1 on PR #873): the resolved-only rule
+ * above gates the separate entityName field, but for an unresolved
+ * signal the working entity name is ALSO embedded in the title /
+ * description prose itself (the recurrence format: "X appears in N
+ * observations…"). Verbatim publication would expose what the rule
+ * says must stay hidden, so eligibility carries a deterministic
+ * public-safety assessment (assessPublicSafety): a signal carrying
+ * entity attribution — entity ids, or a working entity name in its
+ * supporting_statistics — whose resolution status is not 'resolved'
+ * is NOT public-safe, and publishSignal refuses it outright with
+ * that stated reason. The prose is never redacted or rewritten; the
+ * act simply cannot happen until attribution is resolved. Every
+ * published row is therefore safe by construction, and the public
+ * projection needs no safety logic of its own.
+ *
  * Deterministic: the selection and projection functions are pure —
  * same records and publications in, same explainers out, same order.
  * No scoring, no generation, no LLM anywhere in this module.
@@ -40,6 +55,7 @@ import { sql } from "drizzle-orm";
 import { db, pool } from "../db";
 import {
   get_canonical_live_signals,
+  get_canonical_live_signals_by_ids,
   type CanonicalLiveSignal,
 } from "../canonical-live-signal-queries";
 import { writeGovernanceLog } from "../governance-log";
@@ -71,6 +87,8 @@ export interface GovernedSignalRecord {
   governanceStatus: string;
   isCurrent: boolean;
   entityResolutionStatus: string;
+  /** Entity ids the row attributes the pattern to (may be empty). */
+  entityIds: string[];
   entityName: string | null;
   // Why-it-is-a-signal detail for the gate reviewer (admin surface only).
   detectionRuleId: string;
@@ -96,6 +114,14 @@ export interface PublicationRecord {
 /** The gate's view of one promoted signal and its publication state. */
 export interface PromotedSignalAdminView {
   signal: GovernedSignalRecord;
+  /**
+   * The deterministic public-safety assessment (assessPublicSafety):
+   * false — with the stated reason — when the signal carries entity
+   * attribution that is not resolved, so the gate shows why there is
+   * no Publish button for the row instead of offering the act.
+   */
+  publicSafe: boolean;
+  publicSafeReason: string | null;
   publication: {
     state: "published" | "unpublished" | "never_published";
     publicationId: number | null;
@@ -159,6 +185,7 @@ export function fromCanonicalLiveSignal(
     // so every record it returns is current by construction.
     isCurrent: true,
     entityResolutionStatus: signal.entity_resolution_status,
+    entityIds: signal.affected_entities,
     entityName: entityNameFromStatistics(signal.supporting_statistics),
     detectionRuleId: signal.detection_rule_id,
     detectionRuleVersion: signal.detection_rule_version,
@@ -178,6 +205,65 @@ export function isPublishable(record: GovernedSignalRecord): boolean {
     record.isCurrent === true &&
     record.governanceStatus === PROMOTED_GOVERNANCE_STATUS
   );
+}
+
+// ─── Pure core: public-safety assessment ─────────────────────────────
+
+export const ENTITY_ATTRIBUTION_UNRESOLVED_REASON =
+  "entity attribution unresolved";
+
+export interface PublicSafetyAssessment {
+  publicSafe: boolean;
+  /** The stated reason when not public-safe; null when safe. */
+  reason: string | null;
+}
+
+/**
+ * Whether a signal may go public at all, computed deterministically
+ * from the promoted row itself. A signal carries entity attribution
+ * when it names entities (entityIds non-empty) or carries a working
+ * entity name in its supporting_statistics. Attribution that is not
+ * 'resolved' is NOT public-safe: the working name rides inside the
+ * title/description prose, so verbatim publication would expose it.
+ * No attribution → public-safe. Resolved attribution → public-safe
+ * (the name may render). The prose is never edited either way.
+ */
+/** The three attribution facts the assessment reads. */
+export type PublicSafetyInput = Pick<
+  GovernedSignalRecord,
+  "entityIds" | "entityName" | "entityResolutionStatus"
+>;
+
+export function assessPublicSafety(
+  record: PublicSafetyInput,
+): PublicSafetyAssessment {
+  const hasAttribution = record.entityIds.length > 0 || record.entityName != null;
+  if (hasAttribution && record.entityResolutionStatus !== "resolved") {
+    return {
+      publicSafe: false,
+      reason: ENTITY_ATTRIBUTION_UNRESOLVED_REASON,
+    };
+  }
+  return { publicSafe: true, reason: null };
+}
+
+/**
+ * The refusal publishSignal raises for a not-public-safe signal — a
+ * typed error (code SIGNAL_NOT_PUBLIC_SAFE, reason stated) so the
+ * router can surface it as a precondition failure, never a silent
+ * skip and never a 500.
+ */
+export class SignalNotPublicSafeError extends Error {
+  readonly code = "SIGNAL_NOT_PUBLIC_SAFE";
+  readonly signalId: string;
+  readonly reason: string;
+
+  constructor(signalId: string, reason: string) {
+    super(`Signal ${signalId} is not public-safe: ${reason}`);
+    this.name = "SignalNotPublicSafeError";
+    this.signalId = signalId;
+    this.reason = reason;
+  }
 }
 
 /** The active (not withdrawn) publication for a signal, if one exists. */
@@ -288,8 +374,11 @@ export function buildPromotedAdminList(
       const active = activePublicationFor(publications, record.signalId);
       const latest = latestPublicationFor(publications, record.signalId);
       const shown = active ?? latest;
+      const safety = assessPublicSafety(record);
       return {
         signal: record,
+        publicSafe: safety.publicSafe,
+        publicSafeReason: safety.reason,
         publication: {
           state: active
             ? ("published" as const)
@@ -356,48 +445,129 @@ export async function listPublicationRows(
   return (result.rows as any[]).map(rowToPublication);
 }
 
+export const PROMOTED_PAGE_SIZE = 1000;
+
 /**
- * Promoted current signals from the canonical projection, status
- * pinned to 'promoted' — the canonical helper's default (all
- * non-rejected) is never used here.
+ * One page of promoted current signals from the canonical
+ * projection, status pinned to 'promoted' — the canonical helper's
+ * default (all non-rejected) is never used here. The canonical
+ * ordering (detected_at desc, live_data_signal_id desc) is total,
+ * so pages are stable within a pass.
  */
-export async function listPromotedRecords(): Promise<GovernedSignalRecord[]> {
+async function listPromotedRecordsPage(
+  limit: number,
+  offset: number,
+): Promise<GovernedSignalRecord[]> {
   const signals = await get_canonical_live_signals({
     status: PROMOTED_GOVERNANCE_STATUS,
-    limit: 1000,
+    limit,
+    offset,
   });
   return signals.map(fromCanonicalLiveSignal);
 }
 
+/** The newest page of promoted records (single-page read). */
+export async function listPromotedRecords(
+  limit = PROMOTED_PAGE_SIZE,
+): Promise<GovernedSignalRecord[]> {
+  const capped = Math.min(Math.max(limit, 1), PROMOTED_PAGE_SIZE);
+  return listPromotedRecordsPage(capped, 0);
+}
+
+/**
+ * EVERY promoted record, paged through the full eligible set
+ * (the K1 pagination pattern): a first-page cap must never starve
+ * older promoted signals out of the gate's list.
+ */
+export async function listAllPromotedRecords(): Promise<GovernedSignalRecord[]> {
+  const all: GovernedSignalRecord[] = [];
+  for (let offset = 0; ; offset += PROMOTED_PAGE_SIZE) {
+    const page = await listPromotedRecordsPage(PROMOTED_PAGE_SIZE, offset);
+    all.push(...page);
+    if (page.length < PROMOTED_PAGE_SIZE) return all;
+  }
+}
+
+const RECORD_ID_CHUNK = 500;
+
+/** Promoted records fetched directly by id, in chunks. */
+async function listPromotedRecordsByIds(
+  signalIds: string[],
+): Promise<GovernedSignalRecord[]> {
+  const records: GovernedSignalRecord[] = [];
+  for (let i = 0; i < signalIds.length; i += RECORD_ID_CHUNK) {
+    const chunk = signalIds.slice(i, i + RECORD_ID_CHUNK);
+    const signals = await get_canonical_live_signals_by_ids(chunk);
+    records.push(...signals.map(fromCanonicalLiveSignal));
+  }
+  return records;
+}
+
+export const PUBLICATION_PAGE_SIZE = 1000;
+
+/**
+ * EVERY active publication row, paged by id. The public reads start
+ * from the publication side — the set a human actually published —
+ * so the selection filter is applied before any limit, and a
+ * published signal can never be starved out by newer promoted rows
+ * (Codex Finding 2 on PR #873: filter-before-limit).
+ */
+export async function listActivePublicationRows(): Promise<PublicationRecord[]> {
+  const all: PublicationRecord[] = [];
+  for (let offset = 0; ; offset += PUBLICATION_PAGE_SIZE) {
+    const result = await pool.query(
+      `select ${PUBLICATION_COLUMNS}
+         from public.signal_publications
+        where unpublished_at is null
+        order by id
+        limit $1 offset $2`,
+      [PUBLICATION_PAGE_SIZE, offset],
+    );
+    const page = (result.rows as any[]).map(rowToPublication);
+    all.push(...page);
+    if (page.length < PUBLICATION_PAGE_SIZE) return all;
+  }
+}
+
 /** Gate read: promoted signals with their publication state. */
 export async function listPromotedSignals(): Promise<PromotedSignalAdminView[]> {
-  const records = await listPromotedRecords();
+  const records = await listAllPromotedRecords();
   const publications = await listPublicationRows(
     records.map((r) => r.signalId),
   );
   return buildPromotedAdminList(records, publications);
 }
 
-/** Public read: the published explainers, and nothing else. */
+/**
+ * Public read: the published explainers, and nothing else. The
+ * candidate set is the active publications (fetched first, in
+ * full); the promoted rows are then fetched by id. The caller's
+ * limit applies AFTER selection — never before it.
+ */
 export async function listPublishedSignals(
   limit = 100,
 ): Promise<PublicSignalExplainer[]> {
-  const records = await listPromotedRecords();
-  const publications = await listPublicationRows(
-    records.map((r) => r.signalId),
+  const publications = await listActivePublicationRows();
+  if (publications.length === 0) return [];
+  const records = await listPromotedRecordsByIds(
+    publications.map((p) => p.liveDataSignalId),
   );
   const capped = Math.min(Math.max(limit, 1), 1000);
   return selectPublicExplainers(records, publications).slice(0, capped);
 }
 
-/** Public read: one published explainer by signal id, or null. */
+/**
+ * Public read: one published explainer by signal id, or null. The
+ * record is fetched directly by id — no list window can hide it.
+ */
 export async function getPublishedSignal(
   signalId: string,
 ): Promise<PublicSignalExplainer | null> {
-  const records = await listPromotedRecords();
+  const publications = await listPublicationRows([signalId]);
+  if (activePublicationFor(publications, signalId) == null) return null;
+  const records = await listPromotedRecordsByIds([signalId]);
   const record = records.find((r) => r.signalId === signalId);
   if (!record) return null;
-  const publications = await listPublicationRows([signalId]);
   return projectPublicExplainer(record, publications);
 }
 
@@ -427,11 +597,14 @@ export interface UnpublishResult {
 
 /**
  * Publish one promoted signal. A single transaction: verify the row
- * is a current promoted signal → insert the publication row → write
- * the governance log entry (signal_published) → stamp the row with
- * the log's seq_no. If any step fails — including rationale
- * validation inside the log write — everything rolls back: there is
- * no published-but-unlogged state.
+ * is a current promoted signal → verify it is public-safe (a signal
+ * with unresolved entity attribution is refused with a
+ * SignalNotPublicSafeError stating the reason — never published,
+ * never silently skipped) → insert the publication row → write the
+ * governance log entry (signal_published) → stamp the row with the
+ * log's seq_no. If any step fails — including rationale validation
+ * inside the log write — everything rolls back: there is no
+ * published-but-unlogged state.
  */
 export async function publishSignal(input: {
   signalId: string;
@@ -442,7 +615,8 @@ export async function publishSignal(input: {
   return await db.transaction(async (tx: any) => {
     const [signal] = rowsFromExecuteResult(
       await tx.execute(sql`
-        select live_data_signal_id, signal_hash, governance_status, is_current
+        select live_data_signal_id, signal_hash, governance_status, is_current,
+               entity_ids, entity_resolution_status, supporting_statistics
           from public.live_data_signals
          where live_data_signal_id = ${input.signalId}
          limit 1
@@ -453,6 +627,20 @@ export async function publishSignal(input: {
       throw new Error(
         `Signal ${input.signalId} is not a current promoted signal and cannot be published`,
       );
+    }
+
+    // Public-safety: unresolved entity attribution rides inside the
+    // prose itself, so the act is refused — with the reason stated —
+    // rather than publishing and leaking the working entity name.
+    const safety = assessPublicSafety({
+      entityIds: Array.isArray(signal.entity_ids)
+        ? signal.entity_ids.map(String)
+        : [],
+      entityName: entityNameFromStatistics(signal.supporting_statistics),
+      entityResolutionStatus: String(signal.entity_resolution_status),
+    });
+    if (!safety.publicSafe) {
+      throw new SignalNotPublicSafeError(input.signalId, safety.reason!);
     }
 
     const existing = rowsFromExecuteResult(

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   activePublicationFor,
+  assessPublicSafety,
   buildPromotedAdminList,
+  ENTITY_ATTRIBUTION_UNRESOLVED_REASON,
   isPublishable,
   isPubliclyVisible,
   projectPublicExplainer,
@@ -38,6 +40,7 @@ function record(overrides: Partial<GovernedSignalRecord> = {}): GovernedSignalRe
     governanceStatus: "promoted",
     isCurrent: true,
     entityResolutionStatus: "unresolved",
+    entityIds: [],
     entityName: "EXAMPLE CORP",
     detectionRuleId: "atlas.domain3.cross_jurisdiction_recurrence",
     detectionRuleVersion: "1.0.0",
@@ -178,7 +181,86 @@ describe("selectPublicExplainers", () => {
   });
 });
 
+describe("assessPublicSafety (Codex Finding 1)", () => {
+  it("the reason string is the stated one", () => {
+    expect(ENTITY_ATTRIBUTION_UNRESOLVED_REASON).toBe(
+      "entity attribution unresolved",
+    );
+  });
+
+  it("unresolved attribution via the statistics' working name is not public-safe", () => {
+    // The default fixture is the recurrence pattern: the working name
+    // rides in supporting_statistics (entityName) and in the prose,
+    // and resolution is unresolved.
+    const assessment = assessPublicSafety(record());
+    expect(assessment.publicSafe).toBe(false);
+    expect(assessment.reason).toBe("entity attribution unresolved");
+  });
+
+  it("unresolved attribution via entity ids is not public-safe, even with no name", () => {
+    const assessment = assessPublicSafety(
+      record({ entityIds: ["3f6d8f2e-9a4b-4c1d-b2e3-5a6b7c8d9e0f"], entityName: null }),
+    );
+    expect(assessment.publicSafe).toBe(false);
+    expect(assessment.reason).toBe("entity attribution unresolved");
+  });
+
+  it("any non-'resolved' status with attribution is not public-safe", () => {
+    expect(
+      assessPublicSafety(record({ entityResolutionStatus: "pending" })).publicSafe,
+    ).toBe(false);
+  });
+
+  it("resolved attribution is public-safe — names may render", () => {
+    expect(assessPublicSafety(record({ entityResolutionStatus: "resolved" }))).toEqual({
+      publicSafe: true,
+      reason: null,
+    });
+    expect(
+      assessPublicSafety(
+        record({
+          entityResolutionStatus: "resolved",
+          entityIds: ["3f6d8f2e-9a4b-4c1d-b2e3-5a6b7c8d9e0f"],
+          entityName: null,
+        }),
+      ).publicSafe,
+    ).toBe(true);
+  });
+
+  it("no entity attribution is public-safe whatever the resolution status", () => {
+    expect(assessPublicSafety(record({ entityName: null }))).toEqual({
+      publicSafe: true,
+      reason: null,
+    });
+  });
+});
+
 describe("buildPromotedAdminList", () => {
+  it("surfaces the public-safety assessment per signal", () => {
+    const attributionFree = record({
+      signalId: "4293e373-4c9d-46c8-8c3b-529530fd161a",
+      signalHash: "c".repeat(64),
+      entityName: null,
+    });
+    const resolved = record({
+      signalId: "cc7edc84-2618-46d7-9504-ffd2f8c1d57a",
+      signalHash: "d".repeat(64),
+      entityResolutionStatus: "resolved",
+    });
+    const list = buildPromotedAdminList([record(), attributionFree, resolved], []);
+    const byId = new Map(list.map((item) => [item.signal.signalId, item]));
+    // Default fixture: unresolved attribution (working name present).
+    expect(byId.get(SIGNAL_ID)?.publicSafe).toBe(false);
+    expect(byId.get(SIGNAL_ID)?.publicSafeReason).toBe(
+      "entity attribution unresolved",
+    );
+    expect(byId.get(attributionFree.signalId)?.publicSafe).toBe(true);
+    expect(byId.get(attributionFree.signalId)?.publicSafeReason).toBeNull();
+    expect(byId.get(resolved.signalId)?.publicSafe).toBe(true);
+    expect(byId.get(resolved.signalId)?.publicSafeReason).toBeNull();
+  });
+
+
   it("lists only promoted rows, with truthful publication states", () => {
     const unpublished = record({
       signalId: "4293e373-4c9d-46c8-8c3b-529530fd161a",

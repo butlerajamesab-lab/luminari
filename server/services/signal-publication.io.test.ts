@@ -59,6 +59,10 @@ function canonicalQuery(params: any[]): any[] {
   let rows = harness.signals.filter(
     (r) => r.is_current === true && r.governance_status !== "rejected",
   );
+  const idsParam = params.find((p) => Array.isArray(p));
+  if (idsParam) {
+    rows = rows.filter((r) => idsParam.includes(r.live_data_signal_id));
+  }
   const status = params.find(
     (p) =>
       typeof p === "string" &&
@@ -136,12 +140,23 @@ vi.mock("../db", () => {
           return { rows: canonicalQuery(params) };
         }
         if (text.includes("from public.signal_publications")) {
-          const ids = (params[0] as string[]) ?? [];
-          return {
-            rows: harness.publications.filter((r) =>
-              ids.includes(r.live_data_signal_id),
-            ),
-          };
+          if (Array.isArray(params[0])) {
+            const ids = params[0] as string[];
+            return {
+              rows: harness.publications.filter((r) =>
+                ids.includes(r.live_data_signal_id),
+              ),
+            };
+          }
+          // Active-publications listing (publications first, limit last):
+          // params are [limit, offset]; return active rows in id order.
+          const numbers = params.filter((p) => typeof p === "number");
+          const [limit, offset] =
+            numbers.length >= 2 ? numbers.slice(-2) : [numbers[0] ?? 1000, 0];
+          const active = harness.publications
+            .filter((r) => r.unpublished_at == null)
+            .sort((a, b) => a.id - b.id);
+          return { rows: active.slice(offset, offset + limit) };
         }
         throw new Error(`fake pool.query: unhandled SQL: ${text}`);
       },
@@ -197,7 +212,10 @@ function signalRow(overrides: Record<string, unknown> = {}): any {
     severity: "high",
     confidence_score: 0.95,
     verification_state: "supported_multiple_sources",
-    supporting_statistics: { entity_name: "EXAMPLE CORP" },
+    // Attribution-free by default (no entity_ids, no entity_name in the
+    // statistics): the default promoted signal is public-safe. Tests
+    // that need entity attribution add it explicitly.
+    supporting_statistics: {},
     evidence_refs: [],
     detection_rule_id: "atlas.domain3.cross_jurisdiction_recurrence",
     detection_rule_version: "1.0.0",
@@ -364,5 +382,139 @@ describe("listPromotedSignals (gate read)", () => {
     expect(byId.has(CANDIDATE_ID)).toBe(false);
     // The gate sees the why-it-is-a-signal detail.
     expect(byId.get(PROMOTED_ID)?.signal.detectionRuleId).toContain("cross_jurisdiction_recurrence");
+  });
+});
+
+const UNSAFE_STATS_ID = "7b8c9d2e-3f4a-4b5c-8d6e-9f0a1b2c3d4e";
+const UNSAFE_IDS_ID = "8c9d0e3f-4a5b-4c6d-9e7f-0a1b2c3d4e5f";
+const RESOLVED_ID = "9d0e1f40-5b6c-4d7e-af80-1b2c3d4e5f60";
+
+describe("publishSignal — public-safety refusal (Codex Finding 1)", () => {
+  it("refuses a promoted signal whose unresolved entity name rides in the statistics and the prose", async () => {
+    // The K2 fixture pattern, verbatim: the working entity name is in
+    // supporting_statistics AND embedded in the title/description
+    // prose (the recurrence format). Resolution is unresolved, so
+    // publishing would put that name on the public surface.
+    harness.signals.push(
+      signalRow({
+        live_data_signal_id: UNSAFE_STATS_ID,
+        signal_hash: "e".repeat(64),
+        supporting_statistics: { entity_name: "EXAMPLE CORP" },
+        entity_resolution_status: "unresolved",
+      }),
+    );
+    const err = await publishSignal({
+      signalId: UNSAFE_STATS_ID,
+      rationale: RATIONALE,
+      actorId: ACTOR,
+    }).catch((e) => e);
+    expect(err).toBeInstanceOf(Error);
+    expect(err.message).toContain("entity attribution unresolved");
+    expect((err as any).code).toBe("SIGNAL_NOT_PUBLIC_SAFE");
+    // Nothing was written and nothing was logged.
+    expect(harness.publications).toHaveLength(0);
+    expect(harness.logCalls).toHaveLength(0);
+    // And it never reaches the public surface.
+    await expect(listPublishedSignals()).resolves.toEqual([]);
+    await expect(getPublishedSignal(UNSAFE_STATS_ID)).resolves.toBeNull();
+  });
+
+  it("refuses a promoted signal carrying entity ids with unresolved attribution", async () => {
+    harness.signals.push(
+      signalRow({
+        live_data_signal_id: UNSAFE_IDS_ID,
+        signal_hash: "1".repeat(64),
+        entity_ids: ["3f6d8f2e-9a4b-4c1d-b2e3-5a6b7c8d9e0f"],
+        supporting_statistics: {},
+        entity_resolution_status: "unresolved",
+      }),
+    );
+    const err = await publishSignal({
+      signalId: UNSAFE_IDS_ID,
+      rationale: RATIONALE,
+      actorId: ACTOR,
+    }).catch((e) => e);
+    expect(err).toBeInstanceOf(Error);
+    expect(err.message).toContain("entity attribution unresolved");
+    expect((err as any).code).toBe("SIGNAL_NOT_PUBLIC_SAFE");
+    expect(harness.publications).toHaveLength(0);
+    expect(harness.logCalls).toHaveLength(0);
+  });
+
+  it("publishes a resolved-attribution signal and renders its entity name", async () => {
+    harness.signals.push(
+      signalRow({
+        live_data_signal_id: RESOLVED_ID,
+        signal_hash: "2".repeat(64),
+        supporting_statistics: { entity_name: "EXAMPLE CORP" },
+        entity_resolution_status: "resolved",
+      }),
+    );
+    await publishSignal({ signalId: RESOLVED_ID, rationale: RATIONALE, actorId: ACTOR });
+    const detail = await getPublishedSignal(RESOLVED_ID);
+    expect(detail).not.toBeNull();
+    expect(detail?.entityName).toBe("EXAMPLE CORP");
+    const list = await listPublishedSignals();
+    expect(list.map((e) => e.signalId)).toContain(RESOLVED_ID);
+  });
+
+  it("marks unsafe promoted signals in the gate list with the reason", async () => {
+    harness.signals.push(
+      signalRow({
+        live_data_signal_id: UNSAFE_STATS_ID,
+        signal_hash: "e".repeat(64),
+        supporting_statistics: { entity_name: "EXAMPLE CORP" },
+        entity_resolution_status: "unresolved",
+      }),
+    );
+    const list = await listPromotedSignals();
+    const byId = new Map(list.map((item) => [item.signal.signalId, item]));
+    const unsafe = byId.get(UNSAFE_STATS_ID);
+    expect(unsafe?.publicSafe).toBe(false);
+    expect(unsafe?.publicSafeReason).toBe("entity attribution unresolved");
+    const safe = byId.get(PROMOTED_ID);
+    expect(safe?.publicSafe).toBe(true);
+    expect(safe?.publicSafeReason).toBeNull();
+  });
+});
+
+describe("pagination — publications first, no filter-before-limit starvation (Codex Finding 2)", () => {
+  const TOTAL = 1005;
+  const OLDEST_ID = "00000000-0000-4000-8000-000000000000";
+
+  function mintId(i: number): string {
+    return `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`;
+  }
+
+  beforeEach(() => {
+    // 1,005 promoted signals, strictly increasing detected_at; the
+    // published one is the OLDEST — outside the newest 1,000.
+    harness.signals = Array.from({ length: TOTAL }, (_, i) =>
+      signalRow({
+        live_data_signal_id: mintId(i),
+        signal_hash: String(i).padStart(64, "0"),
+        title: `Promoted signal ${i}`,
+        detected_at: new Date(Date.UTC(2026, 0, 1) + i * 60_000).toISOString(),
+      }),
+    );
+  });
+
+  it("the public list still returns a published signal older than the newest 1,000 promoted", async () => {
+    await publishSignal({ signalId: OLDEST_ID, rationale: RATIONALE, actorId: ACTOR });
+    const list = await listPublishedSignals();
+    expect(list.map((e) => e.signalId)).toEqual([OLDEST_ID]);
+  });
+
+  it("getPublishedSignal finds the oldest published signal directly by id", async () => {
+    await publishSignal({ signalId: OLDEST_ID, rationale: RATIONALE, actorId: ACTOR });
+    const detail = await getPublishedSignal(OLDEST_ID);
+    expect(detail).not.toBeNull();
+    expect(detail?.signalId).toBe(OLDEST_ID);
+  });
+
+  it("the gate's promoted list pages past the first 1,000", async () => {
+    const list = await listPromotedSignals();
+    expect(list).toHaveLength(TOTAL);
+    expect(list.map((item) => item.signal.signalId)).toContain(OLDEST_ID);
   });
 });

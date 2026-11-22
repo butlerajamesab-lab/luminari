@@ -13,6 +13,7 @@
  * unreviewed content has no public path.
  */
 
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { adminProcedure, publicProcedure, router } from "../_core/trpc";
 import {
@@ -20,6 +21,7 @@ import {
   listPromotedSignals,
   listPublishedSignals,
   publishSignal,
+  SignalNotPublicSafeError,
   unpublishSignal,
 } from "../services/signal-publication";
 
@@ -37,15 +39,28 @@ export const signalPublicationRouter = router({
     return listPromotedSignals();
   }),
 
-  /** Gate act: publish one promoted signal (governance-logged). */
+  /** Gate act: publish one promoted signal (governance-logged). A
+   *  not-public-safe signal is refused as a precondition failure
+   *  carrying the stated reason — the gate sees why, not a 500. */
   publish: adminProcedure
     .input(publishInput)
     .mutation(async ({ ctx, input }) => {
-      return publishSignal({
-        signalId: input.signalId,
-        rationale: input.rationale,
-        actorId: ctx.user.open_id ?? String(ctx.user.id),
-      });
+      try {
+        return await publishSignal({
+          signalId: input.signalId,
+          rationale: input.rationale,
+          actorId: ctx.user.open_id ?? String(ctx.user.id),
+        });
+      } catch (err) {
+        if (err instanceof SignalNotPublicSafeError) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: err.message,
+            cause: err,
+          });
+        }
+        throw err;
+      }
     }),
 
   /** Gate act: withdraw one signal's active publication (governance-logged). */

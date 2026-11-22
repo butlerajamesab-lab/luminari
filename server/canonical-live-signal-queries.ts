@@ -103,6 +103,32 @@ function normalize(row: any): CanonicalLiveSignal {
   };
 }
 
+const SIGNAL_COLUMNS = `
+       live_data_signal_id,
+       signal_type,
+       title,
+       description,
+       primary_stream_id,
+       source_event_refs,
+       entity_ids,
+       entity_resolution_status,
+       jurisdiction_id,
+       severity,
+       confidence_score,
+       verification_state,
+       supporting_statistics,
+       evidence_refs,
+       detection_rule_id,
+       detection_rule_version,
+       engine_id,
+       engine_version,
+       input_hash,
+       signal_hash,
+       source_freshness_at,
+       detected_at,
+       governance_status,
+       is_current`;
+
 async function query_rows(
   input: CanonicalLiveSignalInput = {},
   page = true,
@@ -129,36 +155,34 @@ async function query_rows(
   }
 
   const result = await pool.query(
-    `select
-       live_data_signal_id,
-       signal_type,
-       title,
-       description,
-       primary_stream_id,
-       source_event_refs,
-       entity_ids,
-       entity_resolution_status,
-       jurisdiction_id,
-       severity,
-       confidence_score,
-       verification_state,
-       supporting_statistics,
-       evidence_refs,
-       detection_rule_id,
-       detection_rule_version,
-       engine_id,
-       engine_version,
-       input_hash,
-       signal_hash,
-       source_freshness_at,
-       detected_at,
-       governance_status,
-       is_current
+    `select ${SIGNAL_COLUMNS}
      from public.live_data_signals
      where ${where.join(" and ")}
      order by detected_at desc, live_data_signal_id desc
      ${paging}`,
     params,
+  );
+  return result.rows.map(normalize);
+}
+
+/**
+ * Direct fetch by signal id — the detail-read path. Same base filter
+ * as query_rows (current rows, rejected excluded), no paging: the
+ * caller names exactly the rows it wants, so a record can never be
+ * starved out of the result by a newest-first limit.
+ */
+export async function get_canonical_live_signals_by_ids(
+  signalIds: string[],
+): Promise<CanonicalLiveSignal[]> {
+  if (signalIds.length === 0) return [];
+  const result = await pool.query(
+    `select ${SIGNAL_COLUMNS}
+     from public.live_data_signals
+     where is_current = true
+       and governance_status <> 'rejected'
+       and live_data_signal_id = any($1::uuid[])
+     order by detected_at desc, live_data_signal_id desc`,
+    [signalIds],
   );
   return result.rows.map(normalize);
 }

@@ -113,6 +113,20 @@ describe("router guard split and service discipline", () => {
   it("the router is registered in the app router", () => {
     expect(routers).toContain("signalPublication: signalPublicationRouter");
   });
+
+  it("publication is gated on the public-safety assessment, surfaced as a precondition failure", () => {
+    expect(service).toContain("assessPublicSafety");
+    expect(service).toContain("SignalNotPublicSafeError");
+    expect(service).toContain('"entity attribution unresolved"');
+    expect(routerSource).toContain("SignalNotPublicSafeError");
+    expect(routerSource).toContain("PRECONDITION_FAILED");
+  });
+
+  it("the public reads start from active publications, not a newest-first window", () => {
+    expect(service).toContain("listActivePublicationRows");
+    expect(service).toContain("get_canonical_live_signals_by_ids");
+    expect(service).toContain("listAllPromotedRecords");
+  });
 });
 
 describe("exposure closure: candidate content is behind the gate", () => {
@@ -154,6 +168,12 @@ describe("client wiring", () => {
     expect(missionControl).toContain("function PublicationCard()");
     expect(missionControl).toContain("signalPublication.listPromoted");
     expect(missionControl).toContain("<PublicationCard />");
+  });
+
+  it("the gate's Publication card shows the not-public-safe reason instead of a Publish button", () => {
+    expect(missionControl).toContain("publicSafe === false");
+    expect(missionControl).toContain("Not public-safe yet");
+    expect(missionControl).toContain("publicSafeReason");
   });
 
   it("the Lighthouse hub links to the public page", () => {
