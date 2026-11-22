@@ -595,6 +595,14 @@ APPROVED_REPOSITORY_ONLY = {
         "20261121113000_hold_bare_amendment_queue_v1.sql",
         "b2bb3e4b5cf634a30d5f84d78f0fae176774cc89",
     ),
+    # Amendment base from evidence (name naming the base, bill number required,
+    # dates only to break ties, contested bases held; Option A, 2026-11-22).
+    # Repository-only pending Alexander's explicit production yes.
+    # Exact Git blob pinned; no production installation or ledger rewrite.
+    "20261122120000": (
+        "20261122120000_docket_amendment_base_evidence_v1.sql",
+        "fc248f681b8f4c05f61137cb5d830381592c7fea",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
