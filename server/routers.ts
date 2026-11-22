@@ -3095,6 +3095,7 @@ import { ingestionRouter } from "./routers/ingestion";
 import { knowledgeBackboneRouter } from "./routers/knowledge-backbone";
 import { signalGovernanceRouter } from "./routers/signal-governance";
 import { governedAlertingRouter } from "./routers/governed-alerting";
+import { signalPublicationRouter } from "./routers/signal-publication";
 import { integrity_routing_router } from "./routers/integrity-routing";
 import { workbenchRouter } from "./routers/workbench";
 import { remedyRouter } from "./routers/remedy";
@@ -3707,6 +3708,7 @@ export const appRouter = router({
   knowledgeBackbone: knowledgeBackboneRouter,
   signalGovernance: signalGovernanceRouter,
   governedAlerting: governedAlertingRouter,
+  signalPublication: signalPublicationRouter,
   integrity_routing: integrity_routing_router,
   meaningLayer: meaningLayerRouter,
   unifiedOutput: unifiedOutputRouter,

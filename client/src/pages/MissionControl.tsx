@@ -1947,6 +1947,116 @@ function ReviewAlertsCard() {
   );
 }
 
+/* ── Publication (Gate B Kernel 2: transparency) ── */
+function PublicationCard() {
+  const utils = trpc.useUtils();
+  const [rationale, setRationale] = useState("");
+  const promoted = trpc.signalPublication.listPromoted.useQuery(undefined, { refetchInterval: 30000 });
+  const rationaleValid = rationale.trim().length >= 10 && rationale.trim().split(/\s+/).length >= 3;
+  const refresh = () => utils.signalPublication.listPromoted.invalidate();
+  const publish = trpc.signalPublication.publish.useMutation({ onSuccess: refresh });
+  const unpublish = trpc.signalPublication.unpublish.useMutation({ onSuccess: refresh });
+  const busy = publish.isPending || unpublish.isPending;
+  const actionError = (publish.error || unpublish.error) as Error | null;
+  const publishedCount = (promoted.data ?? []).filter((item: any) => item.publication.state === "published").length;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-emerald-400" />
+            Publication
+            <Badge variant="secondary" className="text-xs">{publishedCount} published</Badge>
+          </CardTitle>
+          <Link href="/signals">
+            <Button variant="outline" size="sm" className="h-7 text-xs">
+              Public page <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+            </Button>
+          </Link>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Publication is a second governed act, separate from promotion: only a current promoted signal can be
+          published, and publishing places its plain-language explainer on the public page. Every publish and
+          unpublish is written to the governance log with your rationale. A rationale is required — at least
+          10 characters and 3 words, saying why this signal is being published or withdrawn.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <input
+          type="text"
+          placeholder="Rationale for the next publish / unpublish (required, min. 10 characters and 3 words)"
+          value={rationale}
+          onChange={(e) => setRationale(e.target.value)}
+          className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-xs"
+        />
+        {actionError && (
+          <p className="text-xs text-red-400">{actionError.message}</p>
+        )}
+        <div className="space-y-2">
+          {(promoted.data ?? []).map((item: any) => {
+            const sig = item.signal;
+            const pub = item.publication;
+            const isPublished = pub.state === "published";
+            return (
+              <div key={sig.signalId} className="p-3 rounded-lg border border-border/50 bg-card/50">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="font-medium text-sm">{sig.title}</span>
+                      <Badge variant="outline" className="text-[10px]">{sig.severity}</Badge>
+                      <Badge className={isPublished ? "bg-emerald-500/20 text-emerald-300 text-[10px]" : "bg-slate-500/20 text-slate-300 text-[10px]"}>
+                        {isPublished ? "Published" : pub.state === "unpublished" ? "Unpublished" : "Not published"}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{sig.explanation}</p>
+                    <div className="mt-1.5 space-y-0.5 text-[10px] text-muted-foreground">
+                      <div>
+                        Why it is a signal: rule {sig.detectionRuleId} v{sig.detectionRuleVersion} · engine {sig.engineId} v{sig.engineVersion} · verification: {sig.verificationState}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="flex items-center gap-1"><Globe className="h-3 w-3" />{sig.streamId}</span>
+                        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{sig.jurisdiction}</span>
+                        <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{sig.detectedAt ? new Date(sig.detectedAt).toLocaleString() : ""}</span>
+                        <span>
+                          {sig.entityResolutionStatus === "resolved" && sig.entityName
+                            ? <>Entity: {sig.entityName} (resolved)</>
+                            : <>Entity: unresolved — no name is published</>}
+                        </span>
+                      </div>
+                      {isPublished && pub.publishedAt && (
+                        <div>Published {new Date(pub.publishedAt).toLocaleString()}{pub.governanceSeqNo ? ` · governance log #${pub.governanceSeqNo}` : ""}</div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0">
+                    {isPublished ? (
+                      <Button variant="outline" size="sm" className="h-7 text-xs" disabled={!rationaleValid || busy}
+                        onClick={() => unpublish.mutate({ signalId: sig.signalId, rationale: rationale.trim() })}>
+                        Unpublish
+                      </Button>
+                    ) : (
+                      <Button size="sm" className="h-7 text-xs" disabled={!rationaleValid || busy}
+                        onClick={() => publish.mutate({ signalId: sig.signalId, rationale: rationale.trim() })}>
+                        <Send className="h-3 w-3 mr-1" /> Publish
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {(promoted.data ?? []).length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              {promoted.isLoading ? "Loading promoted signals…" : "No promoted signals yet — promotion at the gate is what makes a signal eligible for publication."}
+            </p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 /* ── Signal Governance Panel ── */
 function SignalGovernancePanel() {
   const [selectedSignalId, setSelectedSignalId] = useState<string | null>(null);
@@ -2168,6 +2278,9 @@ function SignalGovernancePanel() {
 
       {/* Review Alerts — Gate B Kernel 1 */}
       <ReviewAlertsCard />
+
+      {/* Publication — Gate B Kernel 2 */}
+      <PublicationCard />
     </div>
   );
 }
