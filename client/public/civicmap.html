@@ -647,6 +647,14 @@
       color: white !important;
     }
 
+    /* The zoom control sits in the map's top-right corner, but the fixed
+       topbar owns the top 58px of the frame (56px on small screens) — the
+       corner container is offset by that height so the control clears the
+       topbar instead of sliding underneath it. */
+    .leaflet-top.leaflet-right {
+      margin-top: 62px;
+    }
+
     .leaflet-control-attribution {
       background: rgba(7, 11, 18, 0.78) !important;
       color: var(--quiet) !important;
@@ -773,6 +781,10 @@
 
       .status {
         display: none;
+      }
+
+      .leaflet-top.leaflet-right {
+        margin-top: 60px;
       }
     }
   </style>

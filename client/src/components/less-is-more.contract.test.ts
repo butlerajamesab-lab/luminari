@@ -35,6 +35,16 @@ describe("less-is-more chrome contracts", () => {
     expect(map).not.toContain("margin-top: 72px");
     expect(map).not.toContain("margin-top: 68px");
     expect(map).toContain("bottom: 84px");
+    // The fixed topbar owns the frame's top edge: the zoom's corner
+    // container is offset by the topbar height, not slid underneath it.
+    expect(map).toContain(".leaflet-top.leaflet-right");
+  });
+
+  it("keeps read-aloud reachable in the direct-Docket shell, which has no helper", () => {
+    const shell = readFileSync("client/src/DocketPublicApp.tsx", "utf8");
+    expect(shell).toContain("useClickToRead");
+    expect(shell).toContain("Read aloud");
+    expect(shell).toContain('<Toaster position="top-center" />');
   });
 
   it("gives the Civic Map shell no duplicate Lighthouse back link", () => {
