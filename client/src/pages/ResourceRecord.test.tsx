@@ -33,6 +33,17 @@ describe("format_address", () => {
     ).toBe("40 N Central Ave Ste 600, Phoenix, AZ 85004");
   });
 
+  it("does not mistake a street-name substring for the locality", () => {
+    // "IN" appears inside "Main" as a substring, but it is not a token of
+    // the street line — the state must still be appended.
+    expect(
+      format_address({
+        address_line1: "123 Main St",
+        state: "IN",
+      }),
+    ).toBe("123 Main St, IN");
+  });
+
   it("falls back to the county when no locality is known", () => {
     expect(
       format_address({
