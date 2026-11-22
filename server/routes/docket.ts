@@ -1031,6 +1031,13 @@ docket_router.get("/archive", async (req, res) => {
            on current_session.state=upper(coalesce(cache.bill->>'state',''))
           and current_session.session_id::text=cache.bill->>'session_id'`
       : "";
+    // Filters without the page cursor, kept for the current-session page,
+    // which applies the cursor as separate index-ordered branches below.
+    const where_without_cursor = [...where];
+    // Each branch follows one stretch of the (action date desc, bill_id)
+    // index order, so a later page reads only its own rows. A single OR
+    // condition makes the planner fetch and sort every bill in the session.
+    let cursor_branches: string[] = [""];
     if (after_id !== null) {
       const id_param = add_param(after_id);
       if (after_date) {
@@ -1038,8 +1045,14 @@ docket_router.get("/archive", async (req, res) => {
         where.push(`(${action_date_expr}<${date_param}
           or (${action_date_expr}=${date_param} and cache.bill_id>${id_param})
           or ${action_date_expr} is null)`);
+        cursor_branches = [
+          `and ${action_date_expr}<${date_param}`,
+          `and ${action_date_expr}=${date_param} and cache.bill_id>${id_param}`,
+          `and ${action_date_expr} is null`,
+        ];
       } else {
         where.push(`(${action_date_expr} is null and cache.bill_id>${id_param})`);
+        cursor_branches = [`and ${action_date_expr} is null and cache.bill_id>${id_param}`];
       }
     }
     const limit_param = add_param(limit+1);
@@ -1048,15 +1061,24 @@ docket_router.get("/archive", async (req, res) => {
           select candidate_cache.bill_id
           from verified_current_sessions current_session
           cross join lateral (
-            select candidate_cache.bill_id
-            from public.docket_bill_detail_cache candidate_cache
-            where current_session.state=upper(coalesce(candidate_cache.bill->>'state',''))
-              and current_session.session_id::text=candidate_cache.bill->>'session_id'
-              ${where.length
-                ? "and "+where.map(condition=>condition.replaceAll("cache.","candidate_cache.")).join(" and ")
-                : ""}
-            order by public.docket_bill_latest_action_date_v1(candidate_cache.bill) desc nulls last,
-                     candidate_cache.bill_id asc
+            select branch.bill_id
+            from (
+              ${cursor_branches.map(branch=>`(
+                select candidate_cache.bill_id,
+                       public.docket_bill_latest_action_date_v1(candidate_cache.bill) as action_date
+                from public.docket_bill_detail_cache candidate_cache
+                where current_session.state=upper(coalesce(candidate_cache.bill->>'state',''))
+                  and current_session.session_id::text=candidate_cache.bill->>'session_id'
+                  ${where_without_cursor.length
+                    ? "and "+where_without_cursor.map(condition=>condition.replaceAll("cache.","candidate_cache.")).join(" and ")
+                    : ""}
+                  ${branch.replaceAll("cache.","candidate_cache.")}
+                order by public.docket_bill_latest_action_date_v1(candidate_cache.bill) desc nulls last,
+                         candidate_cache.bill_id asc
+                limit ${limit_param}
+              )`).join(" union all ")}
+            ) branch
+            order by branch.action_date desc nulls last, branch.bill_id asc
             limit ${limit_param}
           ) candidate_cache
         )`
