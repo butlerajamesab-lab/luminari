@@ -1001,7 +1001,7 @@ docket_router.get("/archive", async (req, res) => {
             case when jsonb_typeof(session_cache.sessions)='array'
                  then session_cache.sessions else '[]'::jsonb end
           ) as session_records(session_evidence)
-          where session_cache.fetched_at >= now()-interval '24 hours'
+          where session_cache.fetched_at >= now()-interval '30 days'
             and session_evidence->>'session_id'=session_cache.session_id::text
             and coalesce(session_evidence->>'prior','') not in ('1','true','yes','y')
             and coalesce(session_evidence->>'sine_die','') not in ('1','true','yes','y')
@@ -1018,7 +1018,7 @@ docket_router.get("/archive", async (req, res) => {
             case when jsonb_typeof(session_cache.sessions)='array'
                  then session_cache.sessions else '[]'::jsonb end
           ) as session_records(session_evidence)
-          where session_cache.fetched_at >= now()-interval '24 hours'
+          where session_cache.fetched_at >= now()-interval '30 days'
             and session_evidence->>'session_id' ~ '^[0-9]+$'
             and (
               session_evidence->>'prior' in ('1','true','yes','y')
@@ -1090,7 +1090,7 @@ docket_router.get("/archive", async (req, res) => {
             case when cache.bill->>'session_id' ~ '^[0-9]+$'
                  then (cache.bill->>'session_id')::integer end as session_id,
             case
-              when session_cache.fetched_at < now()-interval '24 hours'
+              when session_cache.fetched_at < now()-interval '30 days'
                 or cache.bill->>'session_id' !~ '^[0-9]+$'
               then null
               else (
@@ -1124,9 +1124,11 @@ docket_router.get("/archive", async (req, res) => {
       query_with_diagnostics<docket_search_database_row>(
         select,params,{label:"docket_preserved_archive_page",query_timeout_ms:10_000}
       ),
+      // The exact count is informative, never a gate on the listing: a slow
+      // count over the whole preserved corpus must not hide the page.
       query_with_diagnostics<{matching_total:string|number}>(
         count_query,count_params,{label:"docket_preserved_archive_count",query_timeout_ms:5_000}
-      )
+      ).catch(()=>null)
     ]);
     const has_more=page.rows.length>limit;
     const rows=page.rows.slice(0,limit);
@@ -1149,7 +1151,8 @@ docket_router.get("/archive", async (req, res) => {
       session_scope:requested_session_state && requested_session_id !== null
         ? {state:requested_session_state,session_id:requested_session_id} : null,
       current_session_only,
-      matching_total:Number(count.rows[0]?.matching_total??0),
+      matching_total:count ? Number(count.rows[0]?.matching_total??0) : undefined,
+      matching_total_unavailable:count === null,
       limit,has_more,
       next_cursor:has_more && last_row
         ? {action_date:last_row.last_action_date??null,bill_id:last_row.bill_id}
