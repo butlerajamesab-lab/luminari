@@ -127,6 +127,14 @@ describe("router guard split and service discipline", () => {
     expect(service).toContain("get_canonical_live_signals_by_ids");
     expect(service).toContain("listAllPromotedRecords");
   });
+
+  it("the withdrawal is an atomic claim, and losing the race is a conflict at the router", () => {
+    expect(service).toContain("SignalPublicationAlreadyWithdrawnError");
+    expect(service).toContain("and unpublished_at is null");
+    expect(service).toContain("returning id");
+    expect(routerSource).toContain("SignalPublicationAlreadyWithdrawnError");
+    expect(routerSource).toContain("CONFLICT");
+  });
 });
 
 describe("exposure closure: candidate content is behind the gate", () => {

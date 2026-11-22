@@ -22,6 +22,7 @@ import {
   listPublishedSignals,
   publishSignal,
   SignalNotPublicSafeError,
+  SignalPublicationAlreadyWithdrawnError,
   unpublishSignal,
 } from "../services/signal-publication";
 
@@ -63,15 +64,29 @@ export const signalPublicationRouter = router({
       }
     }),
 
-  /** Gate act: withdraw one signal's active publication (governance-logged). */
+  /** Gate act: withdraw one signal's active publication
+   *  (governance-logged). Losing a concurrent-withdrawal race is a
+   *  conflict carrying the stated reason — the first withdrawal
+   *  stands and nothing further is logged. */
   unpublish: adminProcedure
     .input(publishInput)
     .mutation(async ({ ctx, input }) => {
-      return unpublishSignal({
-        signalId: input.signalId,
-        rationale: input.rationale,
-        actorId: ctx.user.open_id ?? String(ctx.user.id),
-      });
+      try {
+        return await unpublishSignal({
+          signalId: input.signalId,
+          rationale: input.rationale,
+          actorId: ctx.user.open_id ?? String(ctx.user.id),
+        });
+      } catch (err) {
+        if (err instanceof SignalPublicationAlreadyWithdrawnError) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: err.message,
+            cause: err,
+          });
+        }
+        throw err;
+      }
     }),
 
   /** Public: the published explainers — promoted + published only. */

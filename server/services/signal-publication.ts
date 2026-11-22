@@ -266,6 +266,30 @@ export class SignalNotPublicSafeError extends Error {
   }
 }
 
+/**
+ * The refusal unpublishSignal raises when a concurrent unpublish
+ * claimed the active publication first (Codex Finding 3 on PR #873).
+ * Typed (code SIGNAL_PUBLICATION_ALREADY_WITHDRAWN) so the router
+ * can surface it as a conflict: the losing act is refused BEFORE any
+ * governance event is written, so the log never records a second
+ * withdrawal of a publication that was no longer active, and the
+ * first withdrawal's timestamp and governance seq_no stand.
+ */
+export class SignalPublicationAlreadyWithdrawnError extends Error {
+  readonly code = "SIGNAL_PUBLICATION_ALREADY_WITHDRAWN";
+  readonly signalId: string;
+  readonly publicationId: number;
+
+  constructor(signalId: string, publicationId: number) {
+    super(
+      `Signal ${signalId} publication ${publicationId} was already withdrawn by a concurrent unpublish`,
+    );
+    this.name = "SignalPublicationAlreadyWithdrawnError";
+    this.signalId = signalId;
+    this.publicationId = publicationId;
+  }
+}
+
 /** The active (not withdrawn) publication for a signal, if one exists. */
 export function activePublicationFor(
   publications: PublicationRecord[],
@@ -700,11 +724,24 @@ export async function publishSignal(input: {
 
 /**
  * Withdraw one signal's active publication. A single transaction:
- * find the active publication → stamp unpublished_at → write the
- * governance log entry (signal_unpublished) → re-stamp the row's
- * seq_no. Unpublishing does not require the signal to still be
- * promoted: the record of a demoted signal's publication must remain
- * closable. With no active publication there is nothing to withdraw.
+ * find the active publication → atomically CLAIM it (conditional
+ * update, still-active predicate) → write the governance log entry
+ * (signal_unpublished) → re-stamp the row's seq_no. Unpublishing
+ * does not require the signal to still be promoted: the record of a
+ * demoted signal's publication must remain closable. With no active
+ * publication there is nothing to withdraw.
+ *
+ * The claim is the concurrency guard (Codex Finding 3 on PR #873):
+ * the read above is not a lock, so two concurrent unpublishes could
+ * both read the active row. The conditional UPDATE is atomic —
+ * under READ COMMITTED it waits on the concurrent withdrawer's row
+ * lock and re-evaluates `unpublished_at is null` against the
+ * committed row, so the loser matches zero rows and is refused with
+ * SignalPublicationAlreadyWithdrawnError BEFORE its governance
+ * event is written. The first withdrawal's unpublished_at and
+ * governance_seq_no are never overwritten, and the log never claims
+ * a publication was withdrawn while it was still active when it
+ * was not.
  */
 export async function unpublishSignal(input: {
   signalId: string;
@@ -727,11 +764,20 @@ export async function unpublishSignal(input: {
       throw new Error(`Signal ${input.signalId} has no active publication`);
     }
 
-    await tx.execute(sql`
-      update public.signal_publications
-         set unpublished_at = ${now}
-       where id = ${Number(publication.id)}
-    `);
+    const claimed = rowsFromExecuteResult(
+      await tx.execute(sql`
+        update public.signal_publications
+           set unpublished_at = ${now}
+         where id = ${Number(publication.id)} and unpublished_at is null
+         returning id
+      `),
+    );
+    if (claimed.length === 0) {
+      throw new SignalPublicationAlreadyWithdrawnError(
+        input.signalId,
+        Number(publication.id),
+      );
+    }
 
     const log = await writeGovernanceLog(tx, {
       eventType: "signal_unpublished",

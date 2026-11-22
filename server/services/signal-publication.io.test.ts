@@ -23,6 +23,14 @@ interface FakeStore {
   nextPublicationId: number;
   logCalls: any[];
   failLogWith: unknown;
+  /**
+   * Publication ids whose withdrawal has been claimed by a
+   * conditional update (the fake's stand-in for the row lock +
+   * predicate re-evaluation Postgres performs under READ COMMITTED).
+   * A claim is visible to other transactions the moment it is made;
+   * it is released if the claiming transaction rolls back.
+   */
+  unpublishClaims: Set<number>;
 }
 
 const harness = vi.hoisted((): FakeStore => ({
@@ -31,6 +39,7 @@ const harness = vi.hoisted((): FakeStore => ({
   nextPublicationId: 1,
   logCalls: [],
   failLogWith: null,
+  unpublishClaims: new Set(),
 }));
 
 function sqlToText(query: any): { text: string; params: any[] } {
@@ -82,7 +91,11 @@ function canonicalQuery(params: any[]): any[] {
 
 vi.mock("../db", () => {
   function executeOn(
-    staging: { publications: any[]; nextPublicationId: number },
+    staging: {
+      publications: any[];
+      nextPublicationId: number;
+      claimsMade: number[];
+    },
     query: any,
   ): { rows: any[] } {
     const { text, params } = sqlToText(query);
@@ -108,6 +121,24 @@ vi.mock("../db", () => {
     if (text.includes("update public.signal_publications")) {
       const id = params[params.length - 1];
       const row = staging.publications.find((r) => r.id === id);
+      // The atomic-claim update (the unpublish withdrawal) carries
+      // the still-active predicate `unpublished_at is null`. Like
+      // Postgres under READ COMMITTED — where the update waits on
+      // the concurrent withdrawer's row lock and re-evaluates the
+      // predicate against the committed row — the claim matches
+      // zero rows once another transaction has claimed the
+      // publication, even though this transaction's staged snapshot
+      // still shows it active. A plain update by id (the pre-fix
+      // shape) always applies: the race the claim closes.
+      if (text.includes("unpublished_at is null")) {
+        if (!row || row.unpublished_at != null || harness.unpublishClaims.has(id)) {
+          return { rows: [] };
+        }
+        harness.unpublishClaims.add(id);
+        staging.claimsMade.push(id);
+        row.unpublished_at = params[0];
+        return { rows: [{ id: row.id }] };
+      }
       if (row) {
         if (text.includes("unpublished_at =")) row.unpublished_at = params[0];
         if (text.includes("governance_seq_no =")) row.governance_seq_no = params[0];
@@ -166,12 +197,23 @@ vi.mock("../db", () => {
         const staging = {
           publications: harness.publications.map((r) => ({ ...r })),
           nextPublicationId: harness.nextPublicationId,
+          claimsMade: [] as number[],
         };
         const tx = { execute: (q: any) => executeOn(staging, q) };
-        const result = await cb(tx);
-        harness.publications = staging.publications;
-        harness.nextPublicationId = staging.nextPublicationId;
-        return result;
+        try {
+          const result = await cb(tx);
+          harness.publications = staging.publications;
+          harness.nextPublicationId = staging.nextPublicationId;
+          return result;
+        } catch (err) {
+          // Rollback: staged writes are discarded (above) and any
+          // withdrawal claims made inside the failed transaction
+          // are released, as a real claim would be.
+          for (const id of staging.claimsMade) {
+            harness.unpublishClaims.delete(id);
+          }
+          throw err;
+        }
       },
     },
   };
@@ -250,6 +292,7 @@ beforeEach(() => {
   harness.nextPublicationId = 1;
   harness.logCalls = [];
   harness.failLogWith = null;
+  harness.unpublishClaims = new Set();
 });
 
 describe("publishSignal", () => {
@@ -475,6 +518,79 @@ describe("publishSignal — public-safety refusal (Codex Finding 1)", () => {
     const safe = byId.get(PROMOTED_ID);
     expect(safe?.publicSafe).toBe(true);
     expect(safe?.publicSafeReason).toBeNull();
+  });
+});
+
+describe("unpublishSignal — concurrent withdrawal race (Codex Finding 3)", () => {
+  it("two concurrent unpublishes: exactly one claims the publication, exactly one signal_unpublished is logged", async () => {
+    await publishSignal({ signalId: PROMOTED_ID, rationale: RATIONALE, actorId: ACTOR });
+
+    // Two admins / two tabs withdraw the same signal at once. Both
+    // transactions read the active publication before either claims
+    // it (the fake stages both snapshots up front and interleaves
+    // the awaits), so only the atomic claim can separate them.
+    const withdrawal = {
+      signalId: PROMOTED_ID,
+      rationale: "Withdrawing pending a correction to the underlying records",
+      actorId: ACTOR,
+    };
+    const settled = await Promise.allSettled([
+      unpublishSignal(withdrawal),
+      unpublishSignal({ ...withdrawal }),
+    ]);
+
+    // Exactly one act succeeds; the loser is refused with the typed
+    // error, before writing anything.
+    const fulfilled = settled.filter((r) => r.status === "fulfilled");
+    const rejected = settled.filter((r) => r.status === "rejected");
+    expect(fulfilled).toHaveLength(1);
+    expect(rejected).toHaveLength(1);
+    const reason = (rejected[0] as PromiseRejectedResult).reason as any;
+    expect(reason?.code).toBe("SIGNAL_PUBLICATION_ALREADY_WITHDRAWN");
+    expect(String(reason?.message)).toContain("already withdrawn");
+
+    // Exactly one signal_unpublished governance event exists — the
+    // log never records a second withdrawal claiming the
+    // publication was still active.
+    const unpublishEvents = harness.logCalls.filter(
+      (c) => c.eventType === "signal_unpublished",
+    );
+    expect(unpublishEvents).toHaveLength(1);
+
+    // The stored row carries the FIRST (winning) withdrawal's
+    // timestamp and governance sequence — never overwritten by the
+    // losing act. Publish took seq 101, so the one withdrawal is 102.
+    const winner = (fulfilled[0] as PromiseFulfilledResult<any>).value;
+    expect(winner.governanceSeqNo).toBe(102);
+    expect(harness.publications).toHaveLength(1);
+    expect(harness.publications[0].unpublished_at).toBe(winner.unpublishedAt);
+    expect(harness.publications[0].governance_seq_no).toBe(
+      winner.governanceSeqNo,
+    );
+  });
+
+  it("a governance log failure after the claim rolls the claim back — a retry can still withdraw", async () => {
+    await publishSignal({ signalId: PROMOTED_ID, rationale: RATIONALE, actorId: ACTOR });
+    harness.failLogWith = new Error(
+      "Governance rationale must be at least 10 characters",
+    );
+    await expect(
+      unpublishSignal({ signalId: PROMOTED_ID, rationale: "short", actorId: ACTOR }),
+    ).rejects.toThrow(/rationale/);
+    // Nothing was withdrawn and the claim did not leak: the
+    // publication is still active and a sound retry succeeds.
+    expect(harness.publications[0].unpublished_at).toBeNull();
+    const result = await unpublishSignal({
+      signalId: PROMOTED_ID,
+      rationale: RATIONALE,
+      actorId: ACTOR,
+    });
+    expect(result.publicationId).toBe(1);
+    expect(harness.publications[0].unpublished_at).not.toBeNull();
+    const unpublishEvents = harness.logCalls.filter(
+      (c) => c.eventType === "signal_unpublished",
+    );
+    expect(unpublishEvents).toHaveLength(1);
   });
 });
 
