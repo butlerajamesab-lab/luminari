@@ -210,8 +210,10 @@ begin
       on version.bill_version_id = queue.bill_version_id
     where version.genome_bill_id = v_genome_bill_id;
 
+    -- The fixture amendment has no provable base, so no_bare_amendment_v1
+    -- keeps it out of the Genome: two source documents, one Genome version.
     if v_document_count <> 2 or v_observation_count <> 2
-        or v_version_count <> 2 or v_version_queue_count <> 0
+        or v_version_count <> 1 or v_version_queue_count <> 0
         or (select count(*) from public.docket_bill_source_document
             where source_bill_id = v_source_bill_id
               and document_family = 'text') <> 1

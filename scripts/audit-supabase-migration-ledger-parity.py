@@ -579,7 +579,21 @@ APPROVED_REPOSITORY_ONLY = {
     # migration is separately reviewed and approved for production installation.
     "20261120193000": (
         "20261120193000_docket_bill_detail_derived_work_outbox_v1.sql",
-        "6b7a48eb1e24c155c84cabbc98e56bd75b03ef65",
+        "16caebd41d23309d2299260166a180b0d6561930",
+    ),
+    # No bare amendment (trigger refusing base-less amendment versions) and
+    # the hold of the 16,622 legacy base-less queue rows. Both were applied
+    # to production Lighthouse on 2026-11-21 as direct SQL on Alexander's
+    # explicit yes, outside the migration ledger; the installed trigger body
+    # matches this file (prosrc md5 aaaa65b0d5ad3f18c6db9ad5b77e9f21).
+    # Exact Git blobs pinned; no ledger rewrite is implied by these entries.
+    "20261121110000": (
+        "20261121110000_no_bare_amendment_v1.sql",
+        "1f8c37ee2097155b53af4268aa3dc1e179b803d2",
+    ),
+    "20261121113000": (
+        "20261121113000_hold_bare_amendment_queue_v1.sql",
+        "b2bb3e4b5cf634a30d5f84d78f0fae176774cc89",
     ),
 }
 
