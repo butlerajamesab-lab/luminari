@@ -23,7 +23,7 @@ describe("Docket LegiScan source contract", () => {
 
   it("preserves exact text/amendment artifact links from the provider payload", () => {
     const detail = read("client/src/components/DocketBillDetailWorkspace.tsx");
-    expect(detail).toContain('first_value(value, ["url", "state_link", "text_url", "doc_url", "source_url"])');
+    expect(detail).toContain('first_value(value, ["state_link", "url", "text_url", "doc_url", "source_url"])');
     expect(detail).toContain('Section title="Bill texts and documents"');
     expect(detail).toContain('Section title="Amendments and supplements"');
   });

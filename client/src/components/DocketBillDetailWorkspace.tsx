@@ -63,7 +63,7 @@ const record_label = (value: unknown, fallback = "Record"): string => {
 
 const record_url = (value: unknown): string | null => {
   if (!is_record(value)) return null;
-  const url = first_value(value, ["url", "state_link", "text_url", "doc_url", "source_url"]);
+  const url = first_value(value, ["state_link", "url", "text_url", "doc_url", "source_url"]);
   return typeof url === "string" && /^https?:\/\//i.test(url) ? url : null;
 };
 
