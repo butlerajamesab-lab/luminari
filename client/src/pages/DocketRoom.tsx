@@ -672,6 +672,9 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
               {(level === "federal" ? ["US"] : ["ALL", ...docket_states.filter(state => level === "state" ? state !== "US" : true)]).map(state => <option key={state} value={state}>{state === "ALL" ? "All jurisdictions" : state}</option>)}
             </select>
           </label>
+          <a href={selected_state === "ALL" || selected_state === "US" ? "/legislators" : `/legislators?state=${encodeURIComponent(selected_state)}`} style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.steelBright, textDecoration: "none", whiteSpace: "nowrap" }}>
+            {selected_state === "ALL" || selected_state === "US" ? "Who represents you →" : `Who represents you in ${selected_state} →`}
+          </a>
           {!search_active && <>
             <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>
               View
