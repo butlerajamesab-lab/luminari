@@ -51,6 +51,16 @@ import {
  * for later evidence methods and keeps finished versions out of claims.
  * This leg reads and writes no queue rows, invokes no decomposition,
  * binds nothing, assembles nothing, and deletes nothing.
+ *
+ * Evaluation failures are bounded in the same spirit as the ingestion
+ * driver's retry cap. A failure that escapes the governed evaluation (a
+ * transport or database error, not an evidence outcome) is recorded in the
+ * marker itself as an evaluation_failed state carrying its failure count
+ * and the exact error. Failed markers become claimable again after the
+ * same staleness interval while their count is below the configured cap;
+ * at the cap the marker stays evaluation_failed — visible, countable,
+ * never deleted — and is never claimed again. A candidate whose evaluation
+ * always throws can therefore never be re-evaluated unbounded.
  */
 
 const DEFAULT_POLL_INTERVAL_MS = 60_000;
@@ -61,6 +71,9 @@ const MIN_BATCH_SIZE = 1;
 const MAX_BATCH_SIZE = 25;
 const ROSETTA_CONTENT_TIMEOUT_MS = 15_000;
 const RESUME_STALE_AFTER_MINUTES = 15;
+const DEFAULT_MAX_EVALUATION_FAILURES = 5;
+const MIN_MAX_EVALUATION_FAILURES = 1;
+const MAX_MAX_EVALUATION_FAILURES = 25;
 
 let timer: NodeJS.Timeout | null = null;
 let running = false;
@@ -81,10 +94,45 @@ export function plan_attachment_cycle(
   return { action: "evaluate" };
 }
 
+export type evaluation_failure_plan =
+  | { action: "retry"; failure_count: number }
+  | { action: "park"; failure_count: number };
+
+/**
+ * The evaluation retry cap, as a pure decision: given the failure count the
+ * version's evaluation marker already records and the configured cap, the
+ * next escaped failure either leaves the marker claimable once more (count
+ * incremented, still below the cap) or parks it for good (count at the
+ * cap). Pure and total so the regression tests can drive a candidate
+ * through repeated failures without a database.
+ */
+export function plan_evaluation_failure(
+  recorded_failure_count: number,
+  max_failures: number,
+): evaluation_failure_plan {
+  const safe_recorded = Number.isFinite(recorded_failure_count)
+    ? Math.max(0, Math.trunc(recorded_failure_count))
+    : 0;
+  const safe_cap = Number.isFinite(max_failures)
+    ? Math.min(
+        MAX_MAX_EVALUATION_FAILURES,
+        Math.max(MIN_MAX_EVALUATION_FAILURES, Math.trunc(max_failures)),
+      )
+    : DEFAULT_MAX_EVALUATION_FAILURES;
+  const failure_count = safe_recorded + 1;
+  return failure_count >= safe_cap
+    ? { action: "park", failure_count }
+    : { action: "retry", failure_count };
+}
+
 export const CLAIM_ATTACHMENT_CANDIDATES_SQL = `
   select version.bill_version_id::text as bill_version_id,
          version.rosetta_source_document_id::bigint as rosetta_source_document_id,
-         lower(version.receipt_json->>'source_content_hash') as source_content_hash
+         lower(version.receipt_json->>'source_content_hash') as source_content_hash,
+         coalesce(
+           (version.receipt_json->'amendment_attachment_evaluation_v1'->>'failure_count')::int,
+           0
+         ) as failure_count
     from public.civic_genome_bill_version version
    where version.document_family = 'amendment'
      and version.processing_state = 'source_ingested'
@@ -111,6 +159,19 @@ export const CLAIM_ATTACHMENT_CANDIDATES_SQL = `
          and (version.receipt_json->'amendment_attachment_evaluation_v1'->>'evaluated_at')::timestamptz
            < now() - make_interval(mins => ${RESUME_STALE_AFTER_MINUTES})
        )
+       or (
+         -- Failed evaluations retry while their recorded failure count is
+         -- below the cap ($2). At the cap the marker is terminal evidence:
+         -- this predicate never selects it again.
+         version.receipt_json->'amendment_attachment_evaluation_v1'->>'status'
+           = 'evaluation_failed'
+         and coalesce(
+               (version.receipt_json->'amendment_attachment_evaluation_v1'->>'failure_count')::int,
+               0
+             ) < $2::int
+         and (version.receipt_json->'amendment_attachment_evaluation_v1'->>'evaluated_at')::timestamptz
+           < now() - make_interval(mins => ${RESUME_STALE_AFTER_MINUTES})
+       )
      )
    order by version.updated_at, version.bill_version_id
    limit $1::int`;
@@ -131,6 +192,7 @@ export const RECORD_ATTACHMENT_EVALUATION_SQL = `
              'contract', 'lighthouse-amendment-attachment-evaluation-v1',
              'status', $2::text,
              'reason', $3::text,
+             'failure_count', $4::int,
              'evaluated_at', now()
            )
          ),
@@ -171,6 +233,7 @@ type attachment_candidate = {
   bill_version_id: string;
   rosetta_source_document_id: number;
   source_content_hash: string;
+  failure_count: number;
 };
 
 function required_environment(name: string): string {
@@ -198,6 +261,15 @@ function bounded_poll_interval_ms(): number {
   );
 }
 
+function bounded_max_evaluation_failures(): number {
+  const raw = Number(process.env.GENOME_AMENDMENT_ATTACHMENT_MAX_EVALUATION_FAILURES);
+  if (!Number.isFinite(raw)) return DEFAULT_MAX_EVALUATION_FAILURES;
+  return Math.min(
+    MAX_MAX_EVALUATION_FAILURES,
+    Math.max(MIN_MAX_EVALUATION_FAILURES, Math.trunc(raw)),
+  );
+}
+
 function error_code(error: unknown): string {
   if (error instanceof Error) {
     const code = (error as { code?: unknown }).code;
@@ -209,10 +281,11 @@ function error_code(error: unknown): string {
 
 async function claim_attachment_candidates(
   batch_size: number,
+  max_failures: number,
 ): Promise<attachment_candidate[]> {
   const { rows } = await query_with_diagnostics<attachment_candidate>(
     CLAIM_ATTACHMENT_CANDIDATES_SQL,
-    [batch_size],
+    [batch_size, max_failures],
     {
       label: "genome_amendment_attachment_claim",
       pool_acquire_timeout_ms: 1_000,
@@ -226,11 +299,13 @@ async function record_attachment_evaluation(
   bill_version_id: string,
   status: string,
   reason: string | null,
+  failure_count: number,
 ): Promise<void> {
   await query_with_diagnostics(RECORD_ATTACHMENT_EVALUATION_SQL, [
     bill_version_id,
     status,
     reason,
+    failure_count,
   ], {
     label: "genome_amendment_attachment_record_evaluation",
     pool_acquire_timeout_ms: 1_000,
@@ -299,6 +374,7 @@ async function evaluate_attachment(
       candidate.bill_version_id,
       "resolved",
       null,
+      candidate.failure_count,
     );
     return "linked";
   }
@@ -309,6 +385,7 @@ async function evaluate_attachment(
     candidate.bill_version_id,
     "evaluating",
     null,
+    candidate.failure_count,
   );
 
   const rows = await fetch_preserved_content(
@@ -319,6 +396,7 @@ async function evaluate_attachment(
       candidate.bill_version_id,
       "content_missing",
       "preserved_source_content_not_found",
+      candidate.failure_count,
     );
     return "skipped";
   }
@@ -328,6 +406,7 @@ async function evaluate_attachment(
       candidate.bill_version_id,
       "content_hash_mismatch",
       "no_preserved_content_row_matches_recorded_hash",
+      candidate.failure_count,
     );
     return "skipped";
   }
@@ -351,6 +430,7 @@ async function evaluate_attachment(
         candidate.bill_version_id,
         "base_identity_conflict",
         code,
+        candidate.failure_count,
       );
       return "skipped";
     }
@@ -373,6 +453,7 @@ async function evaluate_attachment(
       candidate.bill_version_id,
       "resolved",
       null,
+      candidate.failure_count,
     );
     return "linked";
   }
@@ -381,6 +462,7 @@ async function evaluate_attachment(
       candidate.bill_version_id,
       "awaiting_base_content",
       attachment.resolution.reason,
+      candidate.failure_count,
     );
     return "awaiting_base_content";
   }
@@ -388,6 +470,7 @@ async function evaluate_attachment(
     candidate.bill_version_id,
     "unresolved",
     attachment.resolution.reason,
+    candidate.failure_count,
   );
   return "unresolved";
 }
@@ -418,12 +501,17 @@ async function run_attachment_cycle(): Promise<void> {
       return;
     }
 
-    const candidates = await claim_attachment_candidates(bounded_batch_size());
+    const max_failures = bounded_max_evaluation_failures();
+    const candidates = await claim_attachment_candidates(
+      bounded_batch_size(),
+      max_failures,
+    );
     let linked = 0;
     let awaiting = 0;
     let unresolved = 0;
     let skipped = 0;
     let deferred = 0;
+    let capped = 0;
     for (const candidate of candidates) {
       try {
         const outcome = await evaluate_attachment(candidate);
@@ -433,10 +521,31 @@ async function run_attachment_cycle(): Promise<void> {
         else if (outcome === "skipped") skipped += 1;
         else deferred += 1;
       } catch (error) {
-        deferred += 1;
+        const code = error_code(error);
+        const plan = plan_evaluation_failure(
+          candidate.failure_count,
+          max_failures,
+        );
+        try {
+          await record_attachment_evaluation(
+            candidate.bill_version_id,
+            "evaluation_failed",
+            code,
+            plan.failure_count,
+          );
+        } catch {
+          // Best-effort under database distress: if the failure record
+          // itself cannot be written, the marker stays 'evaluating' and
+          // the stale-resume path retries the evaluation, exactly as this
+          // leg behaved before the cap existed.
+        }
+        if (plan.action === "park") capped += 1;
+        else deferred += 1;
         console.error("[GenomeAmendmentAttachment] evaluation_failed", {
           bill_version_id: candidate.bill_version_id,
-          error_code: error_code(error),
+          error_code: code,
+          failure_count: plan.failure_count,
+          capped: plan.action === "park",
         });
       }
     }
@@ -448,6 +557,7 @@ async function run_attachment_cycle(): Promise<void> {
         unresolved,
         skipped,
         deferred,
+        capped,
         rule_set_version: admitted?.rule_set_version,
       });
     }

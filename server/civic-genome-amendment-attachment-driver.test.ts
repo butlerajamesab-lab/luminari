@@ -5,6 +5,7 @@ import {
   RECORD_ATTACHMENT_EVALUATION_SQL,
   content_hash_matches,
   plan_attachment_cycle,
+  plan_evaluation_failure,
   select_content_by_hash,
   type preserved_content,
 } from "./civic-genome-amendment-attachment-driver";
@@ -141,6 +142,65 @@ describe("preserved content selection", () => {
   it("returns null when no preserved row matches", () => {
     expect(select_content_by_hash(rows, "ef".repeat(32))).toBeNull();
     expect(select_content_by_hash([], "ab".repeat(32))).toBeNull();
+  });
+});
+
+describe("evaluation failure retry cap", () => {
+  it("retries below the cap and parks at the cap", () => {
+    expect(plan_evaluation_failure(0, 5)).toEqual({
+      action: "retry",
+      failure_count: 1,
+    });
+    expect(plan_evaluation_failure(3, 5)).toEqual({
+      action: "retry",
+      failure_count: 4,
+    });
+    expect(plan_evaluation_failure(4, 5)).toEqual({
+      action: "park",
+      failure_count: 5,
+    });
+    expect(plan_evaluation_failure(9, 5)).toEqual({
+      action: "park",
+      failure_count: 10,
+    });
+  });
+
+  it("stops a repeatedly failing candidate at the cap instead of re-evaluating forever (regression)", () => {
+    // Drive one candidate through the plan the way the cycle does, feeding
+    // each recorded count back in. On the uncapped driver this loop never
+    // parks: a candidate whose evaluation always throws was re-claimed on
+    // every staleness interval, without limit.
+    let recorded = 0;
+    let retries = 0;
+    let parked_at: number | null = null;
+    for (let failure = 0; failure < 50; failure += 1) {
+      const plan = plan_evaluation_failure(recorded, 5);
+      recorded = plan.failure_count;
+      if (plan.action === "park") {
+        parked_at = plan.failure_count;
+        break;
+      }
+      retries += 1;
+    }
+    expect(parked_at).toBe(5);
+    expect(retries).toBe(4);
+  });
+
+  it("claims failed evaluations only while their count is below the cap", () => {
+    expect(CLAIM_ATTACHMENT_CANDIDATES_SQL).toContain("'evaluation_failed'");
+    expect(CLAIM_ATTACHMENT_CANDIDATES_SQL).toContain(
+      "'failure_count')::int",
+    );
+    expect(CLAIM_ATTACHMENT_CANDIDATES_SQL).toContain("< $2::int");
+    expect(CLAIM_ATTACHMENT_CANDIDATES_SQL).toContain("as failure_count");
+  });
+
+  it("records the failure count inside the evaluation marker", () => {
+    expect(RECORD_ATTACHMENT_EVALUATION_SQL).toContain(
+      "'failure_count', $4::int",
+    );
+    expect(driver).toContain('"evaluation_failed"');
+    expect(driver).toContain("plan_evaluation_failure(");
   });
 });
 

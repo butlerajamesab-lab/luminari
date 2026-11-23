@@ -6,9 +6,12 @@ import {
   DEFER_INGESTION_JOB_SQL,
   PARK_INGESTION_JOB_SQL,
   RECORD_INGESTION_SQL,
+  RECORD_RETRY_CAP_SQL,
+  RECORD_TRANSIENT_FAILURE_SQL,
   RECOVER_STRANDED_INGESTED_SQL,
   is_deterministic_ingestion_failure,
   plan_ingestion_cycle,
+  plan_transient_failure,
 } from "./civic-genome-rosetta-ingestion-driver";
 import type {
   admitted_generation_target,
@@ -138,6 +141,8 @@ describe("genome rosetta ingestion driver contract", () => {
       COMPLETE_INGESTION_JOB_SQL,
       PARK_INGESTION_JOB_SQL,
       DEFER_INGESTION_JOB_SQL,
+      RECORD_TRANSIENT_FAILURE_SQL,
+      RECORD_RETRY_CAP_SQL,
     ]) {
       expect(sql).not.toContain("attempt_count");
     }
@@ -203,6 +208,104 @@ describe("genome rosetta ingestion driver contract", () => {
     expect(worker_yaml).toContain("GENOME_ROSETTA_INGESTION_ENABLED");
     expect(worker_yaml).toMatch(
       /GENOME_ROSETTA_INGESTION_ENABLED\s*\n\s*value: "false"/,
+    );
+  });
+});
+
+describe("genome rosetta ingestion transient retry cap", () => {
+  it("defers below the cap and parks at the cap", () => {
+    expect(plan_transient_failure(0, 5)).toEqual({
+      action: "defer",
+      failure_count: 1,
+    });
+    expect(plan_transient_failure(3, 5)).toEqual({
+      action: "defer",
+      failure_count: 4,
+    });
+    expect(plan_transient_failure(4, 5)).toEqual({
+      action: "park",
+      failure_count: 5,
+    });
+    expect(plan_transient_failure(9, 5)).toEqual({
+      action: "park",
+      failure_count: 10,
+    });
+  });
+
+  it("honors a cap of one and clamps out-of-range caps", () => {
+    expect(plan_transient_failure(0, 1)).toEqual({
+      action: "park",
+      failure_count: 1,
+    });
+    expect(plan_transient_failure(0, 0)).toEqual({
+      action: "park",
+      failure_count: 1,
+    });
+    expect(plan_transient_failure(0, 500)).toEqual({
+      action: "defer",
+      failure_count: 1,
+    });
+    expect(plan_transient_failure(24, 500)).toEqual({
+      action: "park",
+      failure_count: 25,
+    });
+  });
+
+  it("stops a repeatedly failing job at the cap instead of deferring forever (regression)", () => {
+    // Drive one job through the plan the way the cycle does, feeding each
+    // recorded count back in. On the uncapped driver this loop never parks:
+    // every transient failure deferred again, without limit.
+    let recorded = 0;
+    let defers = 0;
+    let parked_at: number | null = null;
+    for (let failure = 0; failure < 50; failure += 1) {
+      const plan = plan_transient_failure(recorded, 5);
+      recorded = plan.failure_count;
+      if (plan.action === "park") {
+        parked_at = plan.failure_count;
+        break;
+      }
+      defers += 1;
+    }
+    expect(parked_at).toBe(5);
+    expect(defers).toBe(4);
+  });
+
+  it("reads the recorded failure count at claim time", () => {
+    expect(CLAIM_INGESTION_JOBS_SQL).toContain(
+      "ingestion_transient_failure_count",
+    );
+    expect(CLAIM_INGESTION_JOBS_SQL).toContain("as transient_failure_count");
+  });
+
+  it("records each deferral in the version receipt with the exact error", () => {
+    expect(RECORD_TRANSIENT_FAILURE_SQL).toContain(
+      "'ingestion_transient_failure_count'",
+    );
+    expect(RECORD_TRANSIENT_FAILURE_SQL).toContain(
+      "'ingestion_last_transient_error_code'",
+    );
+    expect(RECORD_TRANSIENT_FAILURE_SQL).toContain(
+      "receipt_json = receipt_json ||",
+    );
+    expect(RECORD_TRANSIENT_FAILURE_SQL).not.toMatch(
+      /'(rosetta|assembly|prism)_/,
+    );
+  });
+
+  it("records the cap as terminal evidence with count, cap, and last error", () => {
+    expect(RECORD_RETRY_CAP_SQL).toContain("'ingestion_retry_cap'");
+    expect(RECORD_RETRY_CAP_SQL).toContain("'max_transient_failures'");
+    expect(RECORD_RETRY_CAP_SQL).toContain("'failure_count'");
+    expect(RECORD_RETRY_CAP_SQL).toContain("'last_error_code'");
+    expect(RECORD_RETRY_CAP_SQL).not.toMatch(/'(rosetta|assembly|prism)_/);
+  });
+
+  it("routes transient failures through the cap before any defer", () => {
+    expect(driver).toContain("plan_transient_failure(");
+    expect(driver).toContain("record_retry_cap(");
+    expect(driver.indexOf("plan_transient_failure(")).toBeLessThan(
+      driver.lastIndexOf("defer_ingestion_job(job, code)"),
     );
   });
 });
