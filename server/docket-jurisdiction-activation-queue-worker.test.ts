@@ -24,6 +24,8 @@ vi.mock("./civic-genome-projection", () => ({
 
 import {
   DOCKET_ARCHIVE_ONLY_CLAIM_SQL,
+  DOCKET_PAID_REMAINDER_CLAIM_SQL,
+  paid_remainder_lane_enabled,
   DOCKET_PAID_COVERED_BY_ARCHIVE_SQL,
   DOCKET_PAID_COVERED_SWEEP_SQL,
   classify_docket_bill_activation_failure,
@@ -236,6 +238,8 @@ describe("Docket jurisdiction activation queue", () => {
       const sql = String(claim?.[0] ?? "");
       expect(claim?.[1]?.[3]).toEqual(ids);
       expect(sql).toContain("queue.queue_id = any($4::uuid[])");
+    expect(sql).toContain("queue.queue_state = 'submitted'");
+    expect(sql).toContain("queue.locked_at < now() - make_interval(mins => $2::integer)");
       expect(sql).toContain("queue.queue_state = 'eligible'");
       expect(sql).toContain("queue.locked_at is null");
       expect(sql).toContain("queue.attempt_count = 0");
@@ -358,6 +362,25 @@ describe("Docket jurisdiction activation queue", () => {
     expect(DOCKET_PAID_COVERED_SWEEP_SQL).toContain("limit $1::integer");
     expect(DOCKET_PAID_COVERED_SWEEP_SQL).toContain("paid_activation.cache_fetched_at > activation.cache_fetched_at");
     expect(DOCKET_PAID_COVERED_SWEEP_SQL).toContain("paid_activation.source<>'legiscan_get_master_list'");
+  });
+
+  it("paid remainder lane is opt-in, date-bounded and claims only archive-uncovered paid requests", () => {
+    const sql = DOCKET_PAID_REMAINDER_CLAIM_SQL;
+    expect(sql).not.toMatch(/\bdelete\b/i);
+    expect(sql).toContain("paid.activation_source='legiscan_get_master_list'");
+    expect(sql).toContain("queue.queue_id = any($4::uuid[])");
+    expect(sql).toContain("archive_activation.source='legiscan_bulk_json'");
+    expect(sql).toContain("archive_activation.cache_fetched_at >= paid.cache_fetched_at");
+    expect(sql).toContain("for update of queue skip locked");
+    expect(sql).toContain("limit $3::integer");
+    const before = new Date("2026-11-23T20:00:00Z");
+    expect(paid_remainder_lane_enabled({}, before)).toBe(false);
+    expect(paid_remainder_lane_enabled({ DOCKET_PAID_REMAINDER_LANE_ENABLED: "true" }, before)).toBe(true);
+    expect(paid_remainder_lane_enabled({ DOCKET_PAID_REMAINDER_LANE_ENABLED: "true" }, new Date("2026-12-01T00:00:00Z"))).toBe(false);
+    expect(paid_remainder_lane_enabled({
+      DOCKET_PAID_REMAINDER_LANE_ENABLED: "true",
+      DOCKET_PAID_REMAINDER_LANE_UNTIL: "not-a-date",
+    }, before)).toBe(false);
   });
 
   it("proposes a separate no-API worker with inherited secrets, no automatic deployment", () => {
