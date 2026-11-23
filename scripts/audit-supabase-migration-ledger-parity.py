@@ -603,6 +603,11 @@ APPROVED_REPOSITORY_ONLY = {
         "20261122120000_docket_amendment_base_evidence_v1.sql",
         "fc248f681b8f4c05f61137cb5d830381592c7fea",
     ),
+    # 2026-11-23 repository-only pending separately approved production install.
+    "20261123190000": (
+        "20261123190000_genome_rosetta_certification_receipt_v1.sql",
+        "cd2997957761fc2653ca7e4fed41b917f4f6147d",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
