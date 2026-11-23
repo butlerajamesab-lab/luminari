@@ -140,12 +140,21 @@ export function run_docket_bill_detail_derived_work_cycle(): Promise<void> {
   if (stopped || !enabled()) return Promise.resolve();
   const cycle = (async () => {
     try {
-      await Promise.all(
+      // allSettled: every lane finishes before the cycle ends, so a failed
+      // claim in one lane never lets new lanes start beside running ones.
+      const lanes = await Promise.allSettled(
         Array.from({ length: bounded_derived_work_concurrency() }, async () => {
           const job = await claim_next_job();
           if (job) await process_job(job);
         }),
       );
+      for (const lane of lanes) {
+        if (lane.status === "rejected") {
+          console.error("[DocketBillDetailDerivedWork] lane_failed", {
+            error_code: safe_error_code(lane.reason),
+          });
+        }
+      }
     } catch (error) {
       console.error("[DocketBillDetailDerivedWork] cycle_failed", {
         error_code: safe_error_code(error),
