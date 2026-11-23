@@ -51,7 +51,7 @@ services:
       - key: LEGISLATIVE_VERSION_CURRENT_SOURCES_ENABLED
         value: "true"
       - key: LEGISLATIVE_VERSION_QUEUE_CONCURRENCY
-        value: "1"
+        value: "4"
       - key: LEGISLATIVE_VERSION_QUEUE_POLL_MS
         value: "5000"
       - key: LEGISLATIVE_VERSION_QUEUE_RECONCILE_MS
