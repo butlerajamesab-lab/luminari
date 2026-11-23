@@ -1105,7 +1105,7 @@ export async function run_legislative_version_queue_cycle(): Promise<void> {
       }
     }
     const jobs = await claim_jobs(
-      recovery_contract_scope || current_sources ? 1 : bounded_concurrency(),
+      recovery_contract_scope ? 1 : bounded_concurrency(),
       oldest_unbound_docket_identifiers,
       recovery_contract_scope,
       current_sources,
