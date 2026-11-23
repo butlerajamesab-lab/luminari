@@ -670,6 +670,149 @@ async function register_legislative_versions(source_bill_id: number): Promise<do
   return normalize_registration_receipt(result.rows[0]?.receipt);
 }
 
+/**
+ * A completed archive activation also answers older paid-API requests for the
+ * same bill when the archive snapshot is at least as recent as what the paid
+ * request observed. Those rows are closed as covered_by_archive with a receipt
+ * that names the covering archive job; nothing is deleted, and a paid request
+ * that observed a newer snapshot is left for the paid lane.
+ */
+export const DOCKET_PAID_COVERED_BY_ARCHIVE_SQL = `
+  with covering as (
+    select max(activation.cache_fetched_at) as archive_fetched_at
+      from public.docket_jurisdiction_activation_bill binding
+      join public.docket_jurisdiction_activation_run activation
+        on activation.activation_id=binding.activation_id
+       and activation.state=binding.state
+       and activation.session_id=binding.session_id
+     where binding.queue_id=$1::uuid
+       and binding.source_bill_id=$2::integer
+       and activation.source='legiscan_bulk_json'
+  ), paid as (
+    select queue.queue_id,
+           max(activation.cache_fetched_at) as paid_fetched_at
+      from public.docket_bill_processing_queue queue
+      join public.docket_jurisdiction_activation_bill binding
+        on binding.queue_id=queue.queue_id
+       and binding.source_bill_id=queue.source_bill_id
+      join public.docket_jurisdiction_activation_run activation
+        on activation.activation_id=binding.activation_id
+       and activation.state=binding.state
+       and activation.session_id=binding.session_id
+     where queue.source_bill_id=$2::integer
+       and queue.queue_id<>$1::uuid
+       and queue.queue_state in ('eligible','degraded')
+       and queue.locked_at is null
+     group by queue.queue_id
+    having bool_and(activation.source='legiscan_get_master_list')
+  )
+  update public.docket_bill_processing_queue queue
+     set queue_state='completed',
+         completed_at=now(),
+         last_failure_class=null,
+         last_error_code=null,
+         receipt_json=coalesce(queue.receipt_json,'{}'::jsonb) ||
+           jsonb_build_object(
+             'terminal_state','covered_by_archive',
+             'covering_queue_id',$1::text,
+             'covering_archive_fetched_at',covering.archive_fetched_at,
+             'covered_paid_fetched_at',paid.paid_fetched_at,
+             'covered_at',now()
+           ),
+         updated_at=now()
+    from paid, covering
+   where queue.queue_id=paid.queue_id
+     and queue.locked_at is null
+     and covering.archive_fetched_at is not null
+     and paid.paid_fetched_at <= covering.archive_fetched_at
+  returning queue.queue_id`;
+
+async function close_paid_covered_by_archive(
+  job: docket_bill_activation_job,
+): Promise<void> {
+  if (job.activation_source !== "legiscan_bulk_json") return;
+  // Best effort: a failure leaves the paid rows exactly as they were.
+  try {
+    const result = await query_with_diagnostics<{ queue_id: string }>(
+      DOCKET_PAID_COVERED_BY_ARCHIVE_SQL,
+      [job.queue_id, job.source_bill_id],
+      {
+        label: "docket_bill_activation_paid_covered_by_archive",
+        pool_acquire_timeout_ms: 1_000,
+        query_timeout_ms: 5_000,
+      },
+    );
+    if (result.rows.length > 0) {
+      console.log("[DocketJurisdictionActivation] paid_covered_by_archive", {
+        covering_queue_id: job.queue_id,
+        source_bill_id: job.source_bill_id,
+        closed: result.rows.length,
+      });
+    }
+  } catch (error) {
+    console.error("[DocketJurisdictionActivation] paid_covered_by_archive_failed", {
+      queue_id: job.queue_id,
+      error_code: safe_error_code(error),
+    });
+  }
+}
+
+/** Completed archive jobs whose bill still has an open paid-only request. */
+export const DOCKET_PAID_COVERED_SWEEP_SQL = `
+  select archive_queue.queue_id, archive_queue.source_bill_id
+    from public.docket_bill_processing_queue archive_queue
+    join public.docket_jurisdiction_activation_bill binding
+      on binding.queue_id=archive_queue.queue_id
+     and binding.source_bill_id=archive_queue.source_bill_id
+    join public.docket_jurisdiction_activation_run activation
+      on activation.activation_id=binding.activation_id
+     and activation.state=binding.state
+     and activation.session_id=binding.session_id
+   where archive_queue.queue_state='completed'
+     and activation.source='legiscan_bulk_json'
+     and exists (
+       select 1 from public.docket_bill_processing_queue paid
+        where paid.source_bill_id=archive_queue.source_bill_id
+          and paid.queue_id<>archive_queue.queue_id
+          and paid.queue_state in ('eligible','degraded')
+          and paid.locked_at is null
+     )
+   order by archive_queue.completed_at desc nulls last
+   limit $1::integer`;
+
+const PAID_COVERED_SWEEP_BATCH = 200;
+const PAID_COVERED_SWEEP_INTERVAL_MS = 10 * 60_000;
+let paid_covered_sweep_last_ms = 0;
+
+async function sweep_paid_covered_by_archive_if_due(): Promise<void> {
+  if (resolve_docket_activation_source_scope() !== "legiscan_bulk_json") return;
+  if (resolve_docket_archive_canary_queue_ids() !== null) return;
+  if (Date.now() - paid_covered_sweep_last_ms < PAID_COVERED_SWEEP_INTERVAL_MS) return;
+  paid_covered_sweep_last_ms = Date.now();
+  try {
+    const due = await query_with_diagnostics<{ queue_id: string; source_bill_id: number }>(
+      DOCKET_PAID_COVERED_SWEEP_SQL,
+      [PAID_COVERED_SWEEP_BATCH],
+      {
+        label: "docket_bill_activation_paid_covered_sweep",
+        pool_acquire_timeout_ms: 1_000,
+        query_timeout_ms: 15_000,
+      },
+    );
+    for (const row of due.rows) {
+      await close_paid_covered_by_archive({
+        queue_id: row.queue_id,
+        source_bill_id: row.source_bill_id,
+        activation_source: "legiscan_bulk_json",
+      } as docket_bill_activation_job);
+    }
+  } catch (error) {
+    console.error("[DocketJurisdictionActivation] paid_covered_sweep_failed", {
+      error_code: safe_error_code(error),
+    });
+  }
+}
+
 async function mark_job_terminal(input: {
   job: docket_bill_activation_job;
   queue_state: "completed" | "source_unavailable";
@@ -868,6 +1011,7 @@ export async function process_docket_bill_activation_job(
       queue_state,
       receipt,
     });
+    if (queue_state === "completed") await close_paid_covered_by_archive(job);
   } catch (error) {
     // The provider fetch, cache write and version-spine registration already
     // succeeded. A terminal queue-ledger write failure is bookkeeping only;
@@ -894,6 +1038,7 @@ export function run_docket_bill_activation_queue_cycle(): Promise<void> {
       const jobs = await claim_jobs(bounded_concurrency());
       circuit_open_log.reset();
       await Promise.all(jobs.map(job => process_docket_bill_activation_job(job)));
+      await sweep_paid_covered_by_archive_if_due();
     } catch (error) {
       const circuit_remaining_ms = queue_circuit_open_remaining_ms(error);
       if (circuit_remaining_ms !== null) {

@@ -24,6 +24,8 @@ vi.mock("./civic-genome-projection", () => ({
 
 import {
   DOCKET_ARCHIVE_ONLY_CLAIM_SQL,
+  DOCKET_PAID_COVERED_BY_ARCHIVE_SQL,
+  DOCKET_PAID_COVERED_SWEEP_SQL,
   classify_docket_bill_activation_failure,
   docket_bill_activation_retry_delay_seconds,
   process_docket_bill_activation_job,
@@ -340,6 +342,20 @@ describe("Docket jurisdiction activation queue", () => {
     expect(sql).toContain("$5::timestamptz is null or queue.created_at >= $5::timestamptz");
     expect(sql).toContain("queue.queue_id = any($4::uuid[])");
     expect(sql).toContain("queue.locked_at < now() - make_interval(mins => $2::integer)");
+  });
+
+  it("closes only older paid-only requests covered by a completed archive snapshot, never deleting", () => {
+    const sql = DOCKET_PAID_COVERED_BY_ARCHIVE_SQL;
+    expect(sql).toContain("update public.docket_bill_processing_queue queue");
+    expect(sql).not.toMatch(/\bdelete\b/i);
+    expect(sql).toContain("'terminal_state','covered_by_archive'");
+    expect(sql).toContain("'covering_queue_id',$1::text");
+    expect(sql).toContain("having bool_and(activation.source='legiscan_get_master_list')");
+    expect(sql).toContain("paid.paid_fetched_at <= covering.archive_fetched_at");
+    expect(sql).toContain("queue.queue_state in ('eligible','degraded')");
+    expect(sql).toContain("queue.locked_at is null");
+    expect(DOCKET_PAID_COVERED_SWEEP_SQL).toContain("archive_queue.queue_state='completed'");
+    expect(DOCKET_PAID_COVERED_SWEEP_SQL).toContain("limit $1::integer");
   });
 
   it("proposes a separate no-API worker with inherited secrets, no automatic deployment", () => {
