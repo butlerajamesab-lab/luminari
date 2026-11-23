@@ -23,7 +23,7 @@ services:
       - key: FRESH_ATOMIC_CORPUS_RESUME_ENABLED
         value: "false"
       - key: DOCKET_STATE_CACHE_WARMER_ENABLED
-        value: "true"
+        value: "false"
       - key: DOCKET_STATE_CACHE_WARMER_INTERVAL_MS
         value: "900000"
       - key: DOCKET_STATE_CACHE_WARMER_BATCH_SIZE

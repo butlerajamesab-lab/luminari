@@ -97,7 +97,7 @@ describe("Docket Radar live contract", () => {
     const blueprint = read("render.prism-worker.yaml");
     expect(worker).toContain("start_docket_state_cache_warmer");
     expect(worker).toContain("start_docket_bill_activation_queue_worker");
-    expect(blueprint).toMatch(/DOCKET_STATE_CACHE_WARMER_ENABLED\s+value: "true"/);
+    expect(blueprint).toMatch(/DOCKET_STATE_CACHE_WARMER_ENABLED\s+value: "false"/);
     expect(blueprint).toMatch(/DOCKET_BILL_ACTIVATION_QUEUE_ENABLED\s+value: "true"/);
   });
 
