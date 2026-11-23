@@ -238,6 +238,8 @@ describe("Docket jurisdiction activation queue", () => {
       const sql = String(claim?.[0] ?? "");
       expect(claim?.[1]?.[3]).toEqual(ids);
       expect(sql).toContain("queue.queue_id = any($4::uuid[])");
+    expect(sql).toContain("queue.queue_state = 'submitted'");
+    expect(sql).toContain("queue.locked_at < now() - make_interval(mins => $2::integer)");
       expect(sql).toContain("queue.queue_state = 'eligible'");
       expect(sql).toContain("queue.locked_at is null");
       expect(sql).toContain("queue.attempt_count = 0");

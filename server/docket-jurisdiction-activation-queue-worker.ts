@@ -1086,7 +1086,14 @@ export const DOCKET_PAID_REMAINDER_CLAIM_SQL = `
          limit 1
       ) paid
      where queue.queue_id = any($4::uuid[])
-       and queue.queue_state in ('eligible','degraded')
+       and (
+         queue.queue_state in ('eligible','degraded')
+         or (
+           -- a lane job stranded by a restart is reclaimed once its lease expires
+           queue.queue_state = 'submitted'
+           and queue.locked_at < now() - make_interval(mins => $2::integer)
+         )
+       )
        and queue.next_attempt_at <= now()
        and (
          queue.locked_at is null
@@ -1150,7 +1157,7 @@ export const DOCKET_PAID_REMAINDER_CANDIDATES_SQL = `
         on activation.activation_id=binding.activation_id
        and activation.state=binding.state
        and activation.session_id=binding.session_id
-     where queue.queue_state in ('eligible','degraded')
+     where queue.queue_state in ('eligible','degraded','submitted')
      group by queue.queue_id, queue.source_bill_id
   ), archive as (
     select binding.source_bill_id,
