@@ -1056,6 +1056,210 @@ export async function process_docket_bill_activation_job(
   }
 }
 
+/**
+ * Paid remainder lane: a separate, opt-in lane alongside the quota-safe
+ * current-window rules (which stay unchanged). It only claims paid-API
+ * requests that no archive snapshot covers (no archive copy, or the paid
+ * snapshot is newer), spends credits through the existing get_bill budget
+ * guard, and stops on its own date. Off unless explicitly enabled.
+ */
+export const DOCKET_PAID_REMAINDER_CLAIM_SQL = `
+  with candidate as materialized (
+    select queue.queue_id, queue.source_bill_id,
+           paid.state, paid.session_id, paid.activation_source,
+           queue.summary_fingerprint, queue.observed_change_hash,
+           queue.attempt_count, queue.summary_json,
+           null::jsonb as session_evidence
+      from public.docket_bill_processing_queue queue
+      cross join lateral (
+        select activation.state, activation.session_id,
+               activation.source as activation_source,
+               activation.cache_fetched_at
+          from public.docket_jurisdiction_activation_bill binding
+          join public.docket_jurisdiction_activation_run activation
+            on activation.activation_id=binding.activation_id
+           and activation.state=binding.state
+           and activation.session_id=binding.session_id
+         where binding.queue_id=queue.queue_id
+           and binding.source_bill_id=queue.source_bill_id
+         order by activation.cache_fetched_at desc, activation.activation_id
+         limit 1
+      ) paid
+     where queue.queue_id = any($4::uuid[])
+       and queue.queue_state in ('eligible','degraded')
+       and queue.next_attempt_at <= now()
+       and (
+         queue.locked_at is null
+         or queue.locked_at < now() - make_interval(mins => $2::integer)
+       )
+       and paid.activation_source='legiscan_get_master_list'
+       and not exists (
+         -- an archive snapshot of the same bill, same age or newer, covers it
+         select 1
+           from public.docket_bill_processing_queue archive_queue
+           join public.docket_jurisdiction_activation_bill archive_binding
+             on archive_binding.queue_id=archive_queue.queue_id
+            and archive_binding.source_bill_id=archive_queue.source_bill_id
+           join public.docket_jurisdiction_activation_run archive_activation
+             on archive_activation.activation_id=archive_binding.activation_id
+            and archive_activation.state=archive_binding.state
+            and archive_activation.session_id=archive_binding.session_id
+          where archive_queue.source_bill_id=queue.source_bill_id
+            and archive_activation.source='legiscan_bulk_json'
+            and archive_activation.cache_fetched_at >= paid.cache_fetched_at
+       )
+     order by queue.created_at desc, queue.queue_id
+     for update of queue skip locked
+     limit $3::integer
+  )
+  update public.docket_bill_processing_queue queue
+     set queue_state='submitted',
+         locked_at=now(),
+         locked_by=$1,
+         receipt_json=coalesce(queue.receipt_json,'{}'::jsonb) ||
+           jsonb_build_object('paid_remainder_lane_claimed_at', now()),
+         updated_at=now()
+    from candidate
+   where queue.queue_id=candidate.queue_id
+  returning queue.queue_id::text,
+            queue.source_bill_id,
+            candidate.state,
+            candidate.session_id,
+            candidate.activation_source,
+            queue.summary_fingerprint,
+            queue.observed_change_hash,
+            queue.attempt_count,
+            candidate.summary_json,
+            candidate.session_evidence`;
+
+/**
+ * The lane's target list, computed once per process (and again when used up):
+ * open paid-only requests that no archive snapshot of the same age or newer
+ * covers. Aggregates instead of per-row probes so it stays one bounded scan.
+ */
+export const DOCKET_PAID_REMAINDER_CANDIDATES_SQL = `
+  with open_rows as (
+    select queue.queue_id, queue.source_bill_id,
+           max(activation.cache_fetched_at) as paid_fetched_at,
+           bool_and(activation.source='legiscan_get_master_list') as paid_only
+      from public.docket_bill_processing_queue queue
+      join public.docket_jurisdiction_activation_bill binding
+        on binding.queue_id=queue.queue_id
+       and binding.source_bill_id=queue.source_bill_id
+      join public.docket_jurisdiction_activation_run activation
+        on activation.activation_id=binding.activation_id
+       and activation.state=binding.state
+       and activation.session_id=binding.session_id
+     where queue.queue_state in ('eligible','degraded')
+     group by queue.queue_id, queue.source_bill_id
+  ), archive as (
+    select binding.source_bill_id,
+           max(activation.cache_fetched_at) as archive_fetched_at
+      from public.docket_jurisdiction_activation_bill binding
+      join public.docket_jurisdiction_activation_run activation
+        on activation.activation_id=binding.activation_id
+       and activation.state=binding.state
+       and activation.session_id=binding.session_id
+     where activation.source='legiscan_bulk_json'
+     group by binding.source_bill_id
+  )
+  select open_rows.queue_id::text
+    from open_rows
+    left join archive using (source_bill_id)
+   where open_rows.paid_only
+     and (archive.archive_fetched_at is null
+          or archive.archive_fetched_at < open_rows.paid_fetched_at)
+   limit $1::integer`;
+
+const PAID_REMAINDER_CANDIDATE_LIMIT = 5_000;
+let paid_remainder_candidates: string[] | null = null;
+const PAID_REMAINDER_REBUILD_MIN_MS = 10 * 60_000;
+let paid_remainder_last_build_ms = 0;
+
+const DEFAULT_PAID_REMAINDER_LANE_UNTIL = "2026-12-01T00:00:00Z";
+let paid_remainder_lane_halted = false;
+
+export function paid_remainder_lane_enabled(
+  environment: NodeJS.ProcessEnv = process.env,
+  now: Date = new Date(),
+): boolean {
+  if (environment.DOCKET_PAID_REMAINDER_LANE_ENABLED !== "true") return false;
+  const until = new Date(
+    environment.DOCKET_PAID_REMAINDER_LANE_UNTIL?.trim() || DEFAULT_PAID_REMAINDER_LANE_UNTIL,
+  );
+  if (Number.isNaN(until.getTime())) return false;
+  return now.getTime() < until.getTime();
+}
+
+async function run_paid_remainder_lane_once(): Promise<void> {
+  if (paid_remainder_lane_halted || !paid_remainder_lane_enabled()) return;
+  if (resolve_docket_archive_canary_queue_ids() !== null) return;
+  if (paid_remainder_candidates === null) {
+    // The list scan is the lane's only heavy query: at most once per 10 min.
+    if (Date.now() - paid_remainder_last_build_ms < PAID_REMAINDER_REBUILD_MIN_MS) return;
+    paid_remainder_last_build_ms = Date.now();
+    const found = await query_with_diagnostics<{ queue_id: string }>(
+      DOCKET_PAID_REMAINDER_CANDIDATES_SQL,
+      [PAID_REMAINDER_CANDIDATE_LIMIT],
+      {
+        label: "docket_paid_remainder_candidates",
+        pool_acquire_timeout_ms: 1_000,
+        query_timeout_ms: 60_000,
+      },
+    );
+    paid_remainder_candidates = found.rows.map(row => row.queue_id);
+    console.log("[DocketPaidRemainderLane] candidates", {
+      count: paid_remainder_candidates.length,
+    });
+  }
+  if (paid_remainder_candidates.length === 0) {
+    paid_remainder_lane_halted = true;
+    console.log("[DocketPaidRemainderLane] halted_no_candidates");
+    return;
+  }
+  const claimed = await query_with_diagnostics<docket_bill_activation_job>(
+    DOCKET_PAID_REMAINDER_CLAIM_SQL,
+    [queue_worker_id, QUEUE_LEASE_MINUTES, 1, paid_remainder_candidates],
+    {
+      label: "docket_paid_remainder_claim",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 15_000,
+    },
+  );
+  if (claimed.rows.length === 0) {
+    // Everything on the list is done, locked, or now covered: rebuild next pass.
+    paid_remainder_candidates = null;
+    return;
+  }
+  for (const job of claimed.rows) {
+    let receipt: docket_bill_activation_receipt;
+    try {
+      await ensure_civic_genome_bill_ready(job);
+      const bill = await get_bill(job.source_bill_id);
+      await cache_bill_detail(job.source_bill_id, bill);
+      receipt = await register_legislative_versions(job.source_bill_id);
+    } catch (error) {
+      const code = safe_error_code(error);
+      if (code.includes("legiscan_local_monthly_budget_exhausted")) {
+        // Budget is spent: stop the lane for this process; the row retries later.
+        paid_remainder_lane_halted = true;
+        console.log("[DocketPaidRemainderLane] halted_budget_exhausted");
+      }
+      const decision = classify_docket_bill_activation_failure({
+        error,
+        prior_attempt_count: job.attempt_count,
+      });
+      await mark_job_failed({ job, decision });
+      continue;
+    }
+    await mark_job_terminal({
+      job,
+      queue_state: receipt.registered_document_count > 0 ? "completed" : "source_unavailable",
+      receipt: { ...receipt, paid_remainder_lane: true } as docket_bill_activation_receipt,
+    });
+  }
+}
+
 export function run_docket_bill_activation_queue_cycle(): Promise<void> {
   if (active_queue_cycle) return active_queue_cycle;
   if (queue_stopped) return Promise.resolve();
@@ -1066,6 +1270,7 @@ export function run_docket_bill_activation_queue_cycle(): Promise<void> {
       circuit_open_log.reset();
       await Promise.all(jobs.map(job => process_docket_bill_activation_job(job)));
       await sweep_paid_covered_by_archive_if_due();
+      await run_paid_remainder_lane_once();
     } catch (error) {
       const circuit_remaining_ms = queue_circuit_open_remaining_ms(error);
       if (circuit_remaining_ms !== null) {
