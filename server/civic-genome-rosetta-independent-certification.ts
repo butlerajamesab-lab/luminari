@@ -20,7 +20,7 @@ import {
  * Off by default. With the switch off, admission behaves exactly as before
  * (the Rosetta certification route is asked, and it does not exist).
  */
-export const INDEPENDENT_CERTIFIER = "lighthouse-independent-recompute-v1";
+export const INDEPENDENT_CERTIFIER = "lighthouse-independent-recompute-v1" as const;
 const HASH = /^[a-f0-9]{64}$/;
 
 export function independent_certification_enabled(
