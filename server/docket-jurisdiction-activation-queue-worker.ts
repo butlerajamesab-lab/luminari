@@ -115,7 +115,7 @@ export function resolve_docket_archive_canary_queue_ids(
   environment: NodeJS.ProcessEnv = process.env,
 ): string[] | null {
   const raw = environment.DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS;
-  if (raw === undefined) return null;
+  if (raw === undefined || raw.trim() === "") return null;
   if ((environment.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE ?? "all") !== "legiscan_bulk_json") {
     throw new Error("docket_archive_canary_requires_archive_scope");
   }
