@@ -604,6 +604,11 @@ APPROVED_REPOSITORY_ONLY = {
         "fc248f681b8f4c05f61137cb5d830381592c7fea",
     ),
     # 2026-11-23 repository-only pending separately approved production install.
+    "20261123190000": (
+        "20261123190000_genome_rosetta_certification_receipt_v1.sql",
+        "cd2997957761fc2653ca7e4fed41b917f4f6147d",
+    ),
+    # 2026-11-23 repository-only pending separately approved production install.
     "20261123200000": (
         "20261123200000_docket_activation_claim_order_index.sql",
         "f4dff25a85bf00a2934a36a04b47775a022eca21",
