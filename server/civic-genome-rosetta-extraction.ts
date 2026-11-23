@@ -22,7 +22,9 @@ const OFFICIAL_HTML_EXTRACTOR_VERSION = "official-legislative-html-strip-v1";
 const OFFICIAL_HTML_WINDOWS_1252_EXTRACTOR_VERSION = "official-legislative-version-html-windows-1252-strip-v1";
 const PDF_EXTRACTOR_VERSION = `pdf-parse-${PDF_PARSE_VERSION}-getText-v1`;
 const CA_PDF_EXTRACTOR_VERSION = `ca-official-bill-pdf-v1+${PDF_EXTRACTOR_VERSION}`;
-const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
+// 100 MiB: covers the largest source in the corpus (91,762,965 bytes, measured
+// 2026-11-23); bytes + base64 provider copy (~2.33x) must fit the worker's 512 MB.
+const MAX_SOURCE_BYTES = 100 * 1024 * 1024;
 
 export type rosetta_extraction_receipt = {
   source_document_id: number;
