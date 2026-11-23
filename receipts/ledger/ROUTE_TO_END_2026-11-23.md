@@ -8,6 +8,13 @@ Read this first in any new session. Decisions here are made; do not re-ask.
 - Round trips = 0 because of a three-gap door: quarantine returns true; no certification route; V15->Genome assembly adapter missing.
 - Nothing dispatches V15 decomposition at scale (108 sources ever).
 
+## THE REAL GAP (measured 10:50 PT)
+- docket_bill_detail_cache: 212,767 bills, 212,060 with texts, 325,755 text versions.
+- Only 39,138 bills / 99,506 source docs ever registered. 172,923 bills / ~250,004 versions never registered.
+- docket_bill_processing_queue: 217,230 eligible, 0 moved in 24h. 198,862 are free bulk-archive (legiscan_bulk_json); 18,368 need the paid LegiScan API.
+- Cause: shared activation worker capped to 5 canary IDs. Canary proved path (17 bills -> 49 docs -> 43 versions).
+- Fix: PR #886 (empty allowlist = all ready). After merge set DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS="" on srv-da9c7a1f2nfc73f2ee8g. Undo: put 5 IDs back.
+
 ## Phase A — Docket Room intake complete (no decomposition involved)
 Done when: registered = 0, every failed row has a named class and a recorded remedy or a recorded "source unavailable".
 1. Concurrency 1 -> 4 (DONE 10:45 PT, Render env + PR). Watch 1h: rate, 403s, memory. Then 8. Undo: set back to 1.
