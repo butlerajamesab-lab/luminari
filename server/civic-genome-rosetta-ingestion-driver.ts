@@ -37,6 +37,20 @@ import {
  * unlocked (or holding only a stale lease), whose version is still in the
  * registered state. Ingested versions are never re-claimed here; degraded and
  * held rows are evidence states this driver does not select, replay, or repair.
+ *
+ * Transient failures are bounded, not endless. A failure that is not
+ * deterministic (transport, pool pressure, or an unclassified database
+ * error) defers the row for a later retry, and each deferral is counted in
+ * the version's own receipt (ingestion_transient_failure_count). The queue
+ * row's attempt_count is never touched: result observation claims completed
+ * rows by it. At the configured cap the row is parked as degraded evidence
+ * with the exact error and an ingestion_retry_cap receipt record — visible,
+ * countable, never silently dropped, never deleted. A poison source can
+ * therefore never loop unbounded, whatever its cause; new evidence re-enters
+ * through the governed registration path, exactly as for deterministic
+ * parks. The count is read under the claim lease, so it cannot race; if the
+ * count write itself fails after a defer, the cap lands one cycle late,
+ * never early and never never.
  */
 
 const DEFAULT_POLL_INTERVAL_MS = 60_000;
@@ -47,6 +61,9 @@ const MIN_BATCH_SIZE = 1;
 const MAX_BATCH_SIZE = 25;
 const LEASE_STALE_AFTER_MINUTES = 60;
 const TRANSIENT_RETRY_MINUTES = 5;
+const DEFAULT_MAX_TRANSIENT_FAILURES = 5;
+const MIN_MAX_TRANSIENT_FAILURES = 1;
+const MAX_MAX_TRANSIENT_FAILURES = 25;
 
 const ingestion_worker_id = [
   "genome-rosetta-ingestion",
@@ -71,6 +88,36 @@ export function plan_ingestion_cycle(
   const agreement = validate_target_agreement(admitted, live);
   if (!agreement.ok) return { action: "stand_down", reason: agreement.reason };
   return { action: "ingest" };
+}
+
+export type transient_failure_plan =
+  | { action: "defer"; failure_count: number }
+  | { action: "park"; failure_count: number };
+
+/**
+ * The retry cap, as a pure decision: given the transient failure count the
+ * version's receipt already records and the configured cap, the next
+ * transient failure either defers once more (count incremented) or parks
+ * the row for good (count at the cap). Pure and total so the regression
+ * tests can drive a job through repeated failures without a database.
+ */
+export function plan_transient_failure(
+  recorded_failure_count: number,
+  max_failures: number,
+): transient_failure_plan {
+  const safe_recorded = Number.isFinite(recorded_failure_count)
+    ? Math.max(0, Math.trunc(recorded_failure_count))
+    : 0;
+  const safe_cap = Number.isFinite(max_failures)
+    ? Math.min(
+        MAX_MAX_TRANSIENT_FAILURES,
+        Math.max(MIN_MAX_TRANSIENT_FAILURES, Math.trunc(max_failures)),
+      )
+    : DEFAULT_MAX_TRANSIENT_FAILURES;
+  const failure_count = safe_recorded + 1;
+  return failure_count >= safe_cap
+    ? { action: "park", failure_count }
+    : { action: "defer", failure_count };
 }
 
 export const CLAIM_INGESTION_JOBS_SQL = `
@@ -99,7 +146,15 @@ export const CLAIM_INGESTION_JOBS_SQL = `
     returning queue.queue_id::text as queue_id,
               queue.bill_version_id::text as bill_version_id
   )
-  select * from claimed`;
+  select claimed.queue_id,
+         claimed.bill_version_id,
+         coalesce(
+           (version.receipt_json->>'ingestion_transient_failure_count')::int,
+           0
+         ) as transient_failure_count
+    from claimed
+    join public.civic_genome_bill_version version
+      on version.bill_version_id::text = claimed.bill_version_id`;
 
 /**
  * Crash-window recovery: if the worker exits after a version's
@@ -154,6 +209,40 @@ export const DEFER_INGESTION_JOB_SQL = `
          updated_at = now()
    where queue_id = $1::uuid
      and locked_by = $2::text`;
+
+/**
+ * The transient failure count lives in the version's receipt, alongside the
+ * ingestion record itself: raw evidence about this version's own ingestion
+ * history, under this lane's own key namespace, never a derivative receipt.
+ * The queue row's attempt_count is deliberately not used — result
+ * observation claims completed rows by it.
+ */
+export const RECORD_TRANSIENT_FAILURE_SQL = `
+  update public.civic_genome_bill_version
+     set receipt_json = receipt_json || jsonb_build_object(
+           'ingestion_transient_failure_count', $2::int,
+           'ingestion_last_transient_error_code', $3::text,
+           'ingestion_last_transient_failure_at', now()
+         ),
+         updated_at = now()
+   where bill_version_id = $1::uuid`;
+
+export const RECORD_RETRY_CAP_SQL = `
+  update public.civic_genome_bill_version
+     set receipt_json = receipt_json || jsonb_build_object(
+           'ingestion_transient_failure_count', $2::int,
+           'ingestion_last_transient_error_code', $3::text,
+           'ingestion_last_transient_failure_at', now(),
+           'ingestion_retry_cap', jsonb_build_object(
+             'contract', 'lighthouse-ingestion-retry-cap-v1',
+             'max_transient_failures', $4::int,
+             'failure_count', $2::int,
+             'last_error_code', $3::text,
+             'reached_at', now()
+           )
+         ),
+         updated_at = now()
+   where bill_version_id = $1::uuid`;
 
 /**
  * The Genome-side ingestion record. The bill-version receipt quarantine
@@ -233,6 +322,15 @@ function bounded_poll_interval_ms(): number {
   );
 }
 
+function bounded_max_transient_failures(): number {
+  const raw = Number(process.env.GENOME_ROSETTA_INGESTION_MAX_TRANSIENT_FAILURES);
+  if (!Number.isFinite(raw)) return DEFAULT_MAX_TRANSIENT_FAILURES;
+  return Math.min(
+    MAX_MAX_TRANSIENT_FAILURES,
+    Math.max(MIN_MAX_TRANSIENT_FAILURES, Math.trunc(raw)),
+  );
+}
+
 function error_code(error: unknown): string {
   if (error instanceof Error) {
     const code = (error as { code?: unknown }).code;
@@ -273,6 +371,7 @@ export function is_deterministic_ingestion_failure(error: unknown): boolean {
 type ingestion_job = {
   queue_id: string;
   bill_version_id: string;
+  transient_failure_count: number;
 };
 
 async function claim_ingestion_jobs(
@@ -326,6 +425,39 @@ async function defer_ingestion_job(
     [job.queue_id, ingestion_worker_id, reason.slice(0, 200)],
     {
       label: "genome_rosetta_ingestion_defer",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+}
+
+async function record_transient_failure(
+  job: ingestion_job,
+  failure_count: number,
+  reason: string,
+): Promise<void> {
+  await query_with_diagnostics(
+    RECORD_TRANSIENT_FAILURE_SQL,
+    [job.bill_version_id, failure_count, reason.slice(0, 200)],
+    {
+      label: "genome_rosetta_ingestion_record_transient_failure",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+}
+
+async function record_retry_cap(
+  job: ingestion_job,
+  failure_count: number,
+  reason: string,
+  max_failures: number,
+): Promise<void> {
+  await query_with_diagnostics(
+    RECORD_RETRY_CAP_SQL,
+    [job.bill_version_id, failure_count, reason.slice(0, 200), max_failures],
+    {
+      label: "genome_rosetta_ingestion_record_retry_cap",
       pool_acquire_timeout_ms: 1_000,
       query_timeout_ms: 5_000,
     },
@@ -429,6 +561,7 @@ async function run_ingestion_cycle(): Promise<void> {
     let ingested = 0;
     let parked = 0;
     let deferred = 0;
+    let capped = 0;
     for (const job of jobs) {
       try {
         const outcome = await ingest_version_source(job);
@@ -444,8 +577,25 @@ async function run_ingestion_cycle(): Promise<void> {
           await park_ingestion_job(job, code);
           parked += 1;
         } else {
-          await defer_ingestion_job(job, code);
-          deferred += 1;
+          const max_failures = bounded_max_transient_failures();
+          const plan = plan_transient_failure(
+            job.transient_failure_count,
+            max_failures,
+          );
+          if (plan.action === "park") {
+            // Record the cap before parking: if the park write itself
+            // fails, the row stays eligible with the cap receipt in place
+            // and the next cycle parks it again — the terminal record is
+            // never the part that goes missing.
+            await record_retry_cap(job, plan.failure_count, code, max_failures);
+            await park_ingestion_job(job, code);
+            parked += 1;
+            capped += 1;
+          } else {
+            await defer_ingestion_job(job, code);
+            await record_transient_failure(job, plan.failure_count, code);
+            deferred += 1;
+          }
         }
       }
     }
@@ -455,6 +605,7 @@ async function run_ingestion_cycle(): Promise<void> {
         ingested,
         parked,
         deferred,
+        capped,
         rule_set_version: admitted?.rule_set_version,
       });
     }
