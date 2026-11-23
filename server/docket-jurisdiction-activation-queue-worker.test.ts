@@ -356,6 +356,8 @@ describe("Docket jurisdiction activation queue", () => {
     expect(sql).toContain("queue.locked_at is null");
     expect(DOCKET_PAID_COVERED_SWEEP_SQL).toContain("archive_queue.queue_state='completed'");
     expect(DOCKET_PAID_COVERED_SWEEP_SQL).toContain("limit $1::integer");
+    expect(DOCKET_PAID_COVERED_SWEEP_SQL).toContain("paid_activation.cache_fetched_at > activation.cache_fetched_at");
+    expect(DOCKET_PAID_COVERED_SWEEP_SQL).toContain("paid_activation.source<>'legiscan_get_master_list'");
   });
 
   it("proposes a separate no-API worker with inherited secrets, no automatic deployment", () => {

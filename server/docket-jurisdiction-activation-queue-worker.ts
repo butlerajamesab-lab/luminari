@@ -731,6 +731,8 @@ async function close_paid_covered_by_archive(
   job: docket_bill_activation_job,
 ): Promise<void> {
   if (job.activation_source !== "legiscan_bulk_json") return;
+  // The exact-ID pilot boundary never reaches queue rows outside its list.
+  if (resolve_docket_archive_canary_queue_ids() !== null) return;
   // Best effort: a failure leaves the paid rows exactly as they were.
   try {
     const result = await query_with_diagnostics<{ queue_id: string }>(
@@ -771,11 +773,27 @@ export const DOCKET_PAID_COVERED_SWEEP_SQL = `
    where archive_queue.queue_state='completed'
      and activation.source='legiscan_bulk_json'
      and exists (
+       -- Same predicates as the closing update, so only rows it will
+       -- actually close count; non-coverable bills never block the batch.
        select 1 from public.docket_bill_processing_queue paid
         where paid.source_bill_id=archive_queue.source_bill_id
           and paid.queue_id<>archive_queue.queue_id
           and paid.queue_state in ('eligible','degraded')
           and paid.locked_at is null
+          and not exists (
+            select 1
+              from public.docket_jurisdiction_activation_bill paid_binding
+              join public.docket_jurisdiction_activation_run paid_activation
+                on paid_activation.activation_id=paid_binding.activation_id
+               and paid_activation.state=paid_binding.state
+               and paid_activation.session_id=paid_binding.session_id
+             where paid_binding.queue_id=paid.queue_id
+               and paid_binding.source_bill_id=paid.source_bill_id
+               and (
+                 paid_activation.source<>'legiscan_get_master_list'
+                 or paid_activation.cache_fetched_at > activation.cache_fetched_at
+               )
+          )
      )
    order by archive_queue.completed_at desc nulls last
    limit $1::integer`;
