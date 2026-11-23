@@ -801,10 +801,14 @@ export const DOCKET_PAID_COVERED_SWEEP_SQL = `
 const PAID_COVERED_SWEEP_BATCH = 200;
 const PAID_COVERED_SWEEP_INTERVAL_MS = 10 * 60_000;
 let paid_covered_sweep_last_ms = 0;
+// One-time catch-up: the sweep retires for the life of this process once a
+// pass finds nothing to close. Per-job closing handles everything after that.
+let paid_covered_sweep_retired = false;
 
 async function sweep_paid_covered_by_archive_if_due(): Promise<void> {
   if (resolve_docket_activation_source_scope() !== "legiscan_bulk_json") return;
   if (resolve_docket_archive_canary_queue_ids() !== null) return;
+  if (paid_covered_sweep_retired) return;
   if (Date.now() - paid_covered_sweep_last_ms < PAID_COVERED_SWEEP_INTERVAL_MS) return;
   paid_covered_sweep_last_ms = Date.now();
   try {
@@ -817,6 +821,11 @@ async function sweep_paid_covered_by_archive_if_due(): Promise<void> {
         query_timeout_ms: 15_000,
       },
     );
+    if (due.rows.length === 0) {
+      paid_covered_sweep_retired = true;
+      console.log("[DocketJurisdictionActivation] paid_covered_sweep_retired");
+      return;
+    }
     for (const row of due.rows) {
       await close_paid_covered_by_archive({
         queue_id: row.queue_id,
