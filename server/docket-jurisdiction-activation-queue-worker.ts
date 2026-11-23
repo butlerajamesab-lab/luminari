@@ -253,19 +253,32 @@ export const DOCKET_ARCHIVE_ONLY_CLAIM_SQL = `
   with next_archive as materialized (
     -- The queue/activation identity determines WHICH bounded jobs are due.
     -- Never join the 200k-row document cache while picking the first page.
+    -- Walk idx_docket_bill_processing_queue_claim_order in claim order and
+    -- test archive membership per row (lateral + limit keeps the planner from
+    -- hashing ~200k bindings). $5 is an optional created_at floor so repeated
+    -- claims skip the non-archive prefix; null scans from the start.
     select queue.queue_id, queue.source_bill_id,
-           activation.state, activation.session_id,
-           activation.source as activation_source,
-           activation.cache_fetched_at
+           archive.state, archive.session_id,
+           archive.activation_source,
+           archive.cache_fetched_at
       from public.docket_bill_processing_queue queue
-      join public.docket_jurisdiction_activation_bill binding
-        on binding.queue_id=queue.queue_id
-       and binding.source_bill_id=queue.source_bill_id
-      join public.docket_jurisdiction_activation_run activation
-        on activation.activation_id=binding.activation_id
-       and activation.state=binding.state
-       and activation.session_id=binding.session_id
-     where activation.source = 'legiscan_bulk_json'
+      cross join lateral (
+        select activation.state, activation.session_id,
+               activation.source as activation_source,
+               activation.cache_fetched_at
+          from public.docket_jurisdiction_activation_bill binding
+          join public.docket_jurisdiction_activation_run activation
+            on activation.activation_id=binding.activation_id
+           and activation.state=binding.state
+           and activation.session_id=binding.session_id
+         where binding.queue_id=queue.queue_id
+           and binding.source_bill_id=queue.source_bill_id
+           and activation.source = 'legiscan_bulk_json'
+         order by activation.cache_fetched_at desc, activation.activation_id
+         limit 1
+      ) archive
+     where queue.queue_state in ('eligible','degraded','submitted')
+       and ($5::timestamptz is null or queue.created_at >= $5::timestamptz)
        and (
          $4::uuid[] is null
          or (
@@ -363,19 +376,74 @@ export const DOCKET_ARCHIVE_ONLY_CLAIM_SQL = `
 
 const circuit_open_log = new circuit_open_log_gate();
 
+const ARCHIVE_CLAIM_FLOOR_RESET_MS = 10 * 60_000;
+let archive_claim_floor: { created_at: string; set_at_ms: number } | null = null;
+
+function current_archive_claim_floor(canary_active: boolean): string | null {
+  if (canary_active || !archive_claim_floor) return null;
+  if (Date.now() - archive_claim_floor.set_at_ms > ARCHIVE_CLAIM_FLOOR_RESET_MS) {
+    archive_claim_floor = null;
+    return null;
+  }
+  return archive_claim_floor.created_at;
+}
+
+async function advance_archive_claim_floor(
+  rows: docket_bill_activation_job[],
+  canary_active: boolean,
+): Promise<void> {
+  if (canary_active) return;
+  if (rows.length === 0) {
+    archive_claim_floor = null;
+    return;
+  }
+  // The floor only skips work; a failed lookup simply scans from the start.
+  try {
+    const floor = await query_with_diagnostics<{ created_at: string | null }>(
+      `select min(created_at)::text as created_at
+         from public.docket_bill_processing_queue
+        where queue_id = any($1::uuid[])`,
+      [rows.map(row => row.queue_id)],
+      {
+        label: "docket_bill_activation_claim_floor",
+        pool_acquire_timeout_ms: 1_000,
+        query_timeout_ms: 2_000,
+      },
+    );
+    const created_at = floor.rows[0]?.created_at ?? null;
+    if (created_at && !archive_claim_floor) {
+      archive_claim_floor = { created_at, set_at_ms: Date.now() };
+    } else if (created_at && archive_claim_floor) {
+      archive_claim_floor.created_at = created_at;
+    }
+  } catch {
+    archive_claim_floor = null;
+  }
+}
+
 async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> {
   const source_scope = resolve_docket_activation_source_scope();
   const canary_queue_ids = resolve_docket_archive_canary_queue_ids();
   if (source_scope === "legiscan_bulk_json") {
+    const claim_floor = current_archive_claim_floor(canary_queue_ids !== null);
     const result = await query_with_diagnostics<docket_bill_activation_job>(
       DOCKET_ARCHIVE_ONLY_CLAIM_SQL,
-      [queue_worker_id, QUEUE_LEASE_MINUTES, limit, canary_queue_ids],
+      [
+        queue_worker_id,
+        QUEUE_LEASE_MINUTES,
+        limit,
+        canary_queue_ids,
+        claim_floor,
+      ],
       {
         label: "docket_bill_activation_queue_claim",
         pool_acquire_timeout_ms: 1_000,
-        query_timeout_ms: 5_000,
+        // A floorless scan walks the non-archive prefix (~3.3s measured);
+        // floored claims measured under 1ms.
+        query_timeout_ms: claim_floor === null ? 15_000 : 5_000,
       },
     );
+    await advance_archive_claim_floor(result.rows, canary_queue_ids !== null);
     return result.rows;
   }
   // The legacy live API worker must never depend on proposal-only receipt DDL.
