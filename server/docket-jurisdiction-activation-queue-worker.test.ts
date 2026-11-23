@@ -198,9 +198,12 @@ describe("Docket jurisdiction activation queue", () => {
     const a = "11111111-1111-4111-8111-111111111111";
     const b = "22222222-2222-4222-8222-222222222222";
     expect(resolve_docket_archive_canary_queue_ids(scope)).toBeNull();
+    // An empty value opens the shared worker to every ready archive job.
+    expect(resolve_docket_archive_canary_queue_ids({ ...scope, DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS: "" })).toBeNull();
+    expect(resolve_docket_archive_canary_queue_ids({ ...scope, DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS: " " })).toBeNull();
     expect(resolve_docket_archive_canary_queue_ids({ ...scope, DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS: `${a}, ${b}` }))
       .toEqual([a, b]);
-    for (const raw of ["", "not-a-uuid", `${a},${a}`, `${a},${b},${a}`, Array(6).fill(a).join(",")]) {
+    for (const raw of ["not-a-uuid", `${a},${a}`, `${a},${b},${a}`, Array(6).fill(a).join(",")]) {
       expect(() => resolve_docket_archive_canary_queue_ids({
         ...scope, DOCKET_BILL_ACTIVATION_CANARY_QUEUE_IDS: raw,
       })).toThrow("docket_archive_canary_invalid_queue_ids");
