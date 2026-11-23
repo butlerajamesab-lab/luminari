@@ -154,7 +154,7 @@ export const CLAIM_INGESTION_JOBS_SQL = `
          ) as transient_failure_count
     from claimed
     join public.civic_genome_bill_version version
-      on version.bill_version_id::text = claimed.bill_version_id`;
+      on version.bill_version_id = claimed.bill_version_id::uuid`;
 
 /**
  * Crash-window recovery: if the worker exits after a version's
