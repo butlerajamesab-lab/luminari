@@ -300,8 +300,9 @@ describe("Docket jurisdiction activation queue", () => {
         call[2]?.label === "docket_bill_activation_queue_claim");
       expect(claim).toBeDefined();
       expect(String(claim?.[0])).toContain("activation.source = 'legiscan_bulk_json'");
-      expect(claim?.[1]).toHaveLength(4);
+      expect(claim?.[1]).toHaveLength(5);
       expect(claim?.[1]?.[3]).toBeNull();
+      expect(claim?.[1]?.[4]).toBeNull();
       expect(String(claim?.[0])).not.toContain("jsonb_array_elements(cache.bills)");
       expect(String(claim?.[0])).not.toContain("docket_bill_state_cache");
       expect(get_bill).not.toHaveBeenCalled();
@@ -335,6 +336,8 @@ describe("Docket jurisdiction activation queue", () => {
     expect(sql).toContain("locked_by=$1::text");
     expect(sql).toContain("queue.next_attempt_at <= now()");
     expect(sql).toContain("$4::uuid[] is null");
+    expect(sql).toContain("cross join lateral (");
+    expect(sql).toContain("$5::timestamptz is null or queue.created_at >= $5::timestamptz");
     expect(sql).toContain("queue.queue_id = any($4::uuid[])");
     expect(sql).toContain("queue.locked_at < now() - make_interval(mins => $2::integer)");
   });
