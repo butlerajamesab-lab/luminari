@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { get_current_rosetta_live_detail, type current_rosetta_live_detail } from "./current-law-rosetta-live";
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 import { get_rosetta_review_base_url } from "./rosetta-review-url";
+import { read_or_issue_certification } from "./civic-genome-rosetta-independent-certification";
 
 /**
  * Lighthouse-only V12 admission proposal. Reads Rosetta's existing source-content
@@ -398,7 +399,7 @@ export async function inspect_v12_admission_for_binding(binding: v12_genome_bind
       && !detail.hold_receipt
       && detail.failure_receipts.length === 0;
     const certification = certificationEligible
-      ? await read_v12_certification_receipt(source, detail.target)
+      ? await read_or_issue_certification(source, detail)
       : null;
     return admit_v12_live_detail(binding, source, detail, certification);
   } catch (error) {

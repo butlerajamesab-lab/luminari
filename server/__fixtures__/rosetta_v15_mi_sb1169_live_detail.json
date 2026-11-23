@@ -1,0 +1,90 @@
+{
+ "captured_from": "Rosetta kjzytnzkkdpdxtqtjlew rosetta_rule_out V15 decomposition, 2026-11-23, read-only",
+ "source_document_key": "text:2157998:3458386",
+ "detail": {
+  "contract": "rosetta-rule-live-detail-v1",
+  "observed_at": null,
+  "target": {
+   "ruleset_version": "rosetta-rule-ref-v15",
+   "ruleset_sha256": "391fe85166e81146a7b4c22d19b458a642fbdea9dac06aed28c115683cdba203",
+   "installed_ruleset_sha256": "391fe85166e81146a7b4c22d19b458a642fbdea9dac06aed28c115683cdba203"
+  },
+  "source": {
+   "source_content_id": "01384014-d666-4710-9dac-a49e1b1ee937",
+   "source_document_id": 20416,
+   "source_content_hash": "360a9c8452ec8f1f476d7c1255309de783876806b96e8d2423f356682763464e",
+   "source_url": "https://legiscan.com/MI/text/SB1169/id/3458386",
+   "source_version": null,
+   "media_type": null,
+   "source_text": "SENATE BILL NO. 1169 A bill to amend 1961 PA 236, entitled \"Revised judicature act of 1961,\" by amending section 531 (MCL 600.531). the people of the state of michigan enact: Sec. 531. The thirtieth judicial circuit consists of the county of Ingham and has 7 judges. Subject to section 550, this judicial circuit may have 1 additional judge beginning January 1, 2027.",
+   "document_name": null,
+   "document_identifier": null,
+   "document_type": null
+  },
+  "decomposition": {
+   "outcome": "decomposed",
+   "unit_count": 3,
+   "section_count": 2,
+   "ruleset_sha256": "391fe85166e81146a7b4c22d19b458a642fbdea9dac06aed28c115683cdba203",
+   "ruleset_version": "rosetta-rule-ref-v15"
+  },
+  "sections": [
+   {
+    "label": null,
+    "raw_end": 174,
+    "raw_start": 0,
+    "unit_count": 1,
+    "section_ord": 0
+   },
+   {
+    "label": "Sec. 531.",
+    "raw_end": 367,
+    "raw_start": 175,
+    "unit_count": 2,
+    "section_ord": 1
+   }
+  ],
+  "units": [
+   {
+    "kind": "start",
+    "layers": [
+     "H"
+    ],
+    "raw_end": 174,
+    "unit_ord": 1,
+    "raw_start": 0,
+    "disposition": "LAYERED",
+    "section_ord": 0,
+    "raw_text": "SENATE BILL NO. 1169 A bill to amend 1961 PA 236, entitled \"Revised judicature act of 1961,\" by amending section 531 (MCL 600.531). the people of the state of michigan enact:",
+    "effective_text": null
+   },
+   {
+    "kind": "section",
+    "layers": [],
+    "raw_end": 266,
+    "unit_ord": 2,
+    "raw_start": 175,
+    "disposition": "UNCLASSIFIED",
+    "section_ord": 1,
+    "raw_text": "Sec. 531. The thirtieth judicial circuit consists of the county of Ingham and has 7 judges.",
+    "effective_text": null
+   },
+   {
+    "kind": "section",
+    "layers": [
+     "W"
+    ],
+    "raw_end": 367,
+    "unit_ord": 3,
+    "raw_start": 267,
+    "disposition": "LAYERED",
+    "section_ord": 1,
+    "raw_text": "Subject to section 550, this judicial circuit may have 1 additional judge beginning January 1, 2027.",
+    "effective_text": null
+   }
+  ],
+  "markup_events": [],
+  "hold_receipt": null,
+  "failure_receipts": []
+ }
+}
