@@ -618,6 +618,11 @@ APPROVED_REPOSITORY_ONLY = {
         "20261124070000_docket_bill_sponsor_v1.sql",
         "91a39574ac2b2dfef9464dba99438dbb31377af8",
     ),
+    # 2026-11-24 actor layer step 2 (roll calls, votes); repository-only pending approved install.
+    "20261124080000": (
+        "20261124080000_docket_roll_call_v1.sql",
+        "d005ebef09f9040a2d46e9453ad74bd906203da8",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
