@@ -40,6 +40,10 @@ import {
   stop_docket_bill_detail_derived_work_worker,
 } from "./docket-bill-detail-derived-work-worker";
 import {
+  start_tribal_leadership_refresh,
+  stop_tribal_leadership_refresh,
+} from "./tribal-leadership-refresh";
+import {
   start_rosetta_generation_activation_queue_worker,
   stop_rosetta_generation_activation_queue_worker,
 } from "./civic-genome-rosetta-generation-queue-worker";
@@ -341,6 +345,7 @@ console.log("[PrismRosettaWorker] starting", {
 });
 start_prism_rosetta_queue_worker();
 start_docket_bill_detail_derived_work_worker();
+start_tribal_leadership_refresh();
 start_rosetta_generation_activation_queue_worker();
 start_rosetta_generation_target_sync();
 start_genome_version_admission_driver();
@@ -381,6 +386,7 @@ async function shutdown(signal: string): Promise<void> {
   await Promise.all([
     stop_prism_rosetta_queue_worker(),
     stop_docket_bill_detail_derived_work_worker(),
+    stop_tribal_leadership_refresh(),
     stop_rosetta_generation_activation_queue_worker(),
     stop_rosetta_generation_target_sync(),
     stop_genome_version_admission_driver(),
