@@ -23,6 +23,8 @@ const FETCH_DEADLINE_MS = 30_000;
 const MAX_BODY_BYTES = 5 * 1024 * 1024;
 const MAX_LINKED_PAGES = 6;
 const RECAPTURE_AFTER_DAYS = 30;
+const ROBOTS_RETRY_AFTER_DAYS = 1;
+const MAX_REDIRECTS = 5;
 
 // Link text that points at a nation's own account of itself or its asks.
 const LINK_TEXT_PATTERN =
@@ -36,7 +38,9 @@ export const NEXT_NATION_SQL = `
       select 1 from public.native_nation_site_capture_v1 c
       where c.nation_key = r.nation_key
         and c.page_role = 'home'
-        and c.captured_at > now() - make_interval(days => ${RECAPTURE_AFTER_DAYS})
+        and c.captured_at > now() - make_interval(days => case
+          when c.error_code = 'robots_unreachable' then ${ROBOTS_RETRY_AFTER_DAYS}
+          else ${RECAPTURE_AFTER_DAYS} end)
     )
   order by r.nation_name, r.nation_key
   limit 1
@@ -148,38 +152,146 @@ type fetched_page = {
   http_status: number | null;
   content_type: string | null;
   body: Buffer | null;
+  robots_allowed: boolean;
   error_code: string | null;
 };
 
-async function fetch_page(url: string, signal: AbortSignal): Promise<fetched_page> {
+type raw_response = {
+  http_status: number;
+  content_type: string | null;
+  location: string | null;
+  body: Buffer | null;
+  error_code: string | null;
+};
+
+/** Read a body, stopping as soon as it passes MAX_BODY_BYTES. */
+async function read_bounded(response: Response): Promise<{ body: Buffer | null; too_large: boolean }> {
+  if (!response.body) return { body: Buffer.alloc(0), too_large: false };
+  const reader = response.body.getReader();
+  const chunks: Buffer[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > MAX_BODY_BYTES) {
+      await reader.cancel().catch(() => undefined);
+      return { body: null, too_large: true };
+    }
+    chunks.push(Buffer.from(value));
+  }
+  return { body: Buffer.concat(chunks), too_large: false };
+}
+
+/** One request, no redirect following. */
+async function request_once(url: string, signal: AbortSignal): Promise<raw_response> {
   try {
     const response = await fetch(url, {
       method: "GET",
-      redirect: "follow",
+      redirect: "manual",
       headers: { "user-agent": CAPTURE_USER_AGENT, accept: "text/html,text/plain;q=0.9,*/*;q=0.1" },
       signal: AbortSignal.any([signal, AbortSignal.timeout(FETCH_DEADLINE_MS)]),
     });
-    const body = Buffer.from(await response.arrayBuffer());
-    if (body.length > MAX_BODY_BYTES) {
-      return { final_url: response.url, http_status: response.status, content_type: response.headers.get("content-type"), body: null, error_code: "body_too_large" };
+    const location = response.status >= 300 && response.status < 400 ? response.headers.get("location") : null;
+    if (location) {
+      await response.body?.cancel().catch(() => undefined);
+      return { http_status: response.status, content_type: null, location, body: null, error_code: null };
     }
+    const { body, too_large } = await read_bounded(response);
     return {
-      final_url: response.url,
       http_status: response.status,
       content_type: response.headers.get("content-type"),
+      location: null,
       body,
-      error_code: response.ok ? null : `http_${response.status}`,
+      error_code: too_large ? "body_too_large" : response.ok ? null : `http_${response.status}`,
     };
   } catch (error) {
     const name = error instanceof Error ? error.name : "unknown";
-    return { final_url: null, http_status: null, content_type: null, body: null, error_code: `fetch_${name}`.slice(0, 80) };
+    return { http_status: 0, content_type: null, location: null, body: null, error_code: `fetch_${name}`.slice(0, 80) };
   }
 }
 
-async function load_robots(site: URL, signal: AbortSignal): Promise<robots_rule[]> {
-  const page = await fetch_page(new URL("/robots.txt", site).toString(), signal);
-  if (!page.body || page.http_status !== 200) return [];
-  return parse_robots(page.body.toString("utf8"));
+export type robots_state = { status: "rules"; rules: robots_rule[] } | { status: "unreachable" };
+
+/**
+ * RFC 9309: a 4xx robots.txt (other than 429) means no rules; a 5xx, 429,
+ * network failure or redirect loop means the site's wishes are unknown, so
+ * nothing is read until it can be checked.
+ */
+export function robots_state_from(http_status: number, body: Buffer | null): robots_state {
+  if (http_status === 200 && body) return { status: "rules", rules: parse_robots(body.toString("utf8")) };
+  if (http_status >= 400 && http_status < 500 && http_status !== 429) return { status: "rules", rules: [] };
+  return { status: "unreachable" };
+}
+
+export function same_site(a: URL, b: URL): boolean {
+  return a.hostname.replace(/^www\./, "") === b.hostname.replace(/^www\./, "");
+}
+
+export class robots_cache {
+  private readonly by_origin = new Map<string, robots_state>();
+  constructor(private readonly signal: AbortSignal) {}
+
+  async for_url(url: URL): Promise<robots_state> {
+    const known = this.by_origin.get(url.origin);
+    if (known) return known;
+    let target = new URL("/robots.txt", url);
+    let state: robots_state = { status: "unreachable" };
+    for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
+      const response = await request_once(target.toString(), this.signal);
+      if (response.location) {
+        target = new URL(response.location, target);
+        continue;
+      }
+      state = robots_state_from(response.http_status, response.body);
+      break;
+    }
+    this.by_origin.set(url.origin, state);
+    return state;
+  }
+}
+
+/**
+ * Fetch a page, following redirects by hand so every hop is checked against
+ * its own site's robots.txt, and (when site_lock is given) stays on that site.
+ */
+export async function fetch_page(
+  start_url: string,
+  robots: robots_cache,
+  signal: AbortSignal,
+  site_lock: URL | null,
+): Promise<fetched_page> {
+  let url = new URL(start_url);
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
+    if (url.protocol !== "https:" && url.protocol !== "http:") {
+      return { final_url: url.toString(), http_status: null, content_type: null, body: null, robots_allowed: false, error_code: "redirect_bad_scheme" };
+    }
+    if (site_lock && !same_site(url, site_lock)) {
+      return { final_url: url.toString(), http_status: null, content_type: null, body: null, robots_allowed: false, error_code: "redirect_off_site" };
+    }
+    const state = await robots.for_url(url);
+    if (state.status === "unreachable") {
+      return { final_url: url.toString(), http_status: null, content_type: null, body: null, robots_allowed: false, error_code: "robots_unreachable" };
+    }
+    if (!robots_allows(state.rules, url.pathname + url.search)) {
+      return { final_url: url.toString(), http_status: null, content_type: null, body: null, robots_allowed: false, error_code: "robots_disallowed" };
+    }
+    const response = await request_once(url.toString(), signal);
+    if (response.location) {
+      url = new URL(response.location, url);
+      url.hash = "";
+      continue;
+    }
+    return {
+      final_url: url.toString(),
+      http_status: response.http_status || null,
+      content_type: response.content_type,
+      body: response.body,
+      robots_allowed: true,
+      error_code: response.error_code,
+    };
+  }
+  return { final_url: url.toString(), http_status: null, content_type: null, body: null, robots_allowed: true, error_code: "too_many_redirects" };
 }
 
 async function record(
@@ -187,23 +299,22 @@ async function record(
   requested_url: string,
   page_role: "home" | "linked",
   link_text: string | null,
-  robots_allowed: boolean,
-  page: fetched_page | null,
+  page: fetched_page,
 ): Promise<void> {
-  const body = page?.body ?? null;
+  const body = page.error_code ? null : page.body;
   await query_with_diagnostics(INSERT_CAPTURE_SQL, [
     nation_key,
     requested_url,
-    page?.final_url ?? null,
+    page.final_url,
     page_role,
     link_text,
-    page?.http_status ?? null,
-    page?.content_type ?? null,
+    page.http_status,
+    page.content_type,
     body ? gzipSync(body) : null,
     body ? body.length : null,
     body ? createHash("sha256").update(body).digest("hex") : null,
-    robots_allowed,
-    robots_allowed ? page?.error_code ?? null : "robots_disallowed",
+    page.robots_allowed,
+    page.error_code,
   ], { label: "native_nation_site_capture_insert", query_timeout_ms: 10_000 });
 }
 
@@ -222,26 +333,24 @@ export async function capture_next_nation(signal: AbortSignal): Promise<string |
   if (!nation) return null;
   const home_url = normalize_site_url(nation.website_url);
   if (!home_url) {
-    await record(nation.nation_key, nation.website_url, "home", null, true, {
-      final_url: null, http_status: null, content_type: null, body: null, error_code: "invalid_url",
+    await record(nation.nation_key, nation.website_url, "home", null, {
+      final_url: null, http_status: null, content_type: null, body: null, robots_allowed: false, error_code: "invalid_url",
     });
     return nation.nation_key;
   }
-  const site = new URL(home_url);
-  const rules = await load_robots(site, signal);
-  const home_allowed = robots_allows(rules, site.pathname || "/");
-  const home = home_allowed ? await fetch_page(home_url, signal) : null;
-  await record(nation.nation_key, home_url, "home", null, home_allowed, home);
-  if (!home?.body || home.error_code) return nation.nation_key;
+  const robots = new robots_cache(signal);
+  // The home page may move to the nation's newer domain; its linked pages
+  // must then stay on wherever the home page landed.
+  const home = await fetch_page(home_url, robots, signal, null);
+  await record(nation.nation_key, home_url, "home", null, home);
+  if (!home.body || home.error_code || !home.final_url) return nation.nation_key;
 
-  const html = home.body.toString("utf8");
-  for (const link of select_linked_pages(html, home.final_url ?? home_url)) {
+  const landed = new URL(home.final_url);
+  for (const link of select_linked_pages(home.body.toString("utf8"), home.final_url)) {
     if (signal.aborted) break;
     await pause(PAGE_PAUSE_MS, signal);
-    const path = new URL(link.url);
-    const allowed = robots_allows(rules, path.pathname + path.search);
-    const page = allowed ? await fetch_page(link.url, signal) : null;
-    await record(nation.nation_key, link.url, "linked", link.link_text, allowed, page);
+    const page = await fetch_page(link.url, robots, signal, landed);
+    await record(nation.nation_key, link.url, "linked", link.link_text, page);
   }
   return nation.nation_key;
 }

@@ -102,3 +102,73 @@ describe("capture helpers", () => {
     ]);
   });
 });
+
+describe("capture fetch safeguards (local test server)", () => {
+  // A local HTTP server stands in for a nation's site so each safeguard the
+  // review named can be exercised without touching any real site.
+  async function serve(handler: import("node:http").RequestListener) {
+    const { createServer } = await import("node:http");
+    const server = createServer(handler);
+    await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+    const { port } = server.address() as import("node:net").AddressInfo;
+    return { base: `http://127.0.0.1:${port}`, close: () => new Promise<void>(r => server.close(() => r())) };
+  }
+
+  it("checks robots.txt on every redirect hop", async () => {
+    const site = await serve((req, res) => {
+      if (req.url === "/robots.txt") return res.end("User-agent: *\nDisallow: /private");
+      if (req.url === "/") { res.writeHead(302, { location: "/private" }); return res.end(); }
+      res.end("private page");
+    });
+    const { fetch_page, robots_cache } = await import("./native-nation-site-capture");
+    const signal = new AbortController().signal;
+    const page = await fetch_page(`${site.base}/`, new robots_cache(signal), signal, null);
+    await site.close();
+    expect(page.error_code).toBe("robots_disallowed");
+    expect(page.body).toBeNull();
+    expect(page.final_url).toBe(`${site.base}/private`);
+  });
+
+  it("reads nothing while robots.txt is temporarily unavailable", async () => {
+    let home_requests = 0;
+    const site = await serve((req, res) => {
+      if (req.url === "/robots.txt") { res.writeHead(503); return res.end(); }
+      home_requests += 1;
+      res.end("home");
+    });
+    const { fetch_page, robots_cache } = await import("./native-nation-site-capture");
+    const signal = new AbortController().signal;
+    const page = await fetch_page(`${site.base}/`, new robots_cache(signal), signal, null);
+    await site.close();
+    expect(page.error_code).toBe("robots_unreachable");
+    expect(home_requests).toBe(0);
+  });
+
+  it("stops reading a body past the size limit", async () => {
+    const chunk = Buffer.alloc(1024 * 1024, 97);
+    const site = await serve((req, res) => {
+      if (req.url === "/robots.txt") { res.writeHead(404); return res.end(); }
+      for (let i = 0; i < 8; i += 1) res.write(chunk);
+      res.end();
+    });
+    const { fetch_page, robots_cache } = await import("./native-nation-site-capture");
+    const signal = new AbortController().signal;
+    const page = await fetch_page(`${site.base}/`, new robots_cache(signal), signal, null);
+    await site.close();
+    expect(page.error_code).toBe("body_too_large");
+    expect(page.body).toBeNull();
+  });
+
+  it("keeps linked pages on the site the home page landed on", async () => {
+    const site = await serve((req, res) => {
+      if (req.url === "/robots.txt") { res.writeHead(404); return res.end(); }
+      res.writeHead(301, { location: "https://www.facebook.com/somewhere" });
+      res.end();
+    });
+    const { fetch_page, robots_cache } = await import("./native-nation-site-capture");
+    const signal = new AbortController().signal;
+    const page = await fetch_page(`${site.base}/history`, new robots_cache(signal), signal, new URL(site.base));
+    await site.close();
+    expect(page.error_code).toBe("redirect_off_site");
+  });
+});
