@@ -20,6 +20,7 @@ const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 const REFRESH_AFTER_DAYS = 7;
 const MIN_NATIONS = 500;
 const MAX_RESPONSE_BYTES = 10 * 1024 * 1024;
+const FETCH_DEADLINE_MS = 60_000;
 const NAME_FIELDS = ["salutation", "firstname", "middlename", "lastname", "suffix"] as const;
 
 export const TRIBAL_LEADERSHIP_LATEST_SQL = `
@@ -107,13 +108,21 @@ function safe_error_code(error: unknown): string {
 
 export async function run_tribal_leadership_refresh_once(
   today: string = new Date().toISOString().slice(0, 10),
+  signal?: AbortSignal,
 ): Promise<number> {
   const latest = await query_with_diagnostics<{ latest: string | null }>(
     TRIBAL_LEADERSHIP_LATEST_SQL, [], { label: "tribal_leadership_latest", query_timeout_ms: 5_000 },
   );
   if (!tribal_leadership_refresh_due(latest.rows[0]?.latest ?? null, today)) return 0;
 
-  const response = await fetch(TRIBAL_LEADERSHIP_SERVICE_URL, { method: "GET", redirect: "follow" });
+  // One deadline covers the request and the body; shutdown aborts it too.
+  const deadline = AbortSignal.timeout(FETCH_DEADLINE_MS);
+  const fetch_signal = signal ? AbortSignal.any([signal, deadline]) : deadline;
+  const response = await fetch(TRIBAL_LEADERSHIP_SERVICE_URL, {
+    method: "GET",
+    redirect: "follow",
+    signal: fetch_signal,
+  });
   if (!response.ok) throw new Error(`tribal_leadership_fetch_failed:${response.status}`);
   const bytes = Buffer.from(await response.arrayBuffer());
   if (bytes.length === 0 || bytes.length > MAX_RESPONSE_BYTES) throw new Error("tribal_leadership_bad_size");
@@ -136,16 +145,18 @@ export async function run_tribal_leadership_refresh_once(
 
 let timer: NodeJS.Timeout | null = null;
 let active: Promise<unknown> | null = null;
+let shutdown_controller = new AbortController();
 
 function run_guarded(): void {
   if (active) return;
-  active = run_tribal_leadership_refresh_once()
+  active = run_tribal_leadership_refresh_once(undefined, shutdown_controller.signal)
     .catch(error => console.error("[TribalLeadershipRefresh] failed", { error_code: safe_error_code(error) }))
     .finally(() => { active = null; });
 }
 
 export function start_tribal_leadership_refresh(): void {
   if (timer || !enabled()) return;
+  shutdown_controller = new AbortController();
   console.log("[TribalLeadershipRefresh] started", { check_interval_ms: CHECK_INTERVAL_MS });
   run_guarded();
   timer = setInterval(run_guarded, CHECK_INTERVAL_MS);
@@ -155,5 +166,6 @@ export function start_tribal_leadership_refresh(): void {
 export async function stop_tribal_leadership_refresh(): Promise<void> {
   if (timer) clearInterval(timer);
   timer = null;
+  shutdown_controller.abort();
   await active;
 }
