@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { query_with_diagnostics } from "./db";
+import { project_docket_bill_roll_calls } from "./docket-bill-roll-call-projection";
 import { docket_bulk_source_event_date } from "./docket-bulk-json-member";
 import type { legiscan_bill_detail } from "./services/legiscan";
 
@@ -157,4 +158,10 @@ export async function preserve_docket_archive_auxiliary(input: {
       input.kind,input.provider_record_id,input.state,payload_hash,JSON.stringify(input.payload)],
     { label: "docket_bulk_preserve_source_member", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 30_000 },
   );
+  // Archive members arrive bill-first, votes later: when a roll call lands,
+  // project its bill's roll calls and votes now (opt-in, best effort).
+  const roll_call_bill_id = Number(input.payload.bill_id);
+  if (input.kind === "roll_call" && Number.isSafeInteger(roll_call_bill_id) && roll_call_bill_id > 0) {
+    await project_docket_bill_roll_calls(roll_call_bill_id);
+  }
 }
