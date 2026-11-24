@@ -616,7 +616,7 @@ APPROVED_REPOSITORY_ONLY = {
     # 2026-11-24 security advisor lockdown; repository-only pending approved install.
     "20261124060000": (
         "20261124060000_signal_function_public_execute_lockdown.sql",
-        "8abe35ab3f52a1f46e63e32ce967a09a2df13b79",
+        "b00ec4be5a7973eda96ede4ce6286afbec2fdd63",
     ),
 }
 
