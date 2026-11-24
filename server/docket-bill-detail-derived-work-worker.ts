@@ -6,6 +6,7 @@ const DEFAULT_POLL_INTERVAL_MS = 5_000;
 const MIN_POLL_INTERVAL_MS = 1_000;
 const MAX_POLL_INTERVAL_MS = 60_000;
 const CLAIM_LIMIT = 1;
+const MAX_CONCURRENCY = 16;
 const WORKER_LEASE_ID = [
   process.env.RENDER_SERVICE_ID ?? "lighthouse",
   "docket-bill-detail-derived-work",
@@ -44,6 +45,16 @@ function bounded_poll_interval_ms(): number {
   const parsed = Number(process.env.DOCKET_BILL_DETAIL_DERIVED_POLL_MS);
   if (!Number.isFinite(parsed)) return DEFAULT_POLL_INTERVAL_MS;
   return Math.max(MIN_POLL_INTERVAL_MS, Math.min(MAX_POLL_INTERVAL_MS, Math.trunc(parsed)));
+}
+
+// Parallel claim/process lanes per cycle. The claim uses SKIP LOCKED, so
+// lanes never take the same bill. Default 1 keeps the prior behavior.
+export function bounded_derived_work_concurrency(
+  environment: NodeJS.ProcessEnv = process.env,
+): number {
+  const parsed = Number(environment.DOCKET_BILL_DETAIL_DERIVED_CONCURRENCY);
+  if (!Number.isInteger(parsed) || parsed < 1) return 1;
+  return Math.min(parsed, MAX_CONCURRENCY);
 }
 
 function enabled(): boolean {
@@ -129,8 +140,21 @@ export function run_docket_bill_detail_derived_work_cycle(): Promise<void> {
   if (stopped || !enabled()) return Promise.resolve();
   const cycle = (async () => {
     try {
-      const job = await claim_next_job();
-      if (job) await process_job(job);
+      // allSettled: every lane finishes before the cycle ends, so a failed
+      // claim in one lane never lets new lanes start beside running ones.
+      const lanes = await Promise.allSettled(
+        Array.from({ length: bounded_derived_work_concurrency() }, async () => {
+          const job = await claim_next_job();
+          if (job) await process_job(job);
+        }),
+      );
+      for (const lane of lanes) {
+        if (lane.status === "rejected") {
+          console.error("[DocketBillDetailDerivedWork] lane_failed", {
+            error_code: safe_error_code(lane.reason),
+          });
+        }
+      }
     } catch (error) {
       console.error("[DocketBillDetailDerivedWork] cycle_failed", {
         error_code: safe_error_code(error),
@@ -152,6 +176,7 @@ export function start_docket_bill_detail_derived_work_worker(): void {
     worker_id: WORKER_LEASE_ID,
     interval_ms,
     claim_limit: CLAIM_LIMIT,
+    concurrency: bounded_derived_work_concurrency(),
   });
   void run_docket_bill_detail_derived_work_cycle();
   queue_timer = setInterval(() => void run_docket_bill_detail_derived_work_cycle(), interval_ms);
