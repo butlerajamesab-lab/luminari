@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { query_with_diagnostics } from "./db";
 import { project_docket_bill_sponsors } from "./docket-bill-sponsor-projection";
 import { project_docket_bill_roll_calls } from "./docket-bill-roll-call-projection";
+import { project_docket_bill_supplements } from "./docket-bill-supplement-projection";
 import { background_feature_enabled } from "./runtime-role";
 
 const DEFAULT_POLL_INTERVAL_MS = 5_000;
@@ -105,6 +106,7 @@ async function process_job(job: derived_work_job): Promise<void> {
     // Actor layer: sponsors from the same stored snapshot (opt-in, best effort).
     const sponsor_count = await project_docket_bill_sponsors(job.source_bill_id);
     const roll_call_counts = await project_docket_bill_roll_calls(job.source_bill_id);
+    const supplement_count = await project_docket_bill_supplements(job.source_bill_id);
     console.log("[DocketBillDetailDerivedWork] completed", {
       work_id: job.work_id,
       source_bill_id: job.source_bill_id,
@@ -113,6 +115,7 @@ async function process_job(job: derived_work_job): Promise<void> {
       sponsor_count,
       roll_call_count: roll_call_counts.roll_calls,
       roll_call_vote_count: roll_call_counts.votes,
+      supplement_count,
     });
   } catch (error) {
     const error_code = safe_error_code(error);
