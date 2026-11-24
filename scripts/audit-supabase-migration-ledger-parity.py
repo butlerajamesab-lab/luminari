@@ -613,6 +613,11 @@ APPROVED_REPOSITORY_ONLY = {
         "20261123200000_docket_activation_claim_order_index.sql",
         "f4dff25a85bf00a2934a36a04b47775a022eca21",
     ),
+    # 2026-11-24 security advisor lockdown; repository-only pending approved install.
+    "20261124060000": (
+        "20261124060000_signal_function_public_execute_lockdown.sql",
+        "8abe35ab3f52a1f46e63e32ce967a09a2df13b79",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
