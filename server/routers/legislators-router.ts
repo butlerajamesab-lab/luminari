@@ -266,7 +266,11 @@ async function fetchTribalLeaders(state: string): Promise<MemberRow[]> {
       NULLIF(email, '') AS email,
       NULL::text AS contact_method,
       NULL::text AS contact_note,
-      NULLIF(website_url, '') AS website_url,
+      CASE
+        WHEN NULLIF(btrim(website_url), '') IS NULL THEN NULL
+        WHEN btrim(website_url) ~* '^https?://' THEN btrim(website_url)
+        ELSE 'https://' || btrim(website_url)
+      END AS website_url,
       COALESCE(NULLIF(office_address, ''), NULLIF(mailing_address, '')) AS office_address,
       NULL::text AS office_classification,
       NULL::text AS district_office_address,
@@ -281,7 +285,16 @@ async function fetchTribalLeaders(state: string): Promise<MemberRow[]> {
       NULL::text AS source_update,
       fetched_date::text AS fetched_date,
       NULL::text AS last_refreshed,
-      NULL::text AS verification_status
+      CASE
+        WHEN next_election ~ '^\\d{4}-\\d{2}-\\d{2}'
+         AND left(next_election, 10) < to_char(current_date, 'YYYY-MM-DD')
+          THEN 'BIA listed next election ' || left(next_election, 10) || ', now passed; confirm with the nation'
+        WHEN next_election ~ '^\\d{4}-\\d{2}-\\d{2}'
+          THEN 'Next election ' || left(next_election, 10) || ' per BIA'
+        WHEN NULLIF(btrim(next_election), '') IS NOT NULL
+          THEN 'BIA lists next election: ' || btrim(next_election) || '; confirm with the nation'
+        ELSE 'As listed by BIA; confirm with the nation'
+      END AS verification_status
     FROM public.tribal_leaders
     WHERE hq_state = ${state_name}
        OR (
