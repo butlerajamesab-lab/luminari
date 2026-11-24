@@ -60,31 +60,54 @@ export const DOCKET_ROLL_CALL_PROJECTION_SQL = `
   returning roll_call_id`;
 
 export const DOCKET_ROLL_CALL_VOTE_PROJECTION_SQL = `
-  insert into public.docket_roll_call_vote_v1 (
-    roll_call_id, people_id, vote_id, vote_text,
-    archive_sha256, member_path, member_sha256
+  with chosen as materialized (
+    -- Exactly one archive copy per roll call: newest import first, then a
+    -- stable tiebreak. Only copies that name this same bill are eligible.
+    select distinct on (receipt.provider_record_id)
+           receipt.provider_record_id as roll_call_id,
+           receipt.archive_sha256, receipt.member_path, receipt.member_sha256,
+           receipt.payload_json
+      from public.docket_roll_call_v1 roll_call
+      join public.docket_legiscan_bulk_member_receipt receipt
+        on receipt.member_kind = 'roll_call'
+       and receipt.provider_record_id = roll_call.roll_call_id
+       and receipt.payload_json->>'bill_id' = roll_call.source_bill_id::text
+     where roll_call.source_bill_id = $1::integer
+     order by receipt.provider_record_id,
+              receipt.imported_at desc nulls last,
+              receipt.archive_sha256 desc,
+              receipt.member_path desc
+  ), inserted as (
+    insert into public.docket_roll_call_vote_v1 (
+      roll_call_id, people_id, vote_id, vote_text,
+      archive_sha256, member_path, member_sha256
+    )
+    select chosen.roll_call_id,
+           (vote->>'people_id')::integer,
+           nullif(vote->>'vote_id', '')::integer,
+           vote->>'vote_text',
+           chosen.archive_sha256,
+           chosen.member_path,
+           chosen.member_sha256
+      from chosen
+      cross join lateral jsonb_array_elements(
+        case when jsonb_typeof(chosen.payload_json->'votes') = 'array'
+             then chosen.payload_json->'votes' else '[]'::jsonb end
+      ) as vote
+     where coalesce(vote->>'people_id', '') ~ '^[1-9][0-9]*$'
+       and coalesce(vote->>'vote_text', '') <> ''
+    on conflict (roll_call_id, member_sha256, people_id) do nothing
+    returning roll_call_id
+  ), pointed as (
+    update public.docket_roll_call_v1 roll_call
+       set vote_archive_sha256 = chosen.archive_sha256,
+           vote_member_sha256 = chosen.member_sha256
+      from chosen
+     where roll_call.roll_call_id = chosen.roll_call_id
+       and roll_call.vote_member_sha256 is distinct from chosen.member_sha256
+    returning roll_call.roll_call_id
   )
-  select receipt.provider_record_id,
-         (vote->>'people_id')::integer,
-         nullif(vote->>'vote_id', '')::integer,
-         vote->>'vote_text',
-         receipt.archive_sha256,
-         receipt.member_path,
-         receipt.member_sha256
-    from public.docket_roll_call_v1 roll_call
-    join public.docket_legiscan_bulk_member_receipt receipt
-      on receipt.member_kind = 'roll_call'
-     and receipt.provider_record_id = roll_call.roll_call_id
-     and receipt.payload_json->>'bill_id' = roll_call.source_bill_id::text
-    cross join lateral jsonb_array_elements(
-      case when jsonb_typeof(receipt.payload_json->'votes') = 'array'
-           then receipt.payload_json->'votes' else '[]'::jsonb end
-    ) as vote
-   where roll_call.source_bill_id = $1::integer
-     and coalesce(vote->>'people_id', '') ~ '^[1-9][0-9]*$'
-     and coalesce(vote->>'vote_text', '') <> ''
-  on conflict (roll_call_id, people_id) do nothing
-  returning roll_call_id`;
+  select roll_call_id from inserted`;
 
 export function docket_roll_call_projection_enabled(
   environment: NodeJS.ProcessEnv = process.env,

@@ -109,6 +109,44 @@ describe("Docket roll call projection (GA HB79, real corpus rows)", () => {
     expect(await project()).toEqual({ roll_calls: 0, votes: 0 });
   });
 
+  it("never mixes archive copies: one copy per projection, newest import wins, pointer recorded", async () => {
+    // A second, later copy of the same real roll call that lists one fewer vote.
+    const receipt = fixture.roll_call_receipt;
+    const later = { ...receipt.payload_json, votes: receipt.payload_json.votes.slice(1) };
+    await database.query(
+      "update public.docket_legiscan_bulk_member_receipt set imported_at = '2026-11-07T00:00:00Z'",
+    );
+    await database.query(
+      `insert into public.docket_legiscan_bulk_member_receipt
+         (archive_sha256, member_path, member_sha256, member_kind, provider_record_id,
+          state, payload_json, disposition, imported_at)
+       values ($1, $2, $3, 'roll_call', $4, 'GA', $5::jsonb, 'source_preserved', '2026-11-20T00:00:00Z')`,
+      ["f".repeat(64), receipt.member_path, "e".repeat(64), receipt.provider_record_id, JSON.stringify(later)],
+    );
+    await database.query(
+      "update public.docket_bill_detail_cache set fetched_at = fetched_at + interval '60 days' where bill_id = $1",
+      [bill_id],
+    );
+    expect(await project()).toEqual({ roll_calls: 2, votes: 179 });
+    const { rows: copies } = await database.query<{ member_sha256: string; n: number }>(
+      `select member_sha256, count(*)::int as n from public.docket_roll_call_vote_v1
+        where roll_call_id = 1505526 group by 1 order by 1`,
+    );
+    // Both complete copies kept side by side, nothing deleted, nothing mixed.
+    expect(copies).toEqual([
+      { member_sha256: receipt.member_sha256, n: 180 },
+      { member_sha256: "e".repeat(64), n: 179 },
+    ]);
+    const { rows: pointer } = await database.query<{ vote_member_sha256: string }>(
+      "select vote_member_sha256 from public.docket_roll_call_v1 where roll_call_id = 1505526",
+    );
+    expect(pointer[0].vote_member_sha256).toBe("e".repeat(64));
+    await database.query(
+      "delete from public.docket_legiscan_bulk_member_receipt where archive_sha256 = $1",
+      ["f".repeat(64)],
+    );
+  });
+
   it("ignores an archive record that names a different bill", async () => {
     await database.query(
       `update public.docket_legiscan_bulk_member_receipt

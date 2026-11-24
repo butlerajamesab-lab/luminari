@@ -2,8 +2,10 @@
 -- Additive only; no provider calls; nothing deleted.
 --   docket_roll_call_v1      one row per roll call, from the stored bill detail
 --                            (tally, chamber, date, outcome, official links).
---   docket_roll_call_vote_v1 one row per legislator per roll call, from the
---                            preserved LegiScan archive record, with its hashes.
+--   docket_roll_call_vote_v1 one row per legislator per roll call per archive
+--                            copy, from the preserved LegiScan archive record.
+--                            Copies are never mixed; the roll call names the
+--                            copy its current votes come from.
 create table if not exists public.docket_roll_call_v1 (
   roll_call_id bigint primary key check (roll_call_id > 0),
   source_bill_id integer not null,
@@ -20,6 +22,8 @@ create table if not exists public.docket_roll_call_v1 (
   passed boolean,
   legiscan_url text,
   state_link text,
+  vote_archive_sha256 text,
+  vote_member_sha256 text,
   docket_fetched_at timestamptz not null,
   docket_source text not null,
   recorded_at timestamptz not null default now()
@@ -36,7 +40,7 @@ create table if not exists public.docket_roll_call_vote_v1 (
   member_path text not null,
   member_sha256 text not null,
   recorded_at timestamptz not null default now(),
-  primary key (roll_call_id, people_id)
+  primary key (roll_call_id, member_sha256, people_id)
 );
 create index if not exists idx_docket_roll_call_vote_v1_people
   on public.docket_roll_call_vote_v1 (people_id);
