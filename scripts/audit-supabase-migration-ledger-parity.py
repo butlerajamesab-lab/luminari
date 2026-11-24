@@ -633,6 +633,11 @@ APPROVED_REPOSITORY_ONLY = {
         "20261124090000_docket_bill_supplement_v1.sql",
         "95fa35f020bc8fff60f522b3eb16aefcf724e5fb",
     ),
+    # 2026-11-24 tribal leadership snapshots (dated BIA directory pulls); repository-only pending approved install.
+    "20261124100000": (
+        "20261124100000_tribal_leadership_snapshot_v1.sql",
+        "08a21ad27b7daca1a40f12b74ad8e94ba2b6b1f5",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
