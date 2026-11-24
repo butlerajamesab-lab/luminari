@@ -638,6 +638,11 @@ APPROVED_REPOSITORY_ONLY = {
         "20261124100000_tribal_leadership_snapshot_v1.sql",
         "08a21ad27b7daca1a40f12b74ad8e94ba2b6b1f5",
     ),
+    # 2026-11-24 Native Nations registry and raw site capture; repository-only pending approved install.
+    "20261124110000": (
+        "20261124110000_native_nation_site_capture_v1.sql",
+        "0ea18539b5640d7fdd2d376d8b0d8c05aae79ab7",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
