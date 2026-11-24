@@ -1,16 +1,16 @@
 /**
  * Legislators — "Who represents me" hub page.
  *
- * Flow: state picker -> level picker (Federal / State / Both) ->
+ * Flow: state picker -> level picker (Federal / State / Tribal / All) ->
  * district picker(s) -> cards. Member data is rendered ONLY through
  * LegislatorCard; this page renders pickers, section labels, held /
  * needs-district notices, and the always-visible face labels (coverage,
- * last refreshed, sources, tribal link). No member dump is ever rendered:
+ * last refreshed, sources). Tribal governments render beside federal and
+ * state through the same card. No member dump is ever rendered:
  * state-without-district stops at a prompt, and unknown districts stop
  * at a held notice with the valid district list.
  */
 import { useEffect, useState } from "react";
-import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { StationNav } from "@/components/station-nav";
 import LegislatorCard, {
@@ -29,7 +29,7 @@ const tone = {
   green: "#34d399",
 };
 
-type Level = "federal" | "state" | "both";
+type Level = "federal" | "state" | "tribal" | "both";
 
 /** Shape of legislators.byAddress, cast explicitly like the other payloads. */
 type AddressResult =
@@ -330,6 +330,42 @@ function StateChamberSection({
 
 // A link such as /legislators?state=WA (from the Docket Room) opens with
 // that state chosen; anything else starts with no state, as before.
+/** Tribal governments for the chosen state, through the same card. */
+function TribalSection({
+  title,
+  members,
+  isLoading,
+  isError,
+}: {
+  title: string;
+  members: LegislatorMember[];
+  isLoading: boolean;
+  isError: boolean;
+}) {
+  return (
+    <section style={{ marginTop: "2rem" }}>
+      <h2 style={{ fontSize: "1.3rem", margin: "0 0 1rem" }}>{title}</h2>
+      {isLoading ? (
+        <p style={{ color: tone.muted }}>Loading tribal governments…</p>
+      ) : isError ? (
+        <p style={{ color: "#f87171" }}>
+          Could not load tribal governments. Please try again.
+        </p>
+      ) : members.length === 0 ? (
+        <p style={{ color: tone.muted }}>
+          No tribal government is listed for this state in the current sources.
+        </p>
+      ) : (
+        <div style={{ display: "grid", gap: 16 }}>
+          {members.map((member) => (
+            <LegislatorCard key={member.member_key} member={member} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function initial_state_from_link(): string {
   if (typeof window === "undefined") return "";
   const requested = new URLSearchParams(window.location.search).get("state");
@@ -377,11 +413,11 @@ export default function Legislators() {
 
   const federalDistrictsQuery = trpc.legislators.districts.useQuery(
     { state, level: "federal" },
-    { enabled: state !== "" && level !== "state" },
+    { enabled: state !== "" && (level === "federal" || level === "both") },
   );
   const stateChambersQuery = trpc.legislators.chambers.useQuery(
     { state, level: "state" },
-    { enabled: state !== "" && level !== "federal" },
+    { enabled: state !== "" && (level === "state" || level === "both") },
   );
 
   const federalResolveQuery = trpc.legislators.resolve.useQuery(
@@ -390,7 +426,11 @@ export default function Legislators() {
       level: "federal",
       district: federalDistrict === "" ? undefined : federalDistrict,
     },
-    { enabled: state !== "" && level !== "state" },
+    { enabled: state !== "" && (level === "federal" || level === "both") },
+  );
+  const tribalQuery = trpc.legislators.tribal.useQuery(
+    { state },
+    { enabled: state !== "" && (level === "tribal" || level === "both") },
   );
 
   const pickState = (next: string) => {
@@ -423,8 +463,8 @@ export default function Legislators() {
         totalCommittees: number;
         statesCovered: number;
         fetchedDate: string | null;
-        sources: { federal: string; state: string };
-        tribalNote: string;
+        sources: { federal: string; state: string; tribal?: string };
+        totalTribal?: number;
       }
     | undefined;
   const federalDistrictList =
@@ -434,6 +474,9 @@ export default function Legislators() {
     (stateChambersQuery.data as { chambers: string[] } | undefined)?.chambers ??
     [];
   const federalResult = federalResolveQuery.data as ResolveResult | undefined;
+  const tribalMembers =
+    (tribalQuery.data as { members: LegislatorMember[] } | undefined)
+      ?.members ?? [];
 
   return (
     <main
@@ -476,9 +519,10 @@ export default function Legislators() {
           <p style={{ margin: "0 0 0.25rem" }}>
             Coverage: Current legislators for all 50 states, DC, and Puerto
             Rico, plus the federal delegates for American Samoa, Guam, the
-            Northern Mariana Islands, and the U.S. Virgin Islands.
+            Northern Mariana Islands, and the U.S. Virgin Islands, and the
+            leaders of tribal governments.
             {metaData
-              ? ` ${metaData.totalMembers.toLocaleString()} legislators · ${metaData.totalCommittees.toLocaleString()} committee assignments · ${metaData.statesCovered} jurisdictions.`
+              ? ` ${metaData.totalMembers.toLocaleString()} legislators · ${(metaData.totalTribal ?? 0).toLocaleString()} tribal leaders · ${metaData.totalCommittees.toLocaleString()} committee assignments · ${metaData.statesCovered} jurisdictions.`
               : ""}
           </p>
           <p style={{ margin: "0 0 0.25rem" }}>
@@ -496,13 +540,7 @@ export default function Legislators() {
                 State sources: {metaData.sources.state}
               </p>
               <p style={{ margin: 0 }}>
-                {metaData.tribalNote}{" "}
-                <Link
-                  href="/native-nations"
-                  style={{ color: tone.blue, textDecoration: "none" }}
-                >
-                  Native Nations hub
-                </Link>
+                Tribal sources: {metaData.sources.tribal}
               </p>
             </>
           ) : null}
@@ -651,7 +689,8 @@ export default function Legislators() {
                   [
                     ["federal", "Federal"],
                     ["state", "State"],
-                    ["both", "Both"],
+                    ["tribal", "Tribal"],
+                    ["both", "All"],
                   ] as [Level, string][]
                 ).map(([value, label]) => (
                   <button
@@ -678,7 +717,7 @@ export default function Legislators() {
               </div>
             </fieldset>
 
-            {state !== "" && level !== "state" ? (
+            {state !== "" && (level === "federal" || level === "both") ? (
               <DistrictPicker
                 id="federal-district"
                 label="Congressional district"
@@ -698,7 +737,7 @@ export default function Legislators() {
           </p>
         ) : (
           <>
-            {level !== "state" ? (
+            {level === "federal" || level === "both" ? (
               <ResolveSection
                 title={level === "both" ? "Federal" : "Your federal delegation"}
                 level="federal"
@@ -708,7 +747,7 @@ export default function Legislators() {
                 onPickDistrict={setFederalDistrict}
               />
             ) : null}
-            {level !== "federal" ? (
+            {level === "state" || level === "both" ? (
               stateChambersQuery.isLoading ? (
                 <p style={{ color: tone.muted, marginTop: "2rem" }}>
                   Loading state chambers…
@@ -737,6 +776,14 @@ export default function Legislators() {
                   />
                 ))
               )
+            ) : null}
+            {level === "tribal" || level === "both" ? (
+              <TribalSection
+                title={level === "both" ? "Tribal" : "Tribal governments"}
+                members={tribalMembers}
+                isLoading={tribalQuery.isLoading}
+                isError={tribalQuery.isError}
+              />
             ) : null}
           </>
         )}

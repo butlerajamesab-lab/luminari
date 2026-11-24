@@ -9,8 +9,10 @@
  * interpolated into a SQL string. Every member query filters
  * status = 'current': former members are never returned as contacts.
  *
- * Tribal leaders live in a separate table and are OUT OF SCOPE here;
- * the hub links to /native-nations instead of rendering tribal data.
+ * Tribal governments sit on this page beside federal and state, read from
+ * public.tribal_leaders (BIA Tribal Leaders Directory) and shaped into the
+ * same member card. A leader is listed under every state its nation's
+ * record names (headquarters state, else the state in its address or name).
  */
 import { z } from "zod";
 import { router, publicProcedure } from "../_core/trpc";
@@ -82,8 +84,8 @@ const FEDERAL_SOURCE =
   "Congress.gov + unitedstates/congress-legislators dataset";
 const STATE_SOURCE =
   "Open States (openstates.org), CC0, with each legislature's own site as authoritative fallback";
-const TRIBAL_NOTE =
-  "Tribal leaders live in the Native Nations hub (/native-nations), not here.";
+const TRIBAL_SOURCE =
+  "BIA Tribal Leaders Directory (bia.gov), with each nation's own published information";
 
 const MEMBER_COLUMNS = sql`
   member_key, level, chamber, state, district, full_name, party, status,
@@ -238,6 +240,62 @@ const stateInput = z
   .trim()
   .regex(/^[A-Za-z]{2}$/, "state must be a 2-letter code")
   .transform((value) => value.toUpperCase());
+
+/**
+ * Tribal leaders for one state, shaped as card members: the leader's title
+ * stands where a chamber would, the nation's name where a district would.
+ * A record without hq_state is matched by the state named in its address or
+ * the nation's own name, so no band or community is dropped.
+ */
+async function fetchTribalLeaders(state: string): Promise<MemberRow[]> {
+  const state_name = STATE_NAMES[state];
+  if (!state_name) return [];
+  const pattern = `%${state_name}%`;
+  const rows = await queryRows<MemberRow>(sql`
+    SELECT
+      'tribal:' || member_key AS member_key,
+      'tribal' AS level,
+      COALESCE(NULLIF(title, ''), 'Tribal Government') AS chamber,
+      ${state} AS state,
+      tribe_full_name AS district,
+      COALESCE(NULLIF(full_name, ''), tribe_full_name) AS full_name,
+      NULL::text AS party,
+      status,
+      NULL::text AS representation,
+      NULLIF(phone, '') AS phone,
+      NULLIF(email, '') AS email,
+      NULL::text AS contact_method,
+      NULL::text AS contact_note,
+      NULLIF(website_url, '') AS website_url,
+      COALESCE(NULLIF(office_address, ''), NULLIF(mailing_address, '')) AS office_address,
+      NULL::text AS office_classification,
+      NULL::text AS district_office_address,
+      NULL::text AS district_phone,
+      NULL::text AS photo_url,
+      NULL::text AS bio_url,
+      NULL::text AS bio_text,
+      NULL::text AS bio_source,
+      NULL::text AS links_json,
+      source,
+      NULL::text AS source_url,
+      NULL::text AS source_update,
+      fetched_date::text AS fetched_date,
+      NULL::text AS last_refreshed,
+      NULL::text AS verification_status
+    FROM public.tribal_leaders
+    WHERE hq_state = ${state_name}
+       OR (
+         hq_state IS NULL
+         AND (
+           COALESCE(office_address, '') ILIKE ${pattern}
+           OR COALESCE(mailing_address, '') ILIKE ${pattern}
+           OR COALESCE(tribe_full_name, '') ILIKE ${pattern}
+         )
+       )
+    ORDER BY tribe_full_name, full_name
+  `);
+  return rows.map((row) => ({ ...row, committees: [] }));
+}
 
 const levelInput = z.enum(["federal", "state"]);
 
@@ -526,6 +584,14 @@ export const legislatorsRouter = router({
       return attachCommittees(members, committees)[0];
     }),
 
+  /** Tribal governments for one state, as member cards. */
+  tribal: publicProcedure
+    .input(z.object({ state: z.string().trim().length(2) }))
+    .query(async ({ input }) => {
+      const state = input.state.toUpperCase();
+      return { state, members: await fetchTribalLeaders(state) };
+    }),
+
   /** Live counts + honest source strings for the hub face labels. */
   meta: publicProcedure.query(async () => {
     const rows = await queryRows<{
@@ -533,24 +599,27 @@ export const legislatorsRouter = router({
       total_committees: string;
       states_covered: string;
       fetched_date: string | null;
+      total_tribal: string;
     }>(sql`
       SELECT
         (SELECT COUNT(*) FROM public.legislators) AS total_members,
         (SELECT COUNT(*) FROM public.legislator_committees) AS total_committees,
         (SELECT COUNT(DISTINCT state) FROM public.legislators) AS states_covered,
-        (SELECT MAX(fetched_date) FROM public.legislators) AS fetched_date
+        (SELECT MAX(fetched_date) FROM public.legislators) AS fetched_date,
+        (SELECT COUNT(*) FROM public.tribal_leaders) AS total_tribal
     `);
     const row = rows[0];
     return {
       totalMembers: Number(row?.total_members ?? 0),
       totalCommittees: Number(row?.total_committees ?? 0),
+      totalTribal: Number(row?.total_tribal ?? 0),
       statesCovered: Number(row?.states_covered ?? 0),
       fetchedDate: row?.fetched_date ?? null,
       sources: {
         federal: FEDERAL_SOURCE,
         state: STATE_SOURCE,
+        tribal: TRIBAL_SOURCE,
       },
-      tribalNote: TRIBAL_NOTE,
     };
   }),
 });
