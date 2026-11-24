@@ -636,7 +636,7 @@ APPROVED_REPOSITORY_ONLY = {
     # 2026-11-24 tribal leadership snapshots (dated BIA directory pulls); repository-only pending approved install.
     "20261124100000": (
         "20261124100000_tribal_leadership_snapshot_v1.sql",
-        "f8dada46f2b99f81c0d95e0a8ee8d69129b16f8f",
+        "08a21ad27b7daca1a40f12b74ad8e94ba2b6b1f5",
     ),
 }
 

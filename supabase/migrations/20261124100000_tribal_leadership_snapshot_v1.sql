@@ -23,7 +23,7 @@ create index if not exists idx_tribal_leadership_snapshot_v1_tribe
   on public.tribal_leadership_snapshot_v1 (tribe_full_name, captured_date desc);
 
 alter table public.tribal_leadership_snapshot_v1 enable row level security;
-revoke all on public.tribal_leadership_snapshot_v1 from anon, authenticated;
+revoke all on public.tribal_leadership_snapshot_v1 from public, anon, authenticated, service_role;
 grant select, insert on public.tribal_leadership_snapshot_v1 to service_role;
 
 -- The 2026-10-28 pull, carried over verbatim from public.tribal_leaders.
