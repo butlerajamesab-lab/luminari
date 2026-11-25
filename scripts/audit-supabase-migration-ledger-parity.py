@@ -643,6 +643,11 @@ APPROVED_REPOSITORY_ONLY = {
         "20261124110000_native_nation_site_capture_v1.sql",
         "0ea18539b5640d7fdd2d376d8b0d8c05aae79ab7",
     ),
+    # 2026-11-25 expression index for civic_genome_bill source_bill_id lookups; repository-only pending approved install.
+    "20261125080000": (
+        "20261125080000_civic_genome_bill_source_bill_id_index.sql",
+        "8e347ff9c6c9161aa426bd1dec7c70e714bea083",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
