@@ -26,6 +26,7 @@ import { docket_router } from "../routes/docket";
 import { prism_verification_router } from "../routes/prism-verification-router";
 import { civic_genome_export_router } from "../routes/civic-genome-export-router";
 import { invite_redemption_router } from "../routes/invite-redemption-router";
+import { invite_only_gate } from "./invite-only-gate";
 import { registerUploadRoute } from "../upload-route";
 import { registerExportRoute } from "../export-production-route";
 import { registerExecutorRoutes } from "../executor-routes";
@@ -187,6 +188,7 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   app.use(sessionMiddleware);
+  app.use(invite_only_gate);
   app.use("/api/invites", invite_redemption_router);
   app.use(
     "/api/trpc",
