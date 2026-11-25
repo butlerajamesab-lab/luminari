@@ -111,10 +111,22 @@ function quoteIdent(name: string): string {
   return `"${name.replace(/"/g, '""')}"`;
 }
 
+/**
+ * Rows from db.execute(). The current driver returns a QueryResult with
+ * `.rows`; older callers indexed result[0] (mysql2 tuple), which is undefined
+ * on the Proxy and made every export fail with "reading 'map'".
+ */
+export function execute_rows(result: unknown): any[] {
+  const native = result as any;
+  if (Array.isArray(native?.rows)) return native.rows;
+  if (Array.isArray(native)) return Array.isArray(native[0]) ? native[0] : native;
+  return [];
+}
+
 /** Get all table names from the database */
 async function getAllTableNames(): Promise<string[]> {
   const result = await db.execute(sql`SELECT tablename FROM pg_tables WHERE schemaname = 'public'`);
-  const rows = result[0] as unknown as any[];
+  const rows = execute_rows(result);
   return rows.map((r: any) => Object.values(r)[0] as string).sort();
 }
 
@@ -124,7 +136,7 @@ async function getCreateStatement(tableName: string): Promise<string> {
     const result = await db.execute(
       sql`SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = 'public' AND table_name = ${tableName} ORDER BY ordinal_position`
     );
-    const rows = result[0] as unknown as any[];
+    const rows = execute_rows(result);
     if (rows.length > 0) {
       const cols = rows.map((r: any) => {
         let def = `${quoteIdent(r.column_name)} ${r.data_type}`;
@@ -144,7 +156,7 @@ async function getCreateStatement(tableName: string): Promise<string> {
 async function getRowCount(tableName: string): Promise<number> {
   try {
     const result = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM ${quoteIdent(tableName)}`));
-    const rows = result[0] as unknown as any[];
+    const rows = execute_rows(result);
     return Number((rows[0] as any)?.cnt) || 0;
   } catch {
     return 0;
@@ -243,7 +255,7 @@ export async function exportConfig(): Promise<ConfigExport> {
 export async function exportTableData(tableName: string, limit = 10000): Promise<DataExport> {
   try {
     const result = await db.execute(sql.raw(`SELECT * FROM ${quoteIdent(tableName)} LIMIT ${Math.floor(limit)}`));
-    const rows = result[0] as unknown as any[];
+    const rows = execute_rows(result);
     return { tableName, rowCount: rows.length, rows };
   } catch {
     return { tableName, rowCount: 0, rows: [] };
