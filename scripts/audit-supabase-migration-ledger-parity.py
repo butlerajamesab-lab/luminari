@@ -648,6 +648,11 @@ APPROVED_REPOSITORY_ONLY = {
         "20261125080000_civic_genome_bill_source_bill_id_index.sql",
         "8e347ff9c6c9161aa426bd1dec7c70e714bea083",
     ),
+    # 2026-11-25 history lookup rewritten from full hash join to indexed lateral; repository-only pending approved install.
+    "20261125090000": (
+        "20261125090000_genome_history_existing_lookup_lateral.sql",
+        "9c0d5c155675897f8d4b0138c479f3635954acd5",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
