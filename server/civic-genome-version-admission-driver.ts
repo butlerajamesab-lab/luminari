@@ -291,9 +291,15 @@ async function run_admission_cycle(): Promise<void> {
   if (running || stopped) return;
   running = true;
   let did_work = false;
+  const cycle_started_ms = Date.now();
+  const timing = { target_ms: 0, live_target_ms: 0, select_ms: 0, register_ms: 0, register_max_ms: 0 };
   try {
+    let phase_started_ms = Date.now();
     const admitted = await read_admitted_target().catch(() => null);
+    timing.target_ms = Date.now() - phase_started_ms;
+    phase_started_ms = Date.now();
     const live = admitted ? await read_live_target().catch(() => null) : null;
+    timing.live_target_ms = Date.now() - phase_started_ms;
     const plan = plan_admission_cycle(admitted, live);
     if (plan.action === "stand_down") {
       console.log("[GenomeVersionAdmission] stood_down", {
@@ -304,6 +310,7 @@ async function run_admission_cycle(): Promise<void> {
       });
       return;
     }
+    phase_started_ms = Date.now();
     const { rows } = await query_with_diagnostics<{
       genome_bill_id: string;
       source_bill_id: number;
@@ -312,6 +319,7 @@ async function run_admission_cycle(): Promise<void> {
       pool_acquire_timeout_ms: 1_000,
       query_timeout_ms: 10_000,
     });
+    timing.select_ms = Date.now() - phase_started_ms;
     let registered_bills = 0;
     let registered_documents = 0;
     let enqueued = 0;
@@ -319,6 +327,7 @@ async function run_admission_cycle(): Promise<void> {
     let failed = 0;
     for (const row of rows) {
       if (stopped) break;
+      const register_started_ms = Date.now();
       try {
         const { rows: receipt_rows } = await query_with_diagnostics<{
           receipt: {
@@ -337,6 +346,10 @@ async function run_admission_cycle(): Promise<void> {
       } catch (error) {
         if (is_prerequisite_skip(error)) skipped += 1;
         else failed += 1;
+      } finally {
+        const register_elapsed_ms = Date.now() - register_started_ms;
+        timing.register_ms += register_elapsed_ms;
+        timing.register_max_ms = Math.max(timing.register_max_ms, register_elapsed_ms);
       }
     }
     did_work = registered_bills > 0;
@@ -348,6 +361,8 @@ async function run_admission_cycle(): Promise<void> {
       skipped,
       failed,
       rule_set_version: admitted?.rule_set_version ?? null,
+      cycle_ms: Date.now() - cycle_started_ms,
+      ...timing,
     });
   } catch (error) {
     console.error("[GenomeVersionAdmission] cycle_failed", {
