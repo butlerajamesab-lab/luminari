@@ -254,8 +254,8 @@ export function classify_prism_queue_failure(input: {
   };
 }
 
-async function reconcile_completed_jobs(): Promise<void> {
-  await query_with_diagnostics(
+async function reconcile_completed_jobs(): Promise<number> {
+  const result = await query_with_diagnostics(
     `with candidate as (
        select queue.queue_id,
               verification.receipt_count,
@@ -292,16 +292,19 @@ async function reconcile_completed_jobs(): Promise<void> {
       query_timeout_ms: 5_000,
     },
   );
+  return result?.rowCount ?? 0;
 }
 
-async function reconcile_completed_jobs_if_due(): Promise<void> {
+// Returns how many rows reconciliation completed plus how many the v25
+// replenishment admitted, so a productive pass is not recorded as idle.
+async function reconcile_completed_jobs_if_due(): Promise<number> {
   const now_ms = Date.now();
-  if (now_ms < next_reconcile_at_ms) return;
+  if (now_ms < next_reconcile_at_ms) return 0;
   next_reconcile_at_ms = now_ms + bounded_reconcile_interval();
-  await reconcile_completed_jobs();
+  const reconciled = await reconcile_completed_jobs();
   // Explicit selections may reconcile their own receipts but never admit new jobs.
-  if (prism_rosetta_queue_canary_id() || prism_rosetta_queue_batch_ids()) return;
-  await query_with_diagnostics(
+  if (prism_rosetta_queue_canary_id() || prism_rosetta_queue_batch_ids()) return reconciled;
+  const replenished = await query_with_diagnostics(
     `select public.enqueue_civic_genome_prism_v25_batch_v1($1::integer)`,
     [RECONCILE_BATCH_SIZE],
     {
@@ -310,6 +313,8 @@ async function reconcile_completed_jobs_if_due(): Promise<void> {
       query_timeout_ms: 5_000,
     },
   );
+  const enqueued = Number(Object.values(replenished?.rows?.[0] ?? {})[0] ?? 0);
+  return reconciled + (Number.isFinite(enqueued) ? enqueued : 0);
 }
 
 const circuit_open_log = new circuit_open_log_gate();
@@ -569,7 +574,7 @@ async function run_queue_cycle(): Promise<void> {
   queue_cycle_running = true;
   let did_work = false;
   try {
-    await reconcile_completed_jobs_if_due();
+    if ((await reconcile_completed_jobs_if_due()) > 0) did_work = true;
     if (queue_remaining_new_submissions <= 0 && queue_retryable_submission_job_ids.size === 0) {
       if (!submission_budget_exhausted_logged) {
         submission_budget_exhausted_logged = true;

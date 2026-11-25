@@ -94,9 +94,12 @@ describe("idle backoff", () => {
     idle.record(false, 16 * 60 * 1000);
     expect(idle.should_run(16 * 60 * 1000 + 1)).toBe(false);
 
-    // A second burst of work inside the same window does not nudge again.
+    // Work inside the same window does not nudge at once, but it is not
+    // dropped either: the idle worker is brought forward to the window's end.
     busy.record(true, 20 * 60 * 1000);
     expect(idle.should_run(20 * 60 * 1000)).toBe(false);
+    expect(idle.should_run(31 * 60 * 1000 - 1)).toBe(false);
+    expect(idle.should_run(31 * 60 * 1000)).toBe(true);
   });
 
   it("activity nudges can be turned off", () => {
@@ -119,5 +122,29 @@ describe("idle backoff off switch", () => {
     expect(backoff.should_run(1)).toBe(false);
     process.env.WORKER_IDLE_BACKOFF_ENABLED = "false";
     expect(backoff.should_run(1)).toBe(true);
+  });
+});
+
+describe("idle backoff pipeline handoff", () => {
+  afterEach(() => { delete process.env.WORKER_IDLE_ACTIVITY_WAKE_MS; });
+
+  it("a downstream stage that checked too early is looked at again within one window", () => {
+    reset_idle_backoff_registry_for_tests();
+    process.env.WORKER_IDLE_ACTIVITY_WAKE_MS = String(15 * 60 * 1000);
+    const window = 15 * 60 * 1000;
+    const upstream = create_idle_backoff("upstream", 2_000);
+    const downstream = create_idle_backoff("downstream_stage", 30_000);
+    for (let i = 0; i < 12; i += 1) downstream.record(false, 0);
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    // First nudge: downstream looks before upstream has produced anything.
+    upstream.record(true, window);
+    expect(downstream.should_run(window)).toBe(true);
+    downstream.record(false, window);
+    // Upstream then produces work; downstream must not sleep for a day.
+    upstream.record(true, window + 60_000);
+    expect(downstream.should_run(2 * window)).toBe(true);
+    // Activity stops entirely; the deferred look still happened in-window.
+    expect(downstream.ms_until_due(window + 60_000)).toBeLessThanOrEqual(window);
   });
 });

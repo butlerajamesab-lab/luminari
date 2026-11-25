@@ -6,8 +6,9 @@
 //
 // Because every worker lives in the same process, any worker that does real
 // work also nudges idle workers to take one look (at most once per activity
-// window, default 15 minutes), so work handed downstream is not left waiting
-// for the daily check. A nudged worker that still finds nothing goes back to
+// window, default 15 minutes; activity inside a window schedules that look for
+// the window's end), so work handed downstream is not left waiting for the
+// daily check. A nudged worker that still finds nothing goes back to
 // its long wait at once.
 
 const DEFAULT_IDLE_MAX_MS = 24 * 60 * 60 * 1000;
@@ -71,11 +72,16 @@ export function idle_delay_ms(base_ms: number, idle_streak: number, max_ms = idl
 
 function nudge_idle_workers(source: string, now_ms: number): void {
   const window_ms = activity_wake_ms();
-  if (window_ms <= 0 || now_ms - last_activity_wake_ms < window_ms) return;
-  last_activity_wake_ms = now_ms;
+  if (window_ms <= 0) return;
+  // Inside the window a nudge is deferred, not dropped: idle workers are
+  // brought forward to the window's end, so work produced after an earlier
+  // nudge is still looked at within one window.
+  const in_window = now_ms - last_activity_wake_ms < window_ms;
+  const wake_at_ms = in_window ? last_activity_wake_ms + window_ms : now_ms;
+  if (!in_window) last_activity_wake_ms = now_ms;
   for (const other of registry.values()) {
-    if (other.name === source || other.next_due_ms <= now_ms) continue;
-    other.next_due_ms = now_ms;
+    if (other.name === source || other.next_due_ms <= wake_at_ms) continue;
+    other.next_due_ms = wake_at_ms;
   }
 }
 
