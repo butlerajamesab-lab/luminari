@@ -367,7 +367,9 @@ export function start_genome_version_admission_driver(): void {
     interval_ms: delay,
     batch_size: bounded_batch_size(),
   });
-  backoff = create_idle_backoff("genome_version_admission", delay);
+  backoff = create_idle_backoff("genome_version_admission", delay, {
+    watch_tables: ["public.docket_bill_detail_derived_work_v1", "public.civic_genome_bill", "public.civic_genome_rosetta_generation_target"],
+  });
   void run_admission_cycle();
   timer = setInterval(() => {
     if (backoff?.should_run() === false) return;

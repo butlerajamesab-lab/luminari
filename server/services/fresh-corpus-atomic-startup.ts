@@ -7,7 +7,9 @@ import { background_feature_enabled } from "../runtime-role";
 // visibility is resolved per object by corpus-storage-download rather than frozen
 // into startup policy.
 const RESUME_INTERVAL_MS = 15_000;
-const atomic_resume_backoff = create_idle_backoff("fresh_atomic_corpus_resume", RESUME_INTERVAL_MS);
+const atomic_resume_backoff = create_idle_backoff("fresh_atomic_corpus_resume", RESUME_INTERVAL_MS, {
+  watch_tables: ["public.luminari_corpus_atomic_run_v1"],
+});
 
 function schedule_atomic_resume(delay_ms: number) {
   setTimeout(() => {

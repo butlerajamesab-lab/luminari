@@ -197,7 +197,9 @@ export function start_docket_bill_detail_derived_work_worker(): void {
     claim_limit: CLAIM_LIMIT,
     concurrency: bounded_derived_work_concurrency(),
   });
-  queue_backoff = create_idle_backoff("docket_bill_detail_derived_work", interval_ms);
+  queue_backoff = create_idle_backoff("docket_bill_detail_derived_work", interval_ms, {
+    watch_tables: ["public.docket_bill_detail_derived_work_v1"],
+  });
   void run_docket_bill_detail_derived_work_cycle();
   queue_timer = setInterval(() => {
     if (queue_backoff?.should_run() === false) return;
