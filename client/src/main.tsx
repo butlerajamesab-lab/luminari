@@ -1,3 +1,4 @@
+import { should_forward_session } from "@/lib/session-forwarding";
 import { trpc } from "@/lib/trpc";
 import { supabase } from "@/lib/supabase";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
@@ -158,40 +159,15 @@ async function getFreshSessionToken(): Promise<string | null> {
 }
 
 /**
- * Plain same-origin fetches do not pass through the tRPC link. Mission Control
- * uses several protected REST diagnostics, so forward the same Supabase
- * session header to a narrow allowlist of administrator REST surfaces. Never
- * attach the token to another origin.
+ * Plain same-origin fetches do not pass through the tRPC link. The whole /api
+ * surface is behind the invite-only gate, so forward the same Supabase session
+ * header on every same-origin /api request. Never attach the token to another
+ * origin (see should_forward_session).
  */
 const nativeFetch = globalThis.fetch.bind(globalThis);
-const AUTHENTICATED_REST_PREFIXES = [
-  "/api/db-diagnostic",
-  "/api/corpus-footprint",
-  "/api/system/",
-  "/api/conveyor/",
-  "/api/ingestion-control/",
-  "/api/executor/",
-] as const;
-
-function requestUrl(input: RequestInfo | URL): URL | null {
-  try {
-    const raw = typeof input === "string"
-      ? input
-      : input instanceof URL
-        ? input.href
-        : input.url;
-    return new URL(raw, window.location.origin);
-  } catch {
-    return null;
-  }
-}
 
 function shouldForwardSupabaseSession(input: RequestInfo | URL): boolean {
-  const url = requestUrl(input);
-  if (!url || url.origin !== window.location.origin) return false;
-  return AUTHENTICATED_REST_PREFIXES.some(prefix =>
-    prefix.endsWith("/") ? url.pathname.startsWith(prefix) : url.pathname === prefix,
-  );
+  return should_forward_session(input, window.location.origin);
 }
 
 globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -199,7 +175,8 @@ globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise
     return nativeFetch(input, init);
   }
 
-  const headers = new Headers(init?.headers);
+  // A Request input carries its own headers; keep them unless init overrides.
+  const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
   if (!headers.has("x-lighthouse-supabase-session")) {
     const sessionToken = await getFreshSessionToken();
     if (sessionToken) headers.set("x-lighthouse-supabase-session", sessionToken);
