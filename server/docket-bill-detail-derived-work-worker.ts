@@ -1,3 +1,4 @@
+import { create_idle_backoff, type idle_backoff } from "./_core/idle-backoff";
 import { randomUUID } from "node:crypto";
 import { query_with_diagnostics } from "./db";
 import { project_docket_bill_sponsors } from "./docket-bill-sponsor-projection";
@@ -41,6 +42,7 @@ const DEFER_SQL = `
 `;
 
 let queue_timer: NodeJS.Timeout | null = null;
+let queue_backoff: idle_backoff | null = null;
 let active_cycle: Promise<void> | null = null;
 let stopped = false;
 
@@ -150,13 +152,17 @@ export function run_docket_bill_detail_derived_work_cycle(): Promise<void> {
   if (active_cycle) return active_cycle;
   if (stopped || !enabled()) return Promise.resolve();
   const cycle = (async () => {
+    let did_work = false;
     try {
       // allSettled: every lane finishes before the cycle ends, so a failed
       // claim in one lane never lets new lanes start beside running ones.
       const lanes = await Promise.allSettled(
         Array.from({ length: bounded_derived_work_concurrency() }, async () => {
           const job = await claim_next_job();
-          if (job) await process_job(job);
+          if (job) {
+            did_work = true;
+            await process_job(job);
+          }
         }),
       );
       for (const lane of lanes) {
@@ -170,6 +176,8 @@ export function run_docket_bill_detail_derived_work_cycle(): Promise<void> {
       console.error("[DocketBillDetailDerivedWork] cycle_failed", {
         error_code: safe_error_code(error),
       });
+    } finally {
+      queue_backoff?.record(did_work);
     }
   })();
   active_cycle = cycle;
@@ -189,8 +197,12 @@ export function start_docket_bill_detail_derived_work_worker(): void {
     claim_limit: CLAIM_LIMIT,
     concurrency: bounded_derived_work_concurrency(),
   });
+  queue_backoff = create_idle_backoff("docket_bill_detail_derived_work", interval_ms);
   void run_docket_bill_detail_derived_work_cycle();
-  queue_timer = setInterval(() => void run_docket_bill_detail_derived_work_cycle(), interval_ms);
+  queue_timer = setInterval(() => {
+    if (queue_backoff?.should_run() === false) return;
+    void run_docket_bill_detail_derived_work_cycle();
+  }, interval_ms);
   queue_timer.unref?.();
 }
 

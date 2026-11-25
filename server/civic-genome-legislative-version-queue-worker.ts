@@ -1,3 +1,4 @@
+import { create_idle_backoff, type idle_backoff } from "./_core/idle-backoff";
 import { randomUUID } from "node:crypto";
 import { legislative_current_source_scope } from "./legislative-current-source-scope";
 
@@ -83,6 +84,7 @@ let active_queue_cycle: Promise<void> | null = null;
 let current_result_observation_timer: NodeJS.Timeout | null = null;
 let active_current_result_observation: Promise<void> | null = null;
 let current_result_observation_stopped = false;
+let current_result_observation_backoff: idle_backoff | null = null;
 let amendment_source_completion_timer: NodeJS.Timeout | null = null;
 let active_amendment_source_completion: Promise<void> | null = null;
 let queue_cycle_running = false;
@@ -1135,8 +1137,10 @@ function schedule_legislative_version_queue_cycle(): void {
 
 async function run_current_result_observation_cycle(): Promise<void> {
   if (current_result_observation_stopped) return;
+  let did_work = false;
   try {
     const summary = await reconcile_awaiting_current_results();
+    did_work = summary.checked > 0;
     if (summary.attached > 0 || summary.read_errors > 0) {
       console.log("[CurrentResultReconciliation] cycle_complete", summary);
     }
@@ -1147,11 +1151,14 @@ async function run_current_result_observation_cycle(): Promise<void> {
       error_class: error instanceof Error ? error.name : "unknown",
       error_code: safe_error_code(error),
     });
+  } finally {
+    current_result_observation_backoff?.record(did_work);
   }
 }
 
 function schedule_current_result_observation(): void {
   if (active_current_result_observation || current_result_observation_stopped) return;
+  if (current_result_observation_backoff?.should_run() === false) return;
   const observation = run_current_result_observation_cycle();
   active_current_result_observation = observation;
   void observation.finally(() => {
@@ -1166,6 +1173,7 @@ export function start_current_result_observation_worker(): void {
   current_result_observation_stopped = false;
   const interval_ms = bounded_current_result_observation_interval();
   console.log("[CurrentResultReconciliation] started", { interval_ms });
+  current_result_observation_backoff = create_idle_backoff("current_result_observation", interval_ms);
   schedule_current_result_observation();
   current_result_observation_timer = setInterval(() => {
     schedule_current_result_observation();

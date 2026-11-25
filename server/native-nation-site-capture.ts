@@ -1,3 +1,4 @@
+import { create_idle_backoff, type idle_backoff } from "./_core/idle-backoff";
 import { createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
 import { query_with_diagnostics } from "./db";
@@ -360,18 +361,24 @@ function enabled(): boolean {
 }
 
 let timer: NodeJS.Timeout | null = null;
+let backoff: idle_backoff | null = null;
 let active: Promise<unknown> | null = null;
 let controller = new AbortController();
 
 function run_guarded(): void {
   if (active) return;
+  if (backoff?.should_run() === false) return;
   active = capture_next_nation(controller.signal)
     .then(nation_key => {
+      backoff?.record(nation_key !== null);
       if (nation_key) console.log("[NativeNationSiteCapture] captured", { nation_key });
     })
-    .catch(error => console.error("[NativeNationSiteCapture] failed", {
-      error_code: error instanceof Error ? error.message.slice(0, 160) : "unknown",
-    }))
+    .catch(error => {
+      backoff?.record(false);
+      console.error("[NativeNationSiteCapture] failed", {
+        error_code: error instanceof Error ? error.message.slice(0, 160) : "unknown",
+      });
+    })
     .finally(() => { active = null; });
 }
 
@@ -379,6 +386,7 @@ export function start_native_nation_site_capture(): void {
   if (timer || !enabled()) return;
   controller = new AbortController();
   console.log("[NativeNationSiteCapture] started", { cycle_interval_ms: CYCLE_INTERVAL_MS });
+  backoff = create_idle_backoff("native_nation_site_capture", CYCLE_INTERVAL_MS);
   run_guarded();
   timer = setInterval(run_guarded, CYCLE_INTERVAL_MS);
   timer.unref?.();

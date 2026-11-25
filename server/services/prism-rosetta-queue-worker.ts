@@ -1,3 +1,4 @@
+import { create_idle_backoff, type idle_backoff } from "../_core/idle-backoff";
 import { randomUUID } from "crypto";
 import { query_with_diagnostics } from "../db";
 import {
@@ -74,6 +75,7 @@ export type prism_queue_failure_decision = {
 
 let queue_timer: NodeJS.Timeout | null = null;
 let active_queue_cycle: Promise<void> | null = null;
+let queue_backoff: idle_backoff | null = null;
 let queue_cycle_running = false;
 let queue_stopped = false;
 let next_reconcile_at_ms = 0;
@@ -252,8 +254,8 @@ export function classify_prism_queue_failure(input: {
   };
 }
 
-async function reconcile_completed_jobs(): Promise<void> {
-  await query_with_diagnostics(
+async function reconcile_completed_jobs(): Promise<number> {
+  const result = await query_with_diagnostics(
     `with candidate as (
        select queue.queue_id,
               verification.receipt_count,
@@ -290,16 +292,19 @@ async function reconcile_completed_jobs(): Promise<void> {
       query_timeout_ms: 5_000,
     },
   );
+  return result?.rowCount ?? 0;
 }
 
-async function reconcile_completed_jobs_if_due(): Promise<void> {
+// Returns how many rows reconciliation completed plus how many the v25
+// replenishment admitted, so a productive pass is not recorded as idle.
+async function reconcile_completed_jobs_if_due(): Promise<number> {
   const now_ms = Date.now();
-  if (now_ms < next_reconcile_at_ms) return;
+  if (now_ms < next_reconcile_at_ms) return 0;
   next_reconcile_at_ms = now_ms + bounded_reconcile_interval();
-  await reconcile_completed_jobs();
+  const reconciled = await reconcile_completed_jobs();
   // Explicit selections may reconcile their own receipts but never admit new jobs.
-  if (prism_rosetta_queue_canary_id() || prism_rosetta_queue_batch_ids()) return;
-  await query_with_diagnostics(
+  if (prism_rosetta_queue_canary_id() || prism_rosetta_queue_batch_ids()) return reconciled;
+  const replenished = await query_with_diagnostics(
     `select public.enqueue_civic_genome_prism_v25_batch_v1($1::integer)`,
     [RECONCILE_BATCH_SIZE],
     {
@@ -308,6 +313,8 @@ async function reconcile_completed_jobs_if_due(): Promise<void> {
       query_timeout_ms: 5_000,
     },
   );
+  const enqueued = Number(Object.values(replenished?.rows?.[0] ?? {})[0] ?? 0);
+  return reconciled + (Number.isFinite(enqueued) ? enqueued : 0);
 }
 
 const circuit_open_log = new circuit_open_log_gate();
@@ -565,8 +572,9 @@ async function process_job(job: prism_rosetta_queue_job): Promise<void> {
 async function run_queue_cycle(): Promise<void> {
   if (queue_cycle_running || queue_stopped) return;
   queue_cycle_running = true;
+  let did_work = false;
   try {
-    await reconcile_completed_jobs_if_due();
+    if ((await reconcile_completed_jobs_if_due()) > 0) did_work = true;
     if (queue_remaining_new_submissions <= 0 && queue_retryable_submission_job_ids.size === 0) {
       if (!submission_budget_exhausted_logged) {
         submission_budget_exhausted_logged = true;
@@ -620,6 +628,7 @@ async function run_queue_cycle(): Promise<void> {
         attempt_count: job.attempt_count,
         circuit_state: circuit.state,
       });
+      did_work = true;
       await process_job(job);
     }
   } catch (error) {
@@ -638,12 +647,14 @@ async function run_queue_cycle(): Promise<void> {
       });
     }
   } finally {
+    queue_backoff?.record(did_work);
     queue_cycle_running = false;
   }
 }
 
 function schedule_queue_cycle(): void {
   if (active_queue_cycle) return;
+  if (queue_backoff && !queue_backoff.should_run()) return;
   const cycle = run_queue_cycle();
   active_queue_cycle = cycle;
   void cycle.finally(() => {
@@ -691,6 +702,7 @@ export function start_prism_rosetta_queue_worker(): void {
     rule_set_id: PRISM_ROSETTA_RULE_SET_ID,
     rule_set_version: PRISM_ROSETTA_RULE_SET_VERSION,
   });
+  queue_backoff = create_idle_backoff("prism_rosetta_queue", interval_ms);
   schedule_queue_cycle();
   queue_timer = setInterval(() => {
     schedule_queue_cycle();

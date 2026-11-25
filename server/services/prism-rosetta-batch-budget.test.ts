@@ -189,6 +189,8 @@ describe("bounded Prism batches through the actual queue and HTTP submission pat
     vi.stubEnv("PRISM_BRIDGE_SECRET", "test-secret"); vi.stubEnv("RENDER_GIT_COMMIT", "a".repeat(40));
     vi.stubEnv("PRISM_ROSETTA_QUEUE_CANARY_ID", ""); vi.stubEnv("PRISM_ROSETTA_QUEUE_BATCH_IDS", "");
     vi.stubEnv("PRISM_ROSETTA_QUEUE_MAX_NEW_SUBMISSIONS", "25");
+    // These cases pin the fixed polling rhythm, so idle backoff is off here.
+    vi.stubEnv("WORKER_IDLE_BACKOFF_ENABLED", "false");
     bindings = new Map(); receipts = new Map(); runs = new Map(); sent = [];
     block_publication = new Set(); source_failure = new Set(); prism_failures = 0;
     reset_prism_rosetta_circuit();

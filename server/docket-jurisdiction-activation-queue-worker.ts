@@ -1,3 +1,4 @@
+import { create_idle_backoff, type idle_backoff } from "./_core/idle-backoff";
 import { randomUUID } from "node:crypto";
 import { canonical_docket_bill_uuid } from "./docket-canonical-bill-id";
 
@@ -54,6 +55,7 @@ export type docket_bill_activation_failure_decision = {
 };
 
 let queue_timer: NodeJS.Timeout | null = null;
+let queue_backoff: idle_backoff | null = null;
 let active_queue_cycle: Promise<void> | null = null;
 let queue_stopped = false;
 const queue_worker_id = [
@@ -1198,12 +1200,12 @@ export function paid_remainder_lane_enabled(
   return now.getTime() < until.getTime();
 }
 
-async function run_paid_remainder_lane_once(): Promise<void> {
-  if (paid_remainder_lane_halted || !paid_remainder_lane_enabled()) return;
-  if (resolve_docket_archive_canary_queue_ids() !== null) return;
+async function run_paid_remainder_lane_once(): Promise<boolean> {
+  if (paid_remainder_lane_halted || !paid_remainder_lane_enabled()) return false;
+  if (resolve_docket_archive_canary_queue_ids() !== null) return false;
   if (paid_remainder_candidates === null) {
     // The list scan is the lane's only heavy query: at most once per 10 min.
-    if (Date.now() - paid_remainder_last_build_ms < PAID_REMAINDER_REBUILD_MIN_MS) return;
+    if (Date.now() - paid_remainder_last_build_ms < PAID_REMAINDER_REBUILD_MIN_MS) return false;
     paid_remainder_last_build_ms = Date.now();
     const found = await query_with_diagnostics<{ queue_id: string }>(
       DOCKET_PAID_REMAINDER_CANDIDATES_SQL,
@@ -1222,7 +1224,7 @@ async function run_paid_remainder_lane_once(): Promise<void> {
   if (paid_remainder_candidates.length === 0) {
     paid_remainder_lane_halted = true;
     console.log("[DocketPaidRemainderLane] halted_no_candidates");
-    return;
+    return false;
   }
   const claimed = await query_with_diagnostics<docket_bill_activation_job>(
     DOCKET_PAID_REMAINDER_CLAIM_SQL,
@@ -1236,7 +1238,7 @@ async function run_paid_remainder_lane_once(): Promise<void> {
   if (claimed.rows.length === 0) {
     // Everything on the list is done, locked, or now covered: rebuild next pass.
     paid_remainder_candidates = null;
-    return;
+    return false;
   }
   for (const job of claimed.rows) {
     let receipt: docket_bill_activation_receipt;
@@ -1265,6 +1267,7 @@ async function run_paid_remainder_lane_once(): Promise<void> {
       receipt: { ...receipt, paid_remainder_lane: true } as docket_bill_activation_receipt,
     });
   }
+  return true;
 }
 
 export function run_docket_bill_activation_queue_cycle(): Promise<void> {
@@ -1272,12 +1275,14 @@ export function run_docket_bill_activation_queue_cycle(): Promise<void> {
   if (queue_stopped) return Promise.resolve();
 
   const cycle = (async () => {
+    let did_work = false;
     try {
       const jobs = await claim_jobs(bounded_concurrency());
+      did_work = jobs.length > 0;
       circuit_open_log.reset();
       await Promise.all(jobs.map(job => process_docket_bill_activation_job(job)));
       await sweep_paid_covered_by_archive_if_due();
-      await run_paid_remainder_lane_once();
+      if (await run_paid_remainder_lane_once()) did_work = true;
     } catch (error) {
       const circuit_remaining_ms = queue_circuit_open_remaining_ms(error);
       if (circuit_remaining_ms !== null) {
@@ -1293,6 +1298,8 @@ export function run_docket_bill_activation_queue_cycle(): Promise<void> {
           error_code: safe_error_code(error),
         });
       }
+    } finally {
+      queue_backoff?.record(did_work);
     }
   })();
   active_queue_cycle = cycle;
@@ -1317,8 +1324,10 @@ export function start_docket_bill_activation_queue_worker(): void {
     source_scope,
     canary_queue_ids_configured: canary_queue_ids?.length ?? 0,
   });
+  queue_backoff = create_idle_backoff("docket_bill_activation_queue", interval_ms);
   void run_docket_bill_activation_queue_cycle();
   queue_timer = setInterval(() => {
+    if (queue_backoff?.should_run() === false) return;
     void run_docket_bill_activation_queue_cycle();
   }, interval_ms);
   queue_timer.unref?.();
