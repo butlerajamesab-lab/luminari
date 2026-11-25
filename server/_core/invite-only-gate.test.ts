@@ -36,4 +36,19 @@ describe("invite-only gate", () => {
     expect(is_open_path("/api/offices/nearest")).toBe(false);
     expect(is_open_path("/api/civic-genome/export/bills")).toBe(false);
   });
+
+  it("cannot be bypassed by capitals, doubled slashes or malformed encodings", () => {
+    expect(is_open_path("/API/trpc/legislators.tribal")).toBe(false);
+    expect(is_open_path("/Api/Offices/nearest")).toBe(false);
+    expect(is_open_path("//api//trpc/legislators.tribal")).toBe(false);
+    expect(trpc_procedures("/api/trpc/%")).toEqual(["<malformed>"]);
+    expect(is_open_path("/api/trpc/%")).toBe(false);
+  });
+
+  it("keeps invite onboarding reachable (InviteLanding and Login)", () => {
+    expect(is_open_path("/api/trpc/invites.validate")).toBe(true);
+    expect(is_open_path("/api/trpc/auth.bootstrap")).toBe(true);
+    expect(is_open_path("/api/trpc/auth.me,invites.validate")).toBe(true);
+    expect(is_open_path("/api/trpc/invites.create")).toBe(false);
+  });
 });

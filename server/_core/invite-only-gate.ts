@@ -20,7 +20,9 @@ const OPEN_PATHS = new Set([
   "/api/stripe/webhook",
 ]);
 const OPEN_PREFIXES = ["/api/invites/", "/api/oauth/"];
-const OPEN_TRPC_PROCEDURES = new Set(["auth.me", "auth.logout"]);
+// Invite onboarding needs these before the invite grants a role:
+// InviteLanding validates the token, bootstrap creates the signed-in profile.
+const OPEN_TRPC_PROCEDURES = new Set(["auth.me", "auth.logout", "auth.bootstrap", "invites.validate"]);
 
 export function invite_only_enabled(environment: NodeJS.ProcessEnv = process.env): boolean {
   return environment.LIGHTHOUSE_INVITE_ONLY === "true";
@@ -33,13 +35,29 @@ export function invite_only_roles(environment: NodeJS.ProcessEnv = process.env):
 
 /** tRPC procedure names in a (possibly batched) /api/trpc/<a,b,c> path. */
 export function trpc_procedures(pathname: string): string[] {
-  const rest = pathname.slice("/api/trpc/".length);
-  if (!pathname.startsWith("/api/trpc/") || !rest) return [];
-  return decodeURIComponent(rest).split(",").map(name => name.trim()).filter(Boolean);
+  const path = normalize_path(pathname);
+  const rest = path.slice("/api/trpc/".length);
+  if (!path.startsWith("/api/trpc/") || !rest) return [];
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(rest);
+  } catch {
+    return ["<malformed>"]; // never matches the open list, so it stays gated
+  }
+  return decoded.split(",").map(name => name.trim()).filter(Boolean);
 }
 
-export function is_open_path(pathname: string): boolean {
-  if (!pathname.startsWith("/api/")) return true; // the SPA shell itself; data comes only through /api
+/**
+ * Express routing is case-insensitive and tolerant of repeated slashes, so
+ * classify on the same shape it dispatches on (/API//trpc reaches /api/trpc).
+ */
+export function normalize_path(pathname: string): string {
+  return pathname.replace(/\/{2,}/g, "/").toLowerCase();
+}
+
+export function is_open_path(raw_pathname: string): boolean {
+  const pathname = normalize_path(raw_pathname);
+  if (!pathname.startsWith("/api/") && pathname !== "/api") return true; // the SPA shell itself; data comes only through /api
   if (OPEN_PATHS.has(pathname)) return true;
   if (OPEN_PREFIXES.some(prefix => pathname.startsWith(prefix))) return true;
   const procedures = trpc_procedures(pathname);
@@ -53,10 +71,9 @@ export const invite_only_gate: RequestHandler = async (
 ) => {
   if (!invite_only_enabled()) return next();
   const pathname = req.originalUrl.split("?", 1)[0];
-  if (is_open_path(pathname)) return next();
-
-  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   try {
+    if (is_open_path(pathname)) return next();
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
     const ctx = await createContext({ req, res } as any);
     const user = await resolve_user_for_procedure(ctx);
     if (!user) return res.status(401).json({ ok: false, error: "invite_only_sign_in_required" });
