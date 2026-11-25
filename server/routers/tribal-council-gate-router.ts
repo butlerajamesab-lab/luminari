@@ -170,7 +170,7 @@ async function council_membership(auth_user_id: string | null, nation: string) {
   return member ?? null;
 }
 
-export const tribalCouncilGateRouter = router({
+export const tribal_council_gate_router = router({
   public: router({
     page: publicProcedure.input(z.object({ nation_key })).query(async ({ input }) => {
       const fields = await query_rows<Record<string, unknown>>(sql`

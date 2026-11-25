@@ -16,7 +16,7 @@ import { assertActionAllowed } from "./gate-helpers";
 import { hardDeleteCase as canonical_hard_delete_case, hardDeleteDocument as canonical_hard_delete_document } from "./hard-delete-canonical";
 import { getDailySpotlight, getCategorySpotlight, getContextualSpotlights, getDiscoveryCategories, getAllSpotlights, generateShareText } from "./benefits-discovery";
 import { legislatorsRouter } from "./routers/legislators-router";
-import { tribalCouncilGateRouter } from "./routers/tribal-council-gate-router";
+import { tribal_council_gate_router } from "./routers/tribal-council-gate-router";
 import { vaFacilitiesRouter } from "./routers/va-facilities-router";
 import { mathEngineRouter } from "./routers/math-engine-router";
 import { campaignEngineRouter } from "./routers/campaign-engine-router";
@@ -3736,7 +3736,7 @@ export const appRouter = router({
   remedyFeasibility: remedyFeasibilityRouter,
   proceduralPathEngine: proceduralPathEngineRouter,
   legislators: legislatorsRouter,
-  tribalCouncilGate: tribalCouncilGateRouter,
+  tribal_council_gate: tribal_council_gate_router,
   vaFacilities: vaFacilitiesRouter,
   campaignEngine: campaignEngineRouter,
   datasetConnector: datasetConnectorRouter,
