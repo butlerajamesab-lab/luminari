@@ -1,3 +1,4 @@
+import { create_idle_backoff, type idle_backoff } from "./_core/idle-backoff";
 import { query_with_diagnostics } from "./db";
 import { background_feature_enabled } from "./runtime-role";
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
@@ -76,6 +77,7 @@ const MIN_MAX_EVALUATION_FAILURES = 1;
 const MAX_MAX_EVALUATION_FAILURES = 25;
 
 let timer: NodeJS.Timeout | null = null;
+let backoff: idle_backoff | null = null;
 let running = false;
 let stopped = false;
 
@@ -478,6 +480,7 @@ async function evaluate_attachment(
 async function run_attachment_cycle(): Promise<void> {
   if (running || stopped) return;
   running = true;
+  let did_work = false;
   try {
     let admitted: admitted_generation_target | null = null;
     try {
@@ -506,6 +509,7 @@ async function run_attachment_cycle(): Promise<void> {
       bounded_batch_size(),
       max_failures,
     );
+    did_work = candidates.length > 0;
     let linked = 0;
     let awaiting = 0;
     let unresolved = 0;
@@ -566,6 +570,7 @@ async function run_attachment_cycle(): Promise<void> {
       error_code: error_code(error),
     });
   } finally {
+    backoff?.record(did_work);
     running = false;
   }
 }
@@ -578,8 +583,12 @@ export function start_genome_amendment_attachment_driver(): void {
     interval_ms: delay,
     batch_size: bounded_batch_size(),
   });
+  backoff = create_idle_backoff("genome_amendment_attachment", delay);
   void run_attachment_cycle();
-  timer = setInterval(() => void run_attachment_cycle(), delay);
+  timer = setInterval(() => {
+    if (backoff?.should_run() === false) return;
+    void run_attachment_cycle();
+  }, delay);
   timer.unref?.();
 }
 

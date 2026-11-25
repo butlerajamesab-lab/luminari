@@ -1,3 +1,4 @@
+import { create_idle_backoff, type idle_backoff } from "./_core/idle-backoff";
 import { load_queued_docket_binding } from "./civic-genome-docket-binding";
 import { randomUUID } from "node:crypto";
 import { query_with_diagnostics } from "./db";
@@ -24,6 +25,7 @@ export type rosetta_generation_activation_queue_job = {
 };
 
 let queue_timer: NodeJS.Timeout | null = null;
+let queue_backoff: idle_backoff | null = null;
 let queue_cycle_running = false;
 let queue_stopped = false;
 const queue_worker_id = [
@@ -202,9 +204,11 @@ export async function run_rosetta_generation_activation_queue_cycle(): Promise<v
   if (is_genome_rosetta_publication_quarantined()) return; // never claim or mark queued work
   if (queue_cycle_running || queue_stopped) return;
   queue_cycle_running = true;
+  let did_work = false;
   try {
     const job = await claim_next_job();
     circuit_open_log.reset();
+    did_work = job !== null;
     if (job) await process_rosetta_generation_activation_job(job);
   } catch (error) {
     const circuit_remaining_ms = queue_circuit_open_remaining_ms(error);
@@ -222,6 +226,7 @@ export async function run_rosetta_generation_activation_queue_cycle(): Promise<v
       });
     }
   } finally {
+    queue_backoff?.record(did_work);
     queue_cycle_running = false;
   }
 }
@@ -235,8 +240,10 @@ export function start_rosetta_generation_activation_queue_worker(): void {
     interval_ms,
     max_attempts: MAX_ATTEMPTS,
   });
+  queue_backoff = create_idle_backoff("rosetta_generation_activation_queue", interval_ms);
   void run_rosetta_generation_activation_queue_cycle();
   queue_timer = setInterval(() => {
+    if (queue_backoff?.should_run() === false) return;
     void run_rosetta_generation_activation_queue_cycle();
   }, interval_ms);
   queue_timer.unref?.();

@@ -1,3 +1,4 @@
+import { create_idle_backoff } from "../_core/idle-backoff";
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -322,16 +323,24 @@ if (
   && background_feature_enabled("FRESH_CORPUS_RECONCILIATION_ENABLED")
 ) {
   let automaticReconciliationRunning = false;
+  const intervalMs = Math.max(
+    60_000,
+    Math.min(60 * 60_000, Number(process.env.FRESH_CORPUS_RECONCILIATION_INTERVAL_MS ?? 300_000)),
+  );
+  const reconciliation_backoff = create_idle_backoff("fresh_corpus_reconciliation", intervalMs);
   const reconcile = () => {
     if (automaticReconciliationRunning) return;
+    if (!reconciliation_backoff.should_run()) return;
     automaticReconciliationRunning = true;
     void import("../services/fresh-corpus-reconciliation-v1")
       .then(({ reconcileFreshCorpusAutomatically }) =>
         reconcileFreshCorpusAutomatically({ batchSize: 4, maxBatches: 40 }))
       .then(result => {
+        reconciliation_backoff.record(result.replay_required || result.status !== "idle");
         console.log("[FreshCorpusRebuild] automatic_reconciliation", result);
       })
       .catch(error => {
+        reconciliation_backoff.record(false);
         console.error("[FreshCorpusRebuild] automatic_reconciliation_failed", {
           error_class: error instanceof Error ? error.name : "unknown",
           error_message: error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500),
@@ -339,10 +348,6 @@ if (
       })
       .finally(() => { automaticReconciliationRunning = false; });
   };
-  const intervalMs = Math.max(
-    60_000,
-    Math.min(60 * 60_000, Number(process.env.FRESH_CORPUS_RECONCILIATION_INTERVAL_MS ?? 300_000)),
-  );
   setTimeout(reconcile, 15_000).unref();
   setInterval(reconcile, intervalMs).unref();
 }

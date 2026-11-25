@@ -34,6 +34,8 @@ describe("Prism 2.5 replenishment through the actual worker", () => {
     vi.stubEnv("PRISM_ROSETTA_QUEUE_MAX_NEW_SUBMISSIONS", "1");
     vi.stubEnv("PRISM_ROSETTA_QUEUE_POLL_MS", "10000");
     vi.stubEnv("PRISM_ROSETTA_QUEUE_RECONCILE_MS", "60000");
+    // These cases pin the fixed reconcile rhythm, so idle backoff is off here.
+    vi.stubEnv("WORKER_IDLE_BACKOFF_ENABLED", "false");
     vi.mocked(activate_prism_for_rosetta_assembly).mockRejectedValue(new Error("unexpected_activation"));
   });
 

@@ -1,3 +1,4 @@
+import { create_idle_backoff, type idle_backoff } from "./_core/idle-backoff";
 import { randomUUID } from "node:crypto";
 import { query_with_diagnostics } from "./db";
 import { background_feature_enabled } from "./runtime-role";
@@ -72,6 +73,7 @@ const ingestion_worker_id = [
 ].join(":");
 
 let timer: NodeJS.Timeout | null = null;
+let backoff: idle_backoff | null = null;
 let running = false;
 let stopped = false;
 
@@ -527,6 +529,7 @@ async function recover_stranded_ingested_jobs(): Promise<number> {
 async function run_ingestion_cycle(): Promise<void> {
   if (running || stopped) return;
   running = true;
+  let did_work = false;
   try {
     let admitted: admitted_generation_target | null = null;
     try {
@@ -558,6 +561,7 @@ async function run_ingestion_cycle(): Promise<void> {
     }
 
     const jobs = await claim_ingestion_jobs(bounded_batch_size());
+    did_work = jobs.length > 0 || recovered > 0;
     let ingested = 0;
     let parked = 0;
     let deferred = 0;
@@ -614,6 +618,7 @@ async function run_ingestion_cycle(): Promise<void> {
       error_code: error_code(error),
     });
   } finally {
+    backoff?.record(did_work);
     running = false;
   }
 }
@@ -626,8 +631,12 @@ export function start_genome_rosetta_ingestion_driver(): void {
     interval_ms: delay,
     batch_size: bounded_batch_size(),
   });
+  backoff = create_idle_backoff("genome_rosetta_ingestion", delay);
   void run_ingestion_cycle();
-  timer = setInterval(() => void run_ingestion_cycle(), delay);
+  timer = setInterval(() => {
+    if (backoff?.should_run() === false) return;
+    void run_ingestion_cycle();
+  }, delay);
   timer.unref?.();
 }
 

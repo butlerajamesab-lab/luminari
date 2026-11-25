@@ -1,3 +1,4 @@
+import { create_idle_backoff, type idle_backoff } from "./_core/idle-backoff";
 import { query_with_diagnostics } from "./db";
 import { background_feature_enabled } from "./runtime-role";
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
@@ -46,6 +47,7 @@ const DOOR_QUERY_TIMEOUT_MS = 30_000;
 const HASH = /^[a-f0-9]{64}$/i;
 
 let timer: NodeJS.Timeout | null = null;
+let backoff: idle_backoff | null = null;
 let running = false;
 let stopped = false;
 
@@ -288,6 +290,7 @@ export async function read_live_target(): Promise<live_generation_target | null>
 async function run_admission_cycle(): Promise<void> {
   if (running || stopped) return;
   running = true;
+  let did_work = false;
   try {
     const admitted = await read_admitted_target().catch(() => null);
     const live = admitted ? await read_live_target().catch(() => null) : null;
@@ -336,6 +339,7 @@ async function run_admission_cycle(): Promise<void> {
         else failed += 1;
       }
     }
+    did_work = registered_bills > 0;
     console.log("[GenomeVersionAdmission] cycle", {
       selected: rows.length,
       registered_bills,
@@ -350,6 +354,7 @@ async function run_admission_cycle(): Promise<void> {
       error_code: error_code(error),
     });
   } finally {
+    backoff?.record(did_work);
     running = false;
   }
 }
@@ -362,8 +367,12 @@ export function start_genome_version_admission_driver(): void {
     interval_ms: delay,
     batch_size: bounded_batch_size(),
   });
+  backoff = create_idle_backoff("genome_version_admission", delay);
   void run_admission_cycle();
-  timer = setInterval(() => void run_admission_cycle(), delay);
+  timer = setInterval(() => {
+    if (backoff?.should_run() === false) return;
+    void run_admission_cycle();
+  }, delay);
   timer.unref?.();
 }
 

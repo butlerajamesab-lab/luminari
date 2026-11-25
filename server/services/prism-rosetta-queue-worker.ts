@@ -1,3 +1,4 @@
+import { create_idle_backoff, type idle_backoff } from "../_core/idle-backoff";
 import { randomUUID } from "crypto";
 import { query_with_diagnostics } from "../db";
 import {
@@ -74,6 +75,7 @@ export type prism_queue_failure_decision = {
 
 let queue_timer: NodeJS.Timeout | null = null;
 let active_queue_cycle: Promise<void> | null = null;
+let queue_backoff: idle_backoff | null = null;
 let queue_cycle_running = false;
 let queue_stopped = false;
 let next_reconcile_at_ms = 0;
@@ -565,6 +567,7 @@ async function process_job(job: prism_rosetta_queue_job): Promise<void> {
 async function run_queue_cycle(): Promise<void> {
   if (queue_cycle_running || queue_stopped) return;
   queue_cycle_running = true;
+  let did_work = false;
   try {
     await reconcile_completed_jobs_if_due();
     if (queue_remaining_new_submissions <= 0 && queue_retryable_submission_job_ids.size === 0) {
@@ -620,6 +623,7 @@ async function run_queue_cycle(): Promise<void> {
         attempt_count: job.attempt_count,
         circuit_state: circuit.state,
       });
+      did_work = true;
       await process_job(job);
     }
   } catch (error) {
@@ -638,12 +642,14 @@ async function run_queue_cycle(): Promise<void> {
       });
     }
   } finally {
+    queue_backoff?.record(did_work);
     queue_cycle_running = false;
   }
 }
 
 function schedule_queue_cycle(): void {
   if (active_queue_cycle) return;
+  if (queue_backoff && !queue_backoff.should_run()) return;
   const cycle = run_queue_cycle();
   active_queue_cycle = cycle;
   void cycle.finally(() => {
@@ -691,6 +697,7 @@ export function start_prism_rosetta_queue_worker(): void {
     rule_set_id: PRISM_ROSETTA_RULE_SET_ID,
     rule_set_version: PRISM_ROSETTA_RULE_SET_VERSION,
   });
+  queue_backoff = create_idle_backoff("prism_rosetta_queue", interval_ms);
   schedule_queue_cycle();
   queue_timer = setInterval(() => {
     schedule_queue_cycle();
