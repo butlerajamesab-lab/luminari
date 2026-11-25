@@ -123,6 +123,7 @@ export async function getQuarterlyExportStatus() {
       createdAt: exportSpineRuns.createdAt,
       completedAt: exportSpineRuns.completedAt,
       fileUrl: exportSpineRuns.fileUrl,
+      filePath: exportSpineRuns.filePath,
       bundleSize: exportSpineRuns.bundleSize,
       createdBy: exportSpineRuns.createdBy,
       errorMessage: exportSpineRuns.errorMessage,

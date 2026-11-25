@@ -20,7 +20,7 @@ import {
   patternRegistry,
   adminChangeLog,
 } from "../../drizzle/schema";
-import { storagePut } from "../storage";
+import { export_bundle_put } from "../storage";
 import crypto from "crypto";
 
 // ─── Types ───
@@ -474,10 +474,10 @@ export async function runExport(
 
     bundle._manifest = manifest;
 
-    // Upload to S3
+    // Upload to the private export bucket; filePath keeps the storage key,
+    // and downloads go through a short-lived signed URL (getDownloadUrl).
     const finalJson = JSON.stringify(bundle, null, 2);
-    const fileKey = `exports/${bundleName}.json`;
-    const { url } = await storagePut(fileKey, finalJson, "application/json");
+    const { key: fileKey, url } = await export_bundle_put(`${bundleName}.json`, finalJson, "application/json");
 
     // Update run record
     await db.update(exportSpineRuns)

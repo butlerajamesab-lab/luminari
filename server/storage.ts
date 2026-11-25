@@ -360,3 +360,51 @@ export async function storageDelete(storage_key: string): Promise<void> {
   }
   await forge_storage_delete(storage_key);
 }
+
+// ─── Sovereign Control export bundles ───
+// Bundles go to a private Supabase bucket of their own (never the case-document
+// bucket). The old built-in storage proxy (BUILT_IN_FORGE_*) is not configured
+// on Render, which made every export fail at the upload step.
+const DEFAULT_EXPORT_BUCKET = "sovereign-exports";
+
+function export_bucket(): string {
+  return process.env.LIGHTHOUSE_EXPORT_STORAGE_BUCKET?.trim() || DEFAULT_EXPORT_BUCKET;
+}
+
+function export_storage_client(): SupabaseClient {
+  const config = get_supabase_storage_config();
+  return get_supabase_storage_client(config);
+}
+
+export async function export_bundle_put(
+  object_path: string,
+  data: Buffer | Uint8Array | string,
+  content_type = "application/json",
+): Promise<StorageResult> {
+  const client = export_storage_client();
+  const bucket = export_bucket();
+  const { error: bucket_error } = await client.storage.createBucket(bucket, { public: false });
+  if (bucket_error && !/already exists/i.test(bucket_error.message)) {
+    throw new Error(`Export bucket unavailable: ${bucket_error.message}`);
+  }
+  const path = normalize_key(object_path);
+  const { error } = await client.storage
+    .from(bucket)
+    .upload(path, to_upload_body(data), { contentType: content_type, upsert: false });
+  if (error) throw new Error(`Export bundle upload failed: ${error.message}`);
+  return { key: to_supabase_key(bucket, path), url: "" };
+}
+
+export async function export_bundle_signed_url(storage_key: string): Promise<string> {
+  const parsed = parse_supabase_key(storage_key);
+  if (parsed.bucket !== export_bucket()) {
+    throw new Error(`Export key references unexpected bucket: ${parsed.bucket}`);
+  }
+  const { data, error } = await export_storage_client().storage
+    .from(parsed.bucket)
+    .createSignedUrl(parsed.object_path, SIGNED_URL_TTL_SECONDS);
+  if (error || !data?.signedUrl) {
+    throw new Error(`Export download URL failed: ${error?.message || "missing signed URL"}`);
+  }
+  return data.signedUrl;
+}

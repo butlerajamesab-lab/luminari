@@ -43,6 +43,15 @@ function ExportSpinePanel() {
   const { data: stats } = trpc.s76.exportSpine.getStats.useQuery();
   const { data: quarterlyStatus, refetch: refetchQuarterly } = trpc.s76.exportSpine.getQuarterlyStatus.useQuery();
   const triggerQuarterly = trpc.s76.exportSpine.triggerQuarterlyExport.useMutation();
+  const getDownloadUrl = trpc.s76.exportSpine.getDownloadUrl.useMutation();
+  const open_download = async (run: { id: number; fileUrl?: string | null }) => {
+    try {
+      const { url } = run.fileUrl ? { url: run.fileUrl } : await getDownloadUrl.mutateAsync({ runId: run.id });
+      window.location.href = url;
+    } catch (error: any) {
+      toast.error(`Download failed: ${error?.message ?? "unknown error"}`);
+    }
+  };
 
   const handleTriggerQuarterly = async () => {
     try {
@@ -194,8 +203,8 @@ function ExportSpinePanel() {
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <span>{new Date(Number(run.createdAt)).toLocaleDateString()}</span>
                       {run.bundleSize ? <span>{(Number(run.bundleSize) / 1024).toFixed(0)} KB</span> : null}
-                      {run.fileUrl && run.status === "completed" && (
-                        <button onClick={() => window.open(run.fileUrl!, "_blank")} className="text-amber-400 hover:text-amber-300">
+                      {run.status === "completed" && (run.fileUrl || run.filePath) && (
+                        <button onClick={() => open_download(run)} className="text-amber-400 hover:text-amber-300">
                           <Download className="h-3 w-3" />
                         </button>
                       )}
@@ -227,8 +236,8 @@ function ExportSpinePanel() {
                     </div>
                   </div>
                 </div>
-                {run.fileUrl && run.status === "completed" && (
-                  <Button size="sm" variant="outline" onClick={() => window.open(run.fileUrl!, "_blank")}>
+                {run.status === "completed" && (run.fileUrl || run.filePath) && (
+                  <Button size="sm" variant="outline" onClick={() => open_download(run)}>
                     <Download className="h-3 w-3 mr-1" /> Download
                   </Button>
                 )}
