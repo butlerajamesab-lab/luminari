@@ -1,3 +1,4 @@
+import { should_forward_session } from "../client/src/lib/session-forwarding";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -25,11 +26,14 @@ describe("Mission Control truthful knowledge coverage", () => {
 });
 
 describe("protected REST authentication propagation", () => {
-  it("forwards the Supabase session only to same-origin administrator REST paths", () => {
+  it("forwards the Supabase session only to same-origin /api paths", () => {
     const main = source("client/src/main.tsx");
-    expect(main).toContain('"/api/db-diagnostic"');
-    expect(main).toContain('"/api/system/"');
-    expect(main).toContain('url.origin !== window.location.origin');
+    const origin = "https://lighthouse.example";
+    // Administrator REST paths are covered; every other origin is refused.
+    expect(should_forward_session("/api/db-diagnostic", origin)).toBe(true);
+    expect(should_forward_session("/api/system/health", origin)).toBe(true);
+    expect(should_forward_session("https://elsewhere.example/api/system/health", origin)).toBe(false);
+    expect(main).toContain("should_forward_session(input, window.location.origin)");
     expect(main).toContain('headers.set("x-lighthouse-supabase-session", sessionToken)');
     expect(main).toContain('credentials: "include"');
     expect(main).toContain("nativeFetch(input");
