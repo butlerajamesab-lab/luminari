@@ -20,6 +20,7 @@ import {
   OFFICE_FAMILY_META,
 } from "@shared/office-families";
 import OfficeCard from "@/components/offices/OfficeCard";
+import PlaceBrowse from "@/components/offices/PlaceBrowse";
 import { StationNav } from "@/components/station-nav";
 import {
   group_office_results,
@@ -207,7 +208,8 @@ export default function FindAnOffice() {
           Find an office
         </h1>
         <p style={{ color: tone.muted, lineHeight: 1.7, margin: "0 0 1.5rem" }}>
-          Enter your address to find the government offices nearest you —
+          Pick your state and city, or enter your address, to find the
+          government offices near you —
           Social Security, veterans&apos; facilities, health centers,
           housing authorities, job centers, and more. Every office shown
           is a record in the{" "}
@@ -246,6 +248,15 @@ export default function FindAnOffice() {
           </section>
         ) : null}
 
+        <div style={{ marginBottom: "1rem", display: "grid", gap: 6 }}>
+          <span style={{ fontSize: "0.9rem" }}>
+            Only show these kinds of offices (optional)
+          </span>
+          <FamilyChips selected={families} onToggle={toggleFamily} />
+        </div>
+
+        <PlaceBrowse families={families} />
+
         <form
           onSubmit={runSearch}
           style={{
@@ -257,7 +268,7 @@ export default function FindAnOffice() {
           }}
         >
           <label style={{ display: "grid", gap: 6, fontSize: "0.9rem" }}>
-            Find offices by address — no agency name needed
+            Or find the nearest offices to an address — no agency name needed
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <input
                 value={address}
@@ -291,13 +302,6 @@ export default function FindAnOffice() {
               </button>
             </div>
           </label>
-
-          <div style={{ marginTop: "1rem", display: "grid", gap: 6 }}>
-            <span style={{ fontSize: "0.9rem" }}>
-              Only show these kinds of offices (optional)
-            </span>
-            <FamilyChips selected={families} onToggle={toggleFamily} />
-          </div>
 
           {search.phase === "loading" ? (
             <p style={{ color: tone.muted, margin: "0.75rem 0 0" }}>

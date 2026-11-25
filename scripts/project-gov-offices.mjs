@@ -74,6 +74,8 @@ export const FAMILY_CATEGORY_MAP = {
   apprenticeship: { primary: "employment_labor", memberships: [] },
   ssa: { primary: "cash_assistance", memberships: [] },
   native_american: { primary: "tribal", memberships: [] },
+  // BIA Tribal Leaders Directory tribal offices (20261125120000 migration).
+  tribal_government: { primary: "tribal", memberships: [] },
 };
 
 // VA clinical types -> healthcare (U1). va_vamc additionally carries

@@ -35,12 +35,18 @@ export const OFFICE_FAMILY_META: Record<string, OfficeFamilyMeta> = {
     label: "Native American Services",
     color: "#9a3412",
   },
+  // Tribal office of each federally recognized nation, from the BIA Tribal
+  // Leaders Directory (migration 20261125120000_tribal_government_offices_v1).
+  tribal_government: {
+    label: "Tribal Governments",
+    color: "#7c2d12",
+  },
   hospital: { label: "Hospitals", color: "#047857" },
   health_center: { label: "Health Centers", color: "#0f766e" },
   law_enforcement: { label: "Law Enforcement", color: "#dc2626" },
 };
 
-/** The ten anchored office families, in legend order. */
+/** The anchored office families, in legend order. */
 export const OFFICE_FAMILY_KEYS = Object.keys(OFFICE_FAMILY_META);
 
 export function is_office_family_key(value: unknown): value is string {
