@@ -10,6 +10,11 @@
 // the window's end), so work handed downstream is not left waiting for the
 // daily check. A nudged worker that still finds nothing goes back to
 // its long wait at once.
+//
+// Work that arrives from another process (the web service, a database
+// trigger) is caught by the wake pulse (idle-wake-pulse.ts): each worker names
+// the tables its work lives in, and a change to one of them brings that worker
+// forward for a single look.
 
 const DEFAULT_IDLE_MAX_MS = 24 * 60 * 60 * 1000;
 const MAX_IDLE_MAX_MS = 7 * 24 * 60 * 60 * 1000;
@@ -36,6 +41,12 @@ type entry = {
   base_ms: number;
   idle_streak: number;
   next_due_ms: number;
+  watch_tables: string[];
+};
+
+export type idle_backoff_options = {
+  // Tables ("schema.table") whose writes mean this worker may have new work.
+  watch_tables?: string[];
 };
 
 const registry = new Map<string, entry>();
@@ -85,8 +96,18 @@ function nudge_idle_workers(source: string, now_ms: number): void {
   }
 }
 
-export function create_idle_backoff(name: string, base_ms: number): idle_backoff {
-  const state: entry = { name, base_ms: Math.max(1, base_ms), idle_streak: 0, next_due_ms: 0 };
+export function create_idle_backoff(
+  name: string,
+  base_ms: number,
+  options: idle_backoff_options = {},
+): idle_backoff {
+  const state: entry = {
+    name,
+    base_ms: Math.max(1, base_ms),
+    idle_streak: 0,
+    next_due_ms: 0,
+    watch_tables: [...new Set(options.watch_tables ?? [])],
+  };
   registry.set(name, state);
 
   return {
@@ -142,6 +163,26 @@ export function wake_idle_worker(name: string): void {
   if (!state) return;
   state.idle_streak = 0;
   state.next_due_ms = 0;
+}
+
+export function watched_tables(): string[] {
+  const tables = new Set<string>();
+  for (const state of registry.values()) for (const table of state.watch_tables) tables.add(table);
+  return [...tables].sort();
+}
+
+// One look for each idle worker watching a changed table. The idle streak is
+// kept: a look that still finds nothing returns straight to the long wait.
+export function poke_workers_watching(changed_tables: Iterable<string>, now_ms = Date.now()): string[] {
+  const changed = new Set(changed_tables);
+  const poked: string[] = [];
+  for (const state of registry.values()) {
+    if (state.next_due_ms <= now_ms) continue;
+    if (!state.watch_tables.some(table => changed.has(table))) continue;
+    state.next_due_ms = now_ms;
+    poked.push(state.name);
+  }
+  return poked;
 }
 
 export function idle_backoff_snapshots(): idle_backoff_snapshot[] {

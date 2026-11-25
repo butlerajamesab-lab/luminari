@@ -1173,7 +1173,9 @@ export function start_current_result_observation_worker(): void {
   current_result_observation_stopped = false;
   const interval_ms = bounded_current_result_observation_interval();
   console.log("[CurrentResultReconciliation] started", { interval_ms });
-  current_result_observation_backoff = create_idle_backoff("current_result_observation", interval_ms);
+  current_result_observation_backoff = create_idle_backoff("current_result_observation", interval_ms, {
+    watch_tables: ["public.civic_genome_legislative_version_queue", "public.civic_genome_bill_version"],
+  });
   schedule_current_result_observation();
   current_result_observation_timer = setInterval(() => {
     schedule_current_result_observation();

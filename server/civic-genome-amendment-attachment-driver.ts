@@ -583,7 +583,9 @@ export function start_genome_amendment_attachment_driver(): void {
     interval_ms: delay,
     batch_size: bounded_batch_size(),
   });
-  backoff = create_idle_backoff("genome_amendment_attachment", delay);
+  backoff = create_idle_backoff("genome_amendment_attachment", delay, {
+    watch_tables: ["public.civic_genome_bill_version", "public.civic_genome_rosetta_generation_target"],
+  });
   void run_attachment_cycle();
   timer = setInterval(() => {
     if (backoff?.should_run() === false) return;

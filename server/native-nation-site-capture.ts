@@ -386,7 +386,9 @@ export function start_native_nation_site_capture(): void {
   if (timer || !enabled()) return;
   controller = new AbortController();
   console.log("[NativeNationSiteCapture] started", { cycle_interval_ms: CYCLE_INTERVAL_MS });
-  backoff = create_idle_backoff("native_nation_site_capture", CYCLE_INTERVAL_MS);
+  backoff = create_idle_backoff("native_nation_site_capture", CYCLE_INTERVAL_MS, {
+    watch_tables: ["public.native_nation_registry_v1"],
+  });
   run_guarded();
   timer = setInterval(run_guarded, CYCLE_INTERVAL_MS);
   timer.unref?.();

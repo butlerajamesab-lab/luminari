@@ -327,7 +327,9 @@ if (
     60_000,
     Math.min(60 * 60_000, Number(process.env.FRESH_CORPUS_RECONCILIATION_INTERVAL_MS ?? 300_000)),
   );
-  const reconciliation_backoff = create_idle_backoff("fresh_corpus_reconciliation", intervalMs);
+  const reconciliation_backoff = create_idle_backoff("fresh_corpus_reconciliation", intervalMs, {
+    watch_tables: ["storage.objects", "public.luminari_corpus_rebuild_run_v1"],
+  });
   const reconcile = () => {
     if (automaticReconciliationRunning) return;
     if (!reconciliation_backoff.should_run()) return;

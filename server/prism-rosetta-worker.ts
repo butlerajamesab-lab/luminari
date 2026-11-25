@@ -3,6 +3,7 @@ import "./services/fresh-corpus-atomic-startup";
 import "./workers/corpus-import-queue-worker";
 import { legislative_current_source_scope } from "./legislative-current-source-scope";
 import express from "express";
+import { start_wake_pulse, stop_wake_pulse } from "./_core/idle-wake-pulse";
 import { createServer, type Server } from "node:http";
 import { getPool } from "./db";
 import {
@@ -369,6 +370,9 @@ const docket_worker_startup = start_docket_workers().catch(error => {
   });
 });
 
+// Runs after every worker above registered its watched tables.
+start_wake_pulse();
+
 const keep_alive = setInterval(() => undefined, 60_000);
 
 async function shutdown(signal: string): Promise<void> {
@@ -376,6 +380,7 @@ async function shutdown(signal: string): Promise<void> {
   shutting_down = true;
   console.log("[PrismRosettaWorker] shutdown_started", { signal });
   clearInterval(keep_alive);
+  stop_wake_pulse();
   if (legislative_probe_retry_timer) {
     clearTimeout(legislative_probe_retry_timer);
     legislative_probe_retry_timer = null;

@@ -702,7 +702,9 @@ export function start_prism_rosetta_queue_worker(): void {
     rule_set_id: PRISM_ROSETTA_RULE_SET_ID,
     rule_set_version: PRISM_ROSETTA_RULE_SET_VERSION,
   });
-  queue_backoff = create_idle_backoff("prism_rosetta_queue", interval_ms);
+  queue_backoff = create_idle_backoff("prism_rosetta_queue", interval_ms, {
+    watch_tables: ["public.civic_genome_prism_verification_queue", "public.civic_genome_prism_verification_run"],
+  });
   schedule_queue_cycle();
   queue_timer = setInterval(() => {
     schedule_queue_cycle();

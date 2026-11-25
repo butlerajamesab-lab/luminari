@@ -1324,7 +1324,9 @@ export function start_docket_bill_activation_queue_worker(): void {
     source_scope,
     canary_queue_ids_configured: canary_queue_ids?.length ?? 0,
   });
-  queue_backoff = create_idle_backoff("docket_bill_activation_queue", interval_ms);
+  queue_backoff = create_idle_backoff("docket_bill_activation_queue", interval_ms, {
+    watch_tables: ["public.docket_bill_processing_queue", "public.docket_jurisdiction_activation_bill"],
+  });
   void run_docket_bill_activation_queue_cycle();
   queue_timer = setInterval(() => {
     if (queue_backoff?.should_run() === false) return;

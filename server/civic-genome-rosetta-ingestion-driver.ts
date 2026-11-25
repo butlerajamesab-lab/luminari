@@ -631,7 +631,9 @@ export function start_genome_rosetta_ingestion_driver(): void {
     interval_ms: delay,
     batch_size: bounded_batch_size(),
   });
-  backoff = create_idle_backoff("genome_rosetta_ingestion", delay);
+  backoff = create_idle_backoff("genome_rosetta_ingestion", delay, {
+    watch_tables: ["public.civic_genome_legislative_version_queue", "public.civic_genome_bill_version", "public.civic_genome_rosetta_generation_target"],
+  });
   void run_ingestion_cycle();
   timer = setInterval(() => {
     if (backoff?.should_run() === false) return;

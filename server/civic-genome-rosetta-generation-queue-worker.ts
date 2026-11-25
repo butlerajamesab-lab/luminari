@@ -240,7 +240,9 @@ export function start_rosetta_generation_activation_queue_worker(): void {
     interval_ms,
     max_attempts: MAX_ATTEMPTS,
   });
-  queue_backoff = create_idle_backoff("rosetta_generation_activation_queue", interval_ms);
+  queue_backoff = create_idle_backoff("rosetta_generation_activation_queue", interval_ms, {
+    watch_tables: ["public.civic_genome_rosetta_generation_activation_queue"],
+  });
   void run_rosetta_generation_activation_queue_cycle();
   queue_timer = setInterval(() => {
     if (queue_backoff?.should_run() === false) return;
