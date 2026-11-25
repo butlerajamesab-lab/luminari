@@ -6,6 +6,13 @@ import {
   find_nearest_offices,
 } from "../services/office-nearest";
 import { get_unified_catalog_summary } from "../services/resource-directory-unified";
+import {
+  browse_place,
+  list_place_cities,
+  list_place_states,
+  normalize_city_key,
+  normalize_state_code,
+} from "../services/office-place";
 
 export const officesRouter = express.Router();
 
@@ -94,5 +101,49 @@ officesRouter.post("/nearest", async (req: Request, res: Response) => {
     return res
       .status(500)
       .json({ ok: false, error: "office_search_unavailable" });
+  }
+});
+
+/**
+ * Place browse (no street address needed).
+ *
+ * GET /api/offices/places            → states with record counts
+ * GET /api/offices/places?state=WA   → cities in that state with counts
+ * GET /api/offices/place?state=WA&city=seattle&families=a,b
+ *   → offices in the place plus every other catalog record there and
+ *     the records that serve the whole state (services/office-place).
+ */
+officesRouter.get("/places", async (req: Request, res: Response) => {
+  try {
+    if (req.query.state === undefined) {
+      return res.json({ ok: true, states: await list_place_states() });
+    }
+    const state = normalize_state_code(req.query.state);
+    if (!state) return res.status(400).json({ ok: false, error: "invalid_state" });
+    return res.json({ ok: true, state, cities: await list_place_cities(state) });
+  } catch (error) {
+    console.error("[Offices] places request failed", error);
+    return res.status(500).json({ ok: false, error: "office_places_unavailable" });
+  }
+});
+
+officesRouter.get("/place", async (req: Request, res: Response) => {
+  const state = normalize_state_code(req.query.state);
+  if (!state) return res.status(400).json({ ok: false, error: "invalid_state" });
+  const raw_city = typeof req.query.city === "string" ? req.query.city : "";
+  const city_key = raw_city.trim() ? normalize_city_key(raw_city) : null;
+  if (raw_city.trim() && !city_key) {
+    return res.status(400).json({ ok: false, error: "invalid_city" });
+  }
+  const families = typeof req.query.families === "string"
+    ? req.query.families.split(",").map(value => value.trim()).filter(Boolean)
+    : [];
+  try {
+    const outcome = await browse_place({ state, city_key, families });
+    res.setHeader("Cache-Control", "no-store");
+    return res.json({ ok: true, ...outcome });
+  } catch (error) {
+    console.error("[Offices] place browse failed", error);
+    return res.status(500).json({ ok: false, error: "office_place_unavailable" });
   }
 });
