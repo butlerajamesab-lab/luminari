@@ -530,14 +530,14 @@ const docketRouter = router({
 
 // ─── Civic Map Proof Endpoints ───
 async function buildCivicMapResourceProof() {
-  const r = await restSelect("unified_resources", { limit: 200, filters: [{ column: "resourceType", operator: "eq", value: "food_bank" }] });
+  const r = await restSelect("unified_resources", { limit: 200, filters: [{ column: "resource_type", operator: "eq", value: "food_bank" }] });
   const resources = r.items;
   const mapped = resources.filter((x: any) => x.lat != null && x.lon != null).length;
   return { ok: true, source: "atlas_lighthouse_resource_bridge_v1", resource_type: "food_bank", total: resources.length, mapped, unmapped: resources.length - mapped, resources };
 }
 
 async function buildDshsOfficeProof() {
-  const r = await restSelect("unified_resources", { limit: 200, filters: [{ column: "resourceType", operator: "eq", value: "benefits_office" }] });
+  const r = await restSelect("unified_resources", { limit: 200, filters: [{ column: "resource_type", operator: "eq", value: "benefits_office" }] });
   const offices = r.items;
   const mapped = offices.filter((x: any) => x.latitude != null || x.lat != null).length;
   return { ok: true, source: "normalized_civic_resource", total: offices.length, mapped, unmapped: offices.length - mapped, offices };
