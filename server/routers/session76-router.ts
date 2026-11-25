@@ -45,6 +45,18 @@ const exportSpineRouter = router({
       return getExportRun(input.runId);
     }),
 
+  getDownloadUrl: adminProcedure
+    .input(z.object({ runId: z.number() }))
+    .mutation(async ({ input }) => {
+      const { getExportRun } = await import("../engines/export-spine-engine");
+      const { export_bundle_signed_url } = await import("../storage");
+      const run: any = await getExportRun(input.runId);
+      if (!run || run.status !== "completed") throw new Error("Export is not completed.");
+      if (run.fileUrl) return { url: run.fileUrl as string };
+      if (!run.filePath) throw new Error("Export has no stored file.");
+      return { url: await export_bundle_signed_url(run.filePath) };
+    }),
+
   getStats: adminProcedure.query(async () => {
     const { getExportStats } = await import("../engines/export-spine-engine");
     return getExportStats();
