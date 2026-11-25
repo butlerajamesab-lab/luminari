@@ -21,17 +21,9 @@
  * to a reader is always a human sentence, never a serialized payload.
  */
 
-export const CANONICAL_DIRECTORY_CATEGORIES = [
-  "housing",
-  "healthcare",
-  "legal_civil_rights",
-  "cash_assistance",
-  "food_nutrition",
-  "tribal",
-  "safety_crisis",
-  "utilities",
-  "employment_labor",
-] as const;
+import { CANONICAL_DIRECTORY_CATEGORIES } from "@shared/directory-categories";
+
+export { CANONICAL_DIRECTORY_CATEGORIES };
 
 export type DirectoryCategory =
   (typeof CANONICAL_DIRECTORY_CATEGORIES)[number];

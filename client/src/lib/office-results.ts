@@ -27,6 +27,9 @@ export interface OfficeSearchResult {
   url?: string;
 }
 
+/** An office found by place browse: same record, no distance (no address was given). */
+export type PlaceOffice = Omit<OfficeSearchResult, "distance_mi">;
+
 export interface MatchedOfficesResponse {
   ok: true;
   status: "matched";
@@ -113,7 +116,7 @@ export type OfficeCardField =
  * than a placeholder.
  */
 export function office_card_fields(
-  result: OfficeSearchResult,
+  result: PlaceOffice | OfficeSearchResult,
 ): OfficeCardField[] {
   const fields: OfficeCardField[] = [];
   if (result.phone && result.phone.trim()) {

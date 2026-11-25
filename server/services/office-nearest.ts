@@ -148,6 +148,37 @@ export function office_site_match_sql(): string {
 }
 
 /**
+ * Per-family pick of the office row that belongs at catalog location
+ * `l` of entity `c` (see build_office_nearest_sql for why the pick is
+ * per family and restricted to the office's own site). Shared by the
+ * nearest search and the place browse so both place offices identically.
+ */
+export function office_family_pick_sql(): string {
+  return `join lateral (
+        select distinct on (g.agency_key)
+          g.agency_key, g.hours, g.phone_raw, g.url, g.email
+        from public.luminari_anchor_office_source_rows a
+        join public.gov_offices g on g.office_id = a.office_id
+        where a.resource_entity_id = c.resource_entity_id
+          and g.superseded_by is null
+          and ${office_site_match_sql()}
+        order by
+          g.agency_key,
+          (case when l.source_table = 'gov_office_projection_v1'
+                  and l.source_pk = a.office_id
+                then 0 else 1 end),
+          (case when g.lat is not null and g.lng is not null
+                 and g.lat = l.latitude and g.lng = l.longitude
+                then 0 else 1 end),
+          (case when g.lat is not null and g.lng is not null
+                then abs(g.lat::float8 - l.latitude::float8)
+                   + abs(g.lng::float8 - l.longitude::float8)
+                end) nulls last,
+          g.office_id
+      ) office on true`;
+}
+
+/**
  * The nearest-office query. One candidate row per (catalog location,
  * office family): the location supplies the exact site and its
  * coordinates; a lateral pick chooses, PER FAMILY, the entity's
@@ -200,28 +231,7 @@ export function build_office_nearest_sql(): string {
         on l.resource_entity_id = c.resource_entity_id
         and l.latitude is not null
         and l.longitude is not null
-      join lateral (
-        select distinct on (g.agency_key)
-          g.agency_key, g.hours, g.phone_raw, g.url, g.email
-        from public.luminari_anchor_office_source_rows a
-        join public.gov_offices g on g.office_id = a.office_id
-        where a.resource_entity_id = c.resource_entity_id
-          and g.superseded_by is null
-          and ${office_site_match_sql()}
-        order by
-          g.agency_key,
-          (case when l.source_table = 'gov_office_projection_v1'
-                  and l.source_pk = a.office_id
-                then 0 else 1 end),
-          (case when g.lat is not null and g.lng is not null
-                 and g.lat = l.latitude and g.lng = l.longitude
-                then 0 else 1 end),
-          (case when g.lat is not null and g.lng is not null
-                then abs(g.lat::float8 - l.latitude::float8)
-                   + abs(g.lng::float8 - l.longitude::float8)
-                end) nulls last,
-          g.office_id
-      ) office on true
+      ${office_family_pick_sql()}
       where (${distance}) <= $3
         and ($4::text[] is null or office.agency_key = any($4::text[]))
     ),
@@ -293,7 +303,7 @@ export type office_search_outcome = {
   families_not_found: string[];
 };
 
-type nearest_row = {
+export type nearest_row = {
   resource_entity_id: string;
   canonical_id: string | null;
   resource_name: string;
@@ -401,7 +411,7 @@ export function assemble_office_results(
   });
 }
 
-async function load_reviewed_contacts_for(
+export async function load_reviewed_contacts_for(
   entity_ids: string[],
 ): Promise<Map<string, catalog_contact[]>> {
   const by_entity = new Map<string, catalog_contact[]>();
