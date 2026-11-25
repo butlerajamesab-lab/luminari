@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { should_forward_session } from "./session-forwarding";
 
 function read(relative_path: string): string {
   return readFileSync(fileURLToPath(new URL(relative_path, import.meta.url)), "utf8");
@@ -40,8 +41,13 @@ describe("protected REST transport covers every admin-guarded mount", () => {
       const in_lib = protectedRestPrefixes.some(
         prefix => mount === prefix || mount.startsWith(`${prefix}/`),
       );
+      // main.tsx forwards the session on every same-origin path that
+      // should_forward_session accepts; check the mount (and a child path) there.
+      const origin = "https://lighthouse.example";
       const in_main =
-        main_tsx.includes(`"${mount}"`) || main_tsx.includes(`"${mount}/"`);
+        main_tsx.includes("should_forward_session(input, window.location.origin)")
+        && should_forward_session(mount, origin)
+        && should_forward_session(`${mount}/child`, origin);
       expect(in_lib || in_main, `${mount} is guarded server-side but never receives the session header`).toBe(true);
     }
   });
