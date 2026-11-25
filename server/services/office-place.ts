@@ -128,14 +128,23 @@ export function build_office_place_sql(): string {
         and ($2::text is null or ${CITY_KEY_SQL("l.city")} = $2)
         and ($3::text[] is null or office.agency_key = any($3::text[]))
     ),
-    ranked as (
+    family_ranked as (
       select *,
         row_number() over (partition by family order by resource_name, resource_entity_id) as family_rank,
-        row_number() over (order by family, resource_name, resource_entity_id) as overall_rank
+        count(*) over (partition by family) as family_total
       from in_place
+    ),
+    -- The overall cap counts only rows the per-family cap kept, so one large
+    -- family never pushes a smaller family out of the list.
+    ranked as (
+      select *,
+        row_number() over (order by family, resource_name, resource_entity_id) as overall_rank,
+        count(*) over () as kept_total
+      from family_ranked
+      where family_rank <= $4
     )
     select * from ranked
-    where family_rank <= $4 and overall_rank <= $5
+    where overall_rank <= $5
     order by family, resource_name, resource_entity_id`;
 }
 
@@ -171,7 +180,12 @@ export function build_place_other_resources_sql(): string {
       from corpus c
       left join public.luminari_resource_locations l
         on l.resource_entity_id = c.resource_entity_id
-      where not exists (
+      -- Only placements in the requested state compete for the shown location,
+      -- so a resource with an Oregon location still shows in Washington.
+      where coalesce(
+              case when upper(btrim(l.state)) ~ '^[A-Z]{2}$' then upper(btrim(l.state)) end,
+              c.jurisdiction_code) = $1
+        and not exists (
         select 1 from public.luminari_anchor_office_source_rows a
         where a.resource_entity_id = c.resource_entity_id
       )
@@ -183,7 +197,7 @@ export function build_place_other_resources_sql(): string {
              when $2::text is null then 'local'
         end as scope
       from candidates
-      where placement_rank = 1 and state_code = $1
+      where placement_rank = 1
     ),
     -- The same name at the same address from two source families shows once.
     shown as (
@@ -286,7 +300,11 @@ export async function browse_place(input: {
         ]),
   ]);
 
-  const office_rows = (office_result.rows as nearest_row[]).map(row => ({ ...row, distance_mi: 0 }));
+  const raw_office_rows = office_result.rows as Array<nearest_row & { family_total: string | number; kept_total: string | number }>;
+  const offices_capped = raw_office_rows.some(
+    row => Number(row.family_total) > PLACE_OFFICES_PER_FAMILY_CAP || Number(row.kept_total) > PLACE_OFFICES_OVERALL_CAP,
+  );
+  const office_rows = raw_office_rows.map(row => ({ ...row, distance_mi: 0 }));
   const other_rows = other_result.rows as any[];
   const entity_ids = [
     ...new Set([
@@ -329,7 +347,7 @@ export async function browse_place(input: {
     state: input.state,
     city_key: input.city_key,
     offices,
-    offices_capped: office_rows.length >= PLACE_OFFICES_OVERALL_CAP,
+    offices_capped,
     families_not_found: families.filter(family => !found.has(family)),
     other_resources,
     other_resources_capped: other_rows.length >= PLACE_OTHER_RESOURCES_CAP,
