@@ -14,6 +14,7 @@ import {
   office_card_fields,
   website_href,
   type OfficeSearchResult,
+  type PlaceOffice,
 } from "@/lib/office-results";
 
 const tone = {
@@ -27,7 +28,7 @@ const tone = {
 export default function OfficeCard({
   result,
 }: {
-  result: OfficeSearchResult;
+  result: OfficeSearchResult | PlaceOffice;
 }) {
   const family = OFFICE_FAMILY_META[result.family];
   const fields = office_card_fields(result);
@@ -79,9 +80,11 @@ export default function OfficeCard({
           />
           {family?.label ?? result.family}
         </span>
-        <span style={{ fontSize: "0.85rem", color: tone.muted }}>
-          {format_distance(result.distance_mi)} away
-        </span>
+        {"distance_mi" in result ? (
+          <span style={{ fontSize: "0.85rem", color: tone.muted }}>
+            {format_distance(result.distance_mi)} away
+          </span>
+        ) : null}
       </div>
 
       <h3 style={{ margin: 0, fontSize: "1.05rem", lineHeight: 1.35 }}>

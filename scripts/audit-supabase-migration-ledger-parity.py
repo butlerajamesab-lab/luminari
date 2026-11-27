@@ -662,6 +662,20 @@ APPROVED_REPOSITORY_ONLY = {
         "20261125090000_genome_history_existing_lookup_lateral.sql",
         "9c0d5c155675897f8d4b0138c479f3635954acd5",
     ),
+    # 2026-11-25 BIA tribal government offices into gov_offices + catalog projection; repository-only pending approved install.
+    "20261125120000": (
+        "20261125120000_tribal_government_offices_v1.sql",
+        "efaf7b5a72f72d39b3284f0add12ad64d6c91bd5",
+    ),
+    # LegiScan paid-fallback reservation v2. The function was applied to
+    # Lighthouse before this file was committed (version 20261127060806).
+    # The frozen production receipt snapshot does not list that version, so
+    # parity pins the exact git blob. This entry does not rewrite the
+    # production ledger and does not change the SQL bytes.
+    "20261127060806": (
+        "20261127060806_legiscan_reserve_with_protected_reserve_v2.sql",
+        "fc17b324546701ea2f1ffa13cf99d6079772939e",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {

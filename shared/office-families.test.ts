@@ -7,7 +7,7 @@ import {
 } from "./office-families";
 
 describe("OFFICE_FAMILY_META", () => {
-  it("covers exactly the ten anchored office families", () => {
+  it("covers exactly the eleven anchored office families", () => {
     expect([...OFFICE_FAMILY_KEYS].sort()).toEqual(
       [
         "american_job_center",
@@ -19,6 +19,7 @@ describe("OFFICE_FAMILY_META", () => {
         "native_american",
         "public_housing_authority",
         "ssa",
+        "tribal_government",
         "veterans_affairs",
       ].sort(),
     );

@@ -27,6 +27,12 @@ vi.mock("./civic-genome-rosetta-source-ingestion", () => ({
 vi.mock("./civic-genome-rosetta-family-orchestration", () => ({
   assemble_rosetta_and_resolve_family: vi.fn(),
 }));
+// The paid-fallback gate reads bill state and ledger usage from the database;
+// it has its own tests (legiscan-paid-fallback-gate.test.ts). Allow here.
+vi.mock("./legiscan-paid-fallback-gate", async importOriginal => ({
+  ...(await importOriginal<typeof import("./legiscan-paid-fallback-gate")>()),
+  assert_paid_provider_fallback_allowed: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock("./services/legiscan", () => ({
   get_bill: vi.fn(),
   get_bill_text: get_bill_text_mock,
@@ -207,7 +213,7 @@ describe("official source response integrity", () => {
       text_hash: version.provider_hash,
     });
     const extracted = await extract_version_source(version);
-    expect(get_bill_text_mock).toHaveBeenCalledWith(3329003);
+    expect(get_bill_text_mock).toHaveBeenCalledWith(3329003, { protected_reserve: 500 });
     expect(extracted.source_byte_hash).toBe(original_pdf_hash);
     expect(extracted.source_url).toBe(version.provider_url);
     expect(extracted.media_type).toBe("application/pdf");
