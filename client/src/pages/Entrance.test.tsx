@@ -6,10 +6,23 @@ const state = vi.hoisted(() => ({
   agency_rows: [] as any[],
   mutate: vi.fn(),
   navigate: vi.fn(),
+  // The page's existing render tests were written against the always-form
+  // page; their faithful precondition is a signed-in visitor, so the auth
+  // mock defaults to signed in and the gate tests below flip it.
+  auth: { isAuthenticated: true, loading: false } as { isAuthenticated: boolean; loading: boolean },
 }));
 
 vi.mock("wouter", () => ({
   useLocation: () => ["/entrance", state.navigate],
+}));
+
+vi.mock("@/core/hooks/useAuth", () => ({
+  useAuth: () => ({
+    user: state.auth.isAuthenticated ? { id: "worker-1" } : null,
+    isAuthenticated: state.auth.isAuthenticated,
+    loading: state.auth.loading,
+    error: null,
+  }),
 }));
 
 vi.mock("@/lib/trpc", () => ({
@@ -28,6 +41,8 @@ import Entrance, {
   entrance_save,
   entrance_seeker_continue,
   entrance_skip,
+  entrance_worker_gate,
+  entrance_worker_signin_href,
   selection_from_profile,
   type EntranceSelection,
 } from "./Entrance";
@@ -40,6 +55,7 @@ const selection = (patch: Partial<EntranceSelection>): EntranceSelection => ({
 beforeEach(() => {
   state.profile = null;
   state.agency_rows = [];
+  state.auth = { isAuthenticated: true, loading: false };
   state.mutate.mockReset();
   state.navigate.mockReset();
 });
@@ -72,6 +88,67 @@ describe("Entrance page", () => {
     expect(html).toContain("Your agency:");
     expect(html).toContain("Department of Examples");
     expect(html).toContain('aria-pressed="true"');
+  });
+});
+
+describe("the worker path authenticates first", () => {
+  it("gates on loading first, then on having a session", () => {
+    expect(entrance_worker_gate({ loading: true, isAuthenticated: false })).toBe("loading");
+    expect(entrance_worker_gate({ loading: true, isAuthenticated: true })).toBe("loading");
+    expect(entrance_worker_gate({ loading: false, isAuthenticated: false })).toBe("account");
+    expect(entrance_worker_gate({ loading: false, isAuthenticated: true })).toBe("form");
+  });
+
+  it("sends the worker through Login with a redirect back to this door", () => {
+    expect(entrance_worker_signin_href()).toBe("/login?interactive=1&redirect=%2Fentrance");
+  });
+
+  it("signed out: the seeker path is unchanged and anonymous", () => {
+    state.auth = { isAuthenticated: false, loading: false };
+    const html = renderToStaticMarkup(<Entrance />);
+    expect(html).toContain("I’m here for help");
+    expect(html).toContain("You don’t have to say who you are");
+    expect(html).toContain("Continue");
+    expect(state.mutate).not.toHaveBeenCalled();
+  });
+
+  it("signed out: the worker path shows the account step and no declaration form", () => {
+    state.auth = { isAuthenticated: false, loading: false };
+    const html = renderToStaticMarkup(<Entrance />);
+    expect(html).toContain("I’m here to work");
+    expect(html).toContain("Working here starts with an account");
+    expect(html).toContain("Sign in or create an account");
+    expect(html).toContain('href="/login?interactive=1&amp;redirect=%2Fentrance"');
+    // No declaration is collected before a session exists: no toggles, no
+    // government fork, no directory search, no save/skip.
+    expect(html).not.toContain("Advocate");
+    expect(html).not.toContain("volunteers, caseworkers, community helpers");
+    expect(html).not.toContain("Tell us the ground you stand on");
+    expect(html).not.toContain("Find your agency or department");
+    expect(html).not.toContain("Save and come in");
+    expect(html).not.toContain("Skip for now");
+    expect(state.mutate).not.toHaveBeenCalled();
+  });
+
+  it("loading: the seeker path renders and the worker path shows neither form nor account step", () => {
+    state.auth = { isAuthenticated: false, loading: true };
+    const html = renderToStaticMarkup(<Entrance />);
+    expect(html).toContain("I’m here for help");
+    expect(html).toContain("Continue");
+    expect(html).toContain("I’m here to work");
+    expect(html).toContain("seeing whether you’re already signed in");
+    expect(html).not.toContain("Advocate");
+    expect(html).not.toContain("Sign in or create an account");
+    expect(state.mutate).not.toHaveBeenCalled();
+  });
+
+  it("signed in: the declaration form renders as before", () => {
+    state.auth = { isAuthenticated: true, loading: false };
+    const html = renderToStaticMarkup(<Entrance />);
+    expect(html).toContain("Tell us the ground you stand on");
+    expect(html).toContain("Advocate");
+    expect(html).toContain("Save and come in");
+    expect(html).not.toContain("Sign in or create an account");
   });
 });
 

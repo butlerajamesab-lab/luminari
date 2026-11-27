@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { getLoginUrl } from "@/const";
+import { useAuth } from "@/core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -10,6 +12,10 @@ import { trpc } from "@/lib/trpc";
    security role); government entrants identify their branch and, on the
    agency branch, their agency or department from the canonical directory,
    or type it held as unverified.
+   The worker path authenticates BEFORE any declaration is collected: a
+   signed-out worker is sent through Login (and back here) first, because
+   setMine is an authenticated procedure — collecting the declaration
+   first would bounce them to Login mid-submit and discard it.
    Styled in the Lighthouse gold-serif family (Family A).
    ═══════════════════════════════════════════════════════════════════════ */
 
@@ -132,6 +138,32 @@ export function entrance_save(
   return true;
 }
 
+/** Where a worker returns after signing in: this door. */
+export const ENTRANCE_PATH = "/entrance";
+
+/**
+ * The worker path's gate. The declaration form and the agency directory
+ * search are authenticated surfaces, so they render only for a signed-in
+ * visitor. While the session is still being read, neither the form nor
+ * the account step shows — the form must never flash for someone who is
+ * about to be sent to Login.
+ */
+export type EntranceWorkerGate = "loading" | "account" | "form";
+
+export function entrance_worker_gate(auth: {
+  loading: boolean;
+  isAuthenticated: boolean;
+}): EntranceWorkerGate {
+  if (auth.loading) return "loading";
+  return auth.isAuthenticated ? "form" : "account";
+}
+
+/** The worker account step's sign-in link: Login's own redirect
+ *  convention, so a signed-in worker lands back at this door. */
+export function entrance_worker_signin_href(): string {
+  return getLoginUrl(ENTRANCE_PATH);
+}
+
 const KIND_OPTIONS: { kind: EntrantKind; label: string; sub?: string }[] = [
   { kind: "advocate", label: "Advocate", sub: "volunteers, caseworkers, community helpers" },
   { kind: "legal", label: "Legal" },
@@ -141,7 +173,11 @@ const KIND_OPTIONS: { kind: EntrantKind; label: string; sub?: string }[] = [
 
 export default function Entrance() {
   const [, navigate] = useLocation();
-  const profile_query = trpc.entrance.getMine.useQuery();
+  const { isAuthenticated, loading: auth_loading } = useAuth();
+  const worker_gate = entrance_worker_gate({ loading: auth_loading, isAuthenticated });
+  // Both entrance reads are authenticated procedures; a signed-out visitor
+  // never calls them — the seeker path needs nothing from the server.
+  const profile_query = trpc.entrance.getMine.useQuery(undefined, { enabled: isAuthenticated });
   const set_mine = trpc.entrance.setMine.useMutation();
   const [local, setLocal] = useState<EntranceSelection | null>(null);
   const [agency_query, setAgencyQuery] = useState("");
@@ -150,6 +186,7 @@ export default function Entrance() {
   const update = (patch: Partial<EntranceSelection>) => setLocal({ ...selection, ...patch });
 
   const agency_search_enabled =
+    isAuthenticated &&
     selection.kind === "government" &&
     selection.govBranch === "agency" &&
     !selection.notListed &&
@@ -203,6 +240,31 @@ export default function Entrance() {
 
         <section style={{ background: lh.cork, border: `1px solid ${lh.goldBorder}`, borderRadius: 12, padding: "22px 22px 24px" }}>
           <h2 style={{ fontFamily: fontSerif, fontSize: 26, margin: "0 0 6px" }}>I&rsquo;m here to work</h2>
+
+          {worker_gate === "loading" && (
+            <p style={{ color: lh.muted, lineHeight: 1.55, margin: 0 }}>
+              One moment — seeing whether you&rsquo;re already signed in.
+            </p>
+          )}
+
+          {worker_gate === "account" && (
+            <>
+              <p style={{ color: lh.muted, lineHeight: 1.55, margin: "0 0 16px" }}>
+                Working here starts with an account, so the ground you declare is tied to you —
+                and only you can change it. Sign in, or create your free account, and you&rsquo;ll
+                come right back to this door to finish.
+              </p>
+              <a
+                href={entrance_worker_signin_href()}
+                style={{ display: "inline-block", background: lh.gold, color: lh.ink, borderRadius: 8, padding: "11px 22px", fontSize: 15, fontWeight: 600, fontFamily: fontSans, textDecoration: "none" }}
+              >
+                Sign in or create an account
+              </a>
+            </>
+          )}
+
+          {worker_gate === "form" && (
+            <>
           <p style={{ color: lh.muted, lineHeight: 1.55, margin: "0 0 16px" }}>
             Tell us the ground you stand on. It shapes what you land on first — nothing more —
             and you can change it any time.
@@ -363,6 +425,8 @@ export default function Entrance() {
               Skip for now
             </button>
           </div>
+            </>
+          )}
         </section>
       </div>
     </div>
