@@ -27,6 +27,11 @@ vi.mock("./civic-genome-rosetta-source-ingestion", () => ({
 vi.mock("./civic-genome-rosetta-family-orchestration", () => ({
   assemble_rosetta_and_resolve_family: vi.fn(),
 }));
+// The paid-fallback gate reads bill state and ledger usage from the database;
+// it has its own tests (legiscan-paid-fallback-gate.test.ts). Allow here.
+vi.mock("./legiscan-paid-fallback-gate", () => ({
+  assert_paid_provider_fallback_allowed: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock("./services/legiscan", () => ({
   get_bill: vi.fn(),
   get_bill_text: get_bill_text_mock,

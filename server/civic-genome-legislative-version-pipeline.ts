@@ -18,6 +18,7 @@ import {
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 import { fetch_california_official_pdf } from "./california-legislative-source";
 import { get_amendment, get_bill_text } from "./services/legiscan";
+import { assert_paid_provider_fallback_allowed } from "./legiscan-paid-fallback-gate";
 import { assert_legislative_document_role } from "./legislative-document-role";
 import { decode_legislative_html_bytes } from "./legislative-html-byte-decoder";
 import {
@@ -893,6 +894,9 @@ export async function extract_version_source(
   } catch (error) {
     const fallback = provider_copy_contract_for(version, selected_source_url);
     if (!fallback) throw error;
+    // Harvest Ledger guard 11: refuse the paid LegiScan copy unless the bill
+    // is current and this month's usage is under the budget minus reserve.
+    await assert_paid_provider_fallback_allowed(version.source_bill_id);
 
     official_fetch_error = error instanceof Error ? error.message : "unknown";
     california_pdf = null;
