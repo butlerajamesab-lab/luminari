@@ -3100,6 +3100,42 @@ export const users = pgTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+// Entrance package (2026-11-27): the self-declared worker entrance for a
+// signed-in user. This is a lens label only — it is NOT users.role, which
+// stays invite/admin-controlled. Help-seekers write nothing anywhere, so no
+// row ever exists for them. Government agency picks are either canonical
+// (agencyCanonicalId + agencyDisplayName copied from the governed view
+// v_lighthouse_workflow_accountability_catalog_v1 at save time) or free text
+// held in agencyTextUnverified, never minted as canonical.
+export const entranceProfiles = pgTable("entrance_profiles", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().unique().references(() => users.id),
+  entrantKind: text("entrant_kind").$type<"advocate" | "legal" | "education" | "government">(),
+  govBranch: text("gov_branch").$type<"agency" | "legislative">(),
+  agencyCanonicalId: text("agency_canonical_id"),
+  agencyDisplayName: text("agency_display_name"),
+  agencyTextUnverified: text("agency_text_unverified"),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+});
+
+export type EntranceProfile = typeof entranceProfiles.$inferSelect;
+export type InsertEntranceProfile = typeof entranceProfiles.$inferInsert;
+
+// The disembodied door's ledger: one row per AI agent entrance declaration
+// (system, principal, purpose), keyed by the receipt returned to the agent.
+export const agentEntrances = pgTable("agent_entrances", {
+  id: serial("id").primaryKey(),
+  receiptId: text("receipt_id").notNull().unique(),
+  agentSystem: text("agent_system").notNull(),
+  principal: text("principal").notNull(),
+  purpose: text("purpose").notNull(),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+});
+
+export type AgentEntrance = typeof agentEntrances.$inferSelect;
+export type InsertAgentEntrance = typeof agentEntrances.$inferInsert;
+
 export const corpusSnapshots = pgTable("corpus_snapshots", {
   id: serial("id").primaryKey(),
   caseId: integer("case_id").notNull(),

@@ -51,4 +51,24 @@ describe("invite-only gate", () => {
     expect(is_open_path("/api/trpc/auth.me,invites.validate")).toBe(true);
     expect(is_open_path("/api/trpc/invites.create")).toBe(false);
   });
+
+  it("keeps the entrance reachable for signed-in users of any role", () => {
+    // Same standing as auth.bootstrap: the procedures are authenticated, so
+    // the gate lets the path through and tRPC refuses signed-out callers.
+    expect(is_open_path("/api/trpc/entrance.getMine")).toBe(true);
+    expect(is_open_path("/api/trpc/entrance.setMine")).toBe(true);
+    expect(is_open_path("/api/trpc/entrance.searchAgencies")).toBe(true);
+    expect(is_open_path("/api/trpc/entrance.getMine,auth.me")).toBe(true);
+    // Batching an entrance procedure with a gated one stays gated.
+    expect(is_open_path("/api/trpc/entrance.getMine,legislators.tribal")).toBe(false);
+    expect(is_open_path("/api/trpc/entrance.deleteMine")).toBe(false);
+  });
+
+  it("keeps the disembodied door reachable (it token-checks on its own)", () => {
+    expect(is_open_path("/api/agents/enter")).toBe(true);
+    expect(is_open_path("/api/agents/anything-else")).toBe(true);
+    expect(is_open_path("/API//agents/enter")).toBe(true);
+    // The prefix does not leak onto lookalike paths.
+    expect(is_open_path("/api/agentships/enter")).toBe(false);
+  });
 });

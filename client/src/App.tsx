@@ -104,6 +104,7 @@ import CaseResolutionLens from "./pages/CaseResolutionLens";
 import StructuralDiagnosticsLens from "./pages/StructuralDiagnosticsLens";
 import Mudroom from "./pages/Mudroom";
 import Login from "./pages/Login";
+import Entrance from "./pages/Entrance";
 import OAuthConsent from "./pages/OAuthConsent";
 import WorkshopFloor from "./pages/WorkshopFloor";
 import WorkbenchDashboard from "./pages/WorkbenchDashboard";
@@ -249,6 +250,7 @@ function App() {
                 <Route path="/diagnostics" component={StructuralDiagnosticsLens} />
                 <Route path="/mudroom" component={Mudroom} />
                 <Route path="/login" component={Login} />
+                <Route path="/entrance" component={Entrance} />
                 <Route path="/workshop" component={WorkshopFloor} />
                 <Route path="/workbench/:caseId" component={WorkbenchDashboard} />
                 <Route path="/workbench" component={WorkbenchDashboard} />
