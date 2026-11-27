@@ -3072,6 +3072,7 @@ import { ingestCanonicalRegistry } from "./registry-canonical-ingest";
 import fs from "fs";
 import path from "path";
 import { agencyMetricsRouter } from "./routers/agency-metrics";
+import { entranceRouter } from "./routers/entrance";
 import { enforcementIntelligenceRouter } from "./routers/enforcement-intelligence";
 import { architectureMapRouter } from "./routers/architecture-map";
 // Compat routers retained in repo for inspection/fallback only - not mounted in production
@@ -3690,6 +3691,7 @@ export const appRouter = router({
   civilGideon: civilGideonRouter,
   categories: categoryRouter,
   agencyMetrics: agencyMetricsRouter,
+  entrance: entranceRouter,
   enforcementIntel: enforcementIntelligenceRouter,
   architectureMap: architectureMapRouter,
   proceduralEngine: proceduralEngineRouter,

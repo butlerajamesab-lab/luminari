@@ -161,6 +161,13 @@ export default function Login() {
         </button>
         <button
           type="button"
+          onClick={() => navigate("/entrance")}
+          className="w-full text-sm text-teal-300 hover:text-teal-200"
+        >
+          New here? Start at the entrance →
+        </button>
+        <button
+          type="button"
           onClick={() => navigate("/lighthouse")}
           className="w-full text-xs text-slate-400 hover:text-slate-200"
         >

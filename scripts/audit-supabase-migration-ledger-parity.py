@@ -667,6 +667,15 @@ APPROVED_REPOSITORY_ONLY = {
         "20261127060806_legiscan_reserve_with_protected_reserve_v2.sql",
         "fc17b324546701ea2f1ffa13cf99d6079772939e",
     ),
+    # 2026-11-27 Entrance package (entrance_profiles self-declared worker
+    # entrance + agent_entrances disembodied-door ledger; users untouched).
+    # Repository-only pending the separately approved production
+    # installation that follows the merge. Exact Git blob pinned; no
+    # production installation or ledger rewrite is implied by this entry.
+    "20261127120000": (
+        "20261127120000_entrance_profiles_v1.sql",
+        "d95066c3e6bd94cb1c77120af263a2c51758e12c",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {

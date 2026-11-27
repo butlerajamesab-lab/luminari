@@ -105,6 +105,7 @@ export const REGISTERED_CLIENT_ROUTE_PATTERNS = [
   "/mudroom",
   "/oauth/consent",
   "/login",
+  "/entrance",
   "/workshop",
   "/workbench/:caseId",
   "/workbench",
