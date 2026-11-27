@@ -26,6 +26,16 @@ PRODUCTION_RECEIPTS = (
 # joining statements with one blank line, and ending the file with one newline.
 # The sole comment-only receipt (20260517000000) intentionally gets no terminator.
 APPROVED_REPOSITORY_ONLY = {
+    # Recognition registry v1 (nations not federally recognized in the
+    # US and Canada, routes to recognition, decision documents, and the
+    # comparison matrix view). Repository-only pending the separately
+    # approved production installation that follows the merge. Exact
+    # Git blob pinned; no production installation or ledger rewrite is
+    # implied by this entry.
+    "20261127090000": (
+        "20261127090000_recognition_registry_v1.sql",
+        "94d2c3f6efa8efc1fe0083ddf2ce58eb5fca4243",
+    ),
     # Tribal TDHE crosswalk (tribe <-> housing entity pairs
     # from the BIA TDHE contact list; v7 hand-check-gated clean
     # set of 314 rows). Repository-only pending the separately
