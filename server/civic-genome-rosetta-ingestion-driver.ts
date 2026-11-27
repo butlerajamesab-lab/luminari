@@ -367,6 +367,12 @@ export function is_deterministic_ingestion_failure(error: unknown): boolean {
     || code.includes("legislative_amendment_base_content_unavailable")
     || code.includes("legislative_amendment_attachment_state_unresolved")
     || code.includes("legislative_amendment_attachment_not_resolved")
+    // Official fetch failed and the paid LegiScan copy was refused by the
+    // paid-fallback gate (bill not current, or monthly reserve reached).
+    // Park with the reason; never retry blindly. Release SQL is in the gate
+    // package; rows parked for the reserve are released after the month rolls.
+    || code.includes("legislative_version_provider_fallback_not_eligible")
+    || code.includes("legislative_version_provider_fallback_budget_reserve")
   );
 }
 
