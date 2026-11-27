@@ -27,7 +27,7 @@ describe("LegiScan public API budget", () => {
 
   it("reserves every provider request before fetch and paces starts below two requests per second", () => {
     const provider = read("server/services/legiscan.ts");
-    const reserveIndex = provider.indexOf("await reserve_legiscan_api_request(op)");
+    const reserveIndex = provider.indexOf("await reserve_legiscan_api_request(op, reserve_options)");
     const fetchIndex = provider.indexOf("const response = await fetch(url");
     expect(reserveIndex).toBeGreaterThan(0);
     expect(fetchIndex).toBeGreaterThan(reserveIndex);
@@ -49,6 +49,18 @@ describe("LegiScan public API budget", () => {
     expect(migration).toContain("insert into public.legiscan_api_request_ledger");
     expect(migration).not.toContain("delete from public.legiscan_api_request_ledger");
     expect(migration).not.toContain("update public.legiscan_api_request_ledger");
+  });
+
+  it("enforces the paid-fallback ceiling atomically in a sibling reservation function under the same lock", () => {
+    const migration = read(
+      "supabase/migrations/20261127060806_legiscan_reserve_with_protected_reserve_v2.sql",
+    );
+    expect(migration).toContain("reserve_legiscan_api_request_v2");
+    expect(migration).toContain("hashtextextended('legiscan-api-budget:' || v_month_start::text, 0)");
+    expect(migration).toContain("v_count >= p_monthly_budget - p_protected_reserve");
+    expect(migration).toContain("legiscan_paid_fallback_reserve_reached");
+    expect(migration).not.toContain("replace function public.reserve_legiscan_api_request_v1");
+    expect(migration).not.toContain("delete from public.legiscan_api_request_ledger");
   });
 
   it("pins conservative provider and activation settings in the worker blueprint", () => {

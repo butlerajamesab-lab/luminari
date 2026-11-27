@@ -11,6 +11,13 @@ import { configured_legiscan_monthly_request_budget } from "./legiscan-api-budge
  *   2. this month's ledger usage is still below the monthly budget minus a
  *      reserve kept for the live-session refresh path.
  * Otherwise the fallback is refused before any provider call is reserved.
+ *
+ * The ledger read here is an early, advisory refusal (it saves a rate-limit
+ * slot and parks the row sooner). The binding enforcement of the reserve is
+ * atomic: fetch_provider_copy reserves through
+ * public.reserve_legiscan_api_request_v2 with a protected reserve, which
+ * refuses under the same advisory lock as the insert, so a concurrent
+ * reservation cannot slip between this read and the paid call.
  */
 export const PAID_FALLBACK_BUDGET_RESERVE = 500;
 

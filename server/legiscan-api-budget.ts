@@ -44,26 +44,57 @@ function service_identity(
   ].join(":");
 }
 
+export const LEGISCAN_PAID_FALLBACK_RESERVE_REACHED_ERROR =
+  "legiscan_paid_fallback_reserve_reached";
+
+export type legiscan_reserve_options = {
+  /**
+   * Requests that must stay free for live-session refreshes. When > 0 the
+   * reservation is refused inside the database, under the same lock as the
+   * insert, once this month's count reaches budget - protected_reserve.
+   */
+  protected_reserve?: number;
+};
+
 export async function reserve_legiscan_api_request(
   operation: legiscan_budget_operation,
+  options: legiscan_reserve_options = {},
 ): Promise<legiscan_budget_receipt | null> {
   // Provider transport tests stub fetch and should not require a production
   // database. The budget function has its own contract tests.
   if (process.env.NODE_ENV === "test") return null;
 
   const monthly_budget = configured_legiscan_monthly_request_budget();
+  const protected_reserve = options.protected_reserve ?? 0;
+  if (!Number.isSafeInteger(protected_reserve) || protected_reserve < 0) {
+    throw new Error("legiscan_invalid_protected_reserve");
+  }
   let result;
   try {
+    // Without a protected reserve the original v1 reservation is used, so
+    // every non-fallback caller behaves exactly as before.
     result = await query_with_diagnostics<legiscan_budget_receipt>(
-      `select month_start::text,
-              request_ordinal,
-              remaining
-         from public.reserve_legiscan_api_request_v1(
-           $1::text,
-           $2::integer,
-           $3::text
-         )`,
-      [operation, monthly_budget, service_identity()],
+      protected_reserve > 0
+        ? `select month_start::text,
+                  request_ordinal,
+                  remaining
+             from public.reserve_legiscan_api_request_v2(
+               $1::text,
+               $2::integer,
+               $3::text,
+               $4::integer
+             )`
+        : `select month_start::text,
+                  request_ordinal,
+                  remaining
+             from public.reserve_legiscan_api_request_v1(
+               $1::text,
+               $2::integer,
+               $3::text
+             )`,
+      protected_reserve > 0
+        ? [operation, monthly_budget, service_identity(), protected_reserve]
+        : [operation, monthly_budget, service_identity()],
       {
         label: "legiscan_api_request_budget_reserve",
         pool_acquire_timeout_ms: 1_000,
@@ -71,6 +102,12 @@ export async function reserve_legiscan_api_request(
       },
     );
   } catch (error) {
+    if (
+      error instanceof Error
+      && error.message.includes(LEGISCAN_PAID_FALLBACK_RESERVE_REACHED_ERROR)
+    ) {
+      throw new Error(LEGISCAN_PAID_FALLBACK_RESERVE_REACHED_ERROR);
+    }
     if (
       error instanceof Error
       && error.message.includes("legiscan_local_monthly_budget_exhausted")

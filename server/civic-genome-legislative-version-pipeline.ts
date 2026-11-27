@@ -18,7 +18,12 @@ import {
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 import { fetch_california_official_pdf } from "./california-legislative-source";
 import { get_amendment, get_bill_text } from "./services/legiscan";
-import { assert_paid_provider_fallback_allowed } from "./legiscan-paid-fallback-gate";
+import {
+  PAID_FALLBACK_BUDGET_RESERVE,
+  PAID_FALLBACK_BUDGET_RESERVE_ERROR_PREFIX,
+  assert_paid_provider_fallback_allowed,
+} from "./legiscan-paid-fallback-gate";
+import { LEGISCAN_PAID_FALLBACK_RESERVE_REACHED_ERROR } from "./legiscan-api-budget";
 import { assert_legislative_document_role } from "./legislative-document-role";
 import { decode_legislative_html_bytes } from "./legislative-html-byte-decoder";
 import {
@@ -404,7 +409,9 @@ async function fetch_provider_copy(
   };
   try {
     if (contract.document_family === "text") {
-      const bill_text = await get_bill_text(contract.provider_document_id);
+      const bill_text = await get_bill_text(contract.provider_document_id, {
+        protected_reserve: PAID_FALLBACK_BUDGET_RESERVE,
+      });
       document = {
         doc: bill_text.doc,
         document_id: bill_text.doc_id,
@@ -414,7 +421,9 @@ async function fetch_provider_copy(
         retrieval_mode: "legiscan_api_get_bill_text",
       };
     } else {
-      const amendment = await get_amendment(contract.provider_document_id);
+      const amendment = await get_amendment(contract.provider_document_id, {
+        protected_reserve: PAID_FALLBACK_BUDGET_RESERVE,
+      });
       document = {
         doc: amendment.doc,
         document_id: amendment.amendment_id,
@@ -425,6 +434,15 @@ async function fetch_provider_copy(
       };
     }
   } catch (error) {
+    // The database refused the reservation atomically: the month is at
+    // budget - reserve. Park with the reason (the driver treats this code as
+    // deterministic); never fold it into the shared-outage pause.
+    if (
+      error instanceof Error
+      && error.message === LEGISCAN_PAID_FALLBACK_RESERVE_REACHED_ERROR
+    ) {
+      throw new Error(`${PAID_FALLBACK_BUDGET_RESERVE_ERROR_PREFIX}:atomic_reserve_reached`);
+    }
     const document_failure_code = provider_copy_document_failure_code(error);
     if (document_failure_code) throw new Error(document_failure_code);
     // The queue must treat every failure inside the authenticated provider

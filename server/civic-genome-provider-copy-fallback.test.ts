@@ -12,7 +12,8 @@ const { get_amendment_mock, get_bill_text_mock, paid_gate_mock } = vi.hoisted(()
 // from the database; its own tests live in legiscan-paid-fallback-gate.test.ts.
 // Here it is allow-by-default so the provider-copy contract tests keep their
 // meaning, and one test below proves a refusal stops the paid call.
-vi.mock("./legiscan-paid-fallback-gate", () => ({
+vi.mock("./legiscan-paid-fallback-gate", async importOriginal => ({
+  ...(await importOriginal<typeof import("./legiscan-paid-fallback-gate")>()),
   assert_paid_provider_fallback_allowed: paid_gate_mock,
 }));
 
@@ -116,6 +117,30 @@ describe("Civic Genome provider-copy source fallback", () => {
     expect(get_amendment_mock).not.toHaveBeenCalled();
   });
 
+  it("parks, not pauses, when the database refuses the reservation at the reserve line (bill text)", async () => {
+    const source = html_source();
+    const expected_md5 = createHash("md5").update(source).digest("hex");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("fetch failed")));
+    get_bill_text_mock.mockRejectedValueOnce(new Error("legiscan_paid_fallback_reserve_reached"));
+
+    await expect(
+      extract_version_source(version_fixture(source, expected_md5) as never),
+    ).rejects.toThrow("legislative_version_provider_fallback_budget_reserve:atomic_reserve_reached");
+    expect(get_bill_text_mock).toHaveBeenCalledWith(99, { protected_reserve: 500 });
+  });
+
+  it("parks, not pauses, when the database refuses the reservation at the reserve line (amendment)", async () => {
+    const source = html_source();
+    const expected_md5 = createHash("md5").update(source).digest("hex");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("fetch failed")));
+    get_amendment_mock.mockRejectedValueOnce(new Error("legiscan_paid_fallback_reserve_reached"));
+
+    await expect(
+      extract_version_source(amendment_version_fixture(source, expected_md5) as never),
+    ).rejects.toThrow("legislative_version_provider_fallback_budget_reserve:atomic_reserve_reached");
+    expect(get_amendment_mock).toHaveBeenCalledWith(99, { protected_reserve: 500 });
+  });
+
   it("refuses the paid amendment copy when the gate refuses", async () => {
     const source = html_source();
     const expected_md5 = createHash("md5").update(source).digest("hex");
@@ -148,7 +173,7 @@ describe("Civic Genome provider-copy source fallback", () => {
     expect(fetch_mock).toHaveBeenCalledTimes(1);
     expect(fetch_mock.mock.calls[0]?.[0]).toContain("legislature.vermont.gov");
     expect(get_bill_text_mock).toHaveBeenCalledOnce();
-    expect(get_bill_text_mock).toHaveBeenCalledWith(99);
+    expect(get_bill_text_mock).toHaveBeenCalledWith(99, { protected_reserve: 500 });
     expect(extracted.source_url).toBe("https://legiscan.com/VT/text/S0001/id/99");
     expect(extracted.source_version).toContain(
       "legiscan-api-hash-checked-provider-copy-v2",
@@ -176,7 +201,7 @@ describe("Civic Genome provider-copy source fallback", () => {
     );
 
     expect(get_amendment_mock).toHaveBeenCalledOnce();
-    expect(get_amendment_mock).toHaveBeenCalledWith(99);
+    expect(get_amendment_mock).toHaveBeenCalledWith(99, { protected_reserve: 500 });
     expect(get_bill_text_mock).not.toHaveBeenCalled();
     expect(extracted.source_metadata).toMatchObject({
       docket_document_family: "amendment",

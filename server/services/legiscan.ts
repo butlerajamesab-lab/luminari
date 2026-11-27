@@ -1,4 +1,7 @@
-import { reserve_legiscan_api_request } from "../legiscan-api-budget";
+import {
+  reserve_legiscan_api_request,
+  type legiscan_reserve_options,
+} from "../legiscan-api-budget";
 
 const legiscan_base_url = "https://api.legiscan.com/";
 const LEGISCAN_REQUEST_TIMEOUT_MS = 30_000;
@@ -239,6 +242,7 @@ const classify_provider_alert_scope = (
 const legiscan_request = async <payload>(
   op: legiscan_operation_key,
   params: Record<string, string | number>,
+  reserve_options: legiscan_reserve_options = {},
 ): Promise<payload> => {
   const url = new URL(legiscan_base_url);
   const api_key = required_env("LEGISCAN_API_KEY");
@@ -256,7 +260,7 @@ const legiscan_request = async <payload>(
     assert_shared_provider_circuit_closed();
     await wait_for_legiscan_rate_slot();
     assert_shared_provider_circuit_closed();
-    await reserve_legiscan_api_request(op);
+    await reserve_legiscan_api_request(op, reserve_options);
     const response = await fetch(url, { signal: controller.signal });
 
     if (!response.ok) {
@@ -351,6 +355,7 @@ export const get_bill = async (bill_id: number): Promise<legiscan_bill_detail> =
 
 export const get_bill_text = async (
   document_id: number,
+  reserve_options: legiscan_reserve_options = {},
 ): Promise<legiscan_bill_text> => {
   const data = await legiscan_request<{
     status: "OK";
@@ -360,7 +365,7 @@ export const get_bill_text = async (
       document_id,
       "invalid_legiscan_bill_text_document_id",
     ),
-  });
+  }, reserve_options);
 
   if (
     !data.text
@@ -386,6 +391,7 @@ export const get_bill_text = async (
 
 export const get_amendment = async (
   amendment_id: number,
+  reserve_options: legiscan_reserve_options = {},
 ): Promise<legiscan_amendment> => {
   const data = await legiscan_request<{
     status: "OK";
@@ -395,7 +401,7 @@ export const get_amendment = async (
       amendment_id,
       "invalid_legiscan_amendment_id",
     ),
-  });
+  }, reserve_options);
 
   if (
     !data.amendment
