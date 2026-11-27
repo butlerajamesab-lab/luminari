@@ -209,9 +209,10 @@ def main() -> int:
             problems.append(f"route nation not matched: {name}")
             continue
         out.append(
-            "insert into public.recognition_route_v1 (nation_key, country, route, route_status, petition_filed_date, decision_date, statute_citation, years_to_recognition, notes_factual_only, source_urls, name_in_source) "
+            "insert into public.recognition_route_v1 (nation_key, country, route, route_status, petition_filed_date, petition_filed_year, decision_date, statute_citation, years_to_recognition, notes_factual_only, source_urls, name_in_source) "
             f"values ({lit(key)}, {lit('CA' if r['country'] in ('Canada', 'CA') else r['country'])}, {lit(route)}, {lit(r['status'])}, "
             f"{lit(r['petition_filed_date'] if re.fullmatch(r'\d{4}-\d{2}-\d{2}', r['petition_filed_date'] or '') else None)}, "
+            f"{lit((re.match(r'(\d{4})', r['petition_filed_date'] or '') or [None, None])[1])}, "
             f"{lit(r['decision_date'] if re.fullmatch(r'\d{4}-\d{2}-\d{2}', r['decision_date'] or '') else None)}, "
             f"{lit(r['statute_citation'])}, {lit(r['years_from_first_petition_to_recognition'] if re.fullmatch(r'\d+', r['years_from_first_petition_to_recognition'] or '') else None)}, "
             f"{lit(r['notes_factual_only'])}, {arr(split_urls(r['source_urls']))}, {lit(name)}) on conflict do nothing;"

@@ -34,7 +34,7 @@ APPROVED_REPOSITORY_ONLY = {
     # implied by this entry.
     "20261127090000": (
         "20261127090000_recognition_registry_v1.sql",
-        "ae128efda319cdc95b2c2e81d21f50d284aac6cd",
+        "94d2c3f6efa8efc1fe0083ddf2ce58eb5fca4243",
     ),
     # Tribal TDHE crosswalk (tribe <-> housing entity pairs
     # from the BIA TDHE contact list; v7 hand-check-gated clean
