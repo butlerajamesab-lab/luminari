@@ -18,7 +18,7 @@
 --     drafted, approved and logged here;
 --   * every read of non-public material is logged (who saw what, when).
 --
--- Additive only. Nothing existing is altered. No data is loaded here; the
+-- Additive only and safe to re-run. Nothing existing is altered. No data is loaded here; the
 -- nations' existing seed records are imported by a separate, reviewed step.
 -- Nothing in this schema is readable by anon or authenticated roles; the
 -- server reads it with the service role and enforces access per nation.
@@ -28,7 +28,7 @@ revoke all on schema tribal_council_gate from public, anon, authenticated;
 grant usage on schema tribal_council_gate to service_role;
 
 -- Sections a page can have. The council may add its own (added_by='council').
-create table tribal_council_gate.section (
+create table if not exists tribal_council_gate.section (
   nation_key text not null references public.native_nation_registry_v1 (nation_key),
   section_key text not null check (section_key ~ '^[a-z][a-z0-9_]{1,62}$'),
   title text not null,
@@ -56,7 +56,7 @@ create table tribal_council_gate.section (
 
 -- One row per field value. Values are never edited in place: a correction
 -- or replacement adds a new row and points the old one at it.
-create table tribal_council_gate.field (
+create table if not exists tribal_council_gate.field (
   field_id bigint generated always as identity primary key,
   nation_key text not null,
   section_key text not null,
@@ -99,11 +99,11 @@ create table tribal_council_gate.field (
     (field_state = 'superseded') = (superseded_by is not null)
   )
 );
-create index field_nation_section_idx
+create index if not exists field_nation_section_idx
   on tribal_council_gate.field (nation_key, section_key, display_order);
 
 -- Page layout as the council sets it.
-create table tribal_council_gate.layout (
+create table if not exists tribal_council_gate.layout (
   nation_key text primary key references public.native_nation_registry_v1 (nation_key),
   display_name text,
   primary_language_tag text,
@@ -117,7 +117,7 @@ create table tribal_council_gate.layout (
 
 -- Where letters go. Only addresses the nation itself publishes, or the
 -- official directory lists, with the page they were read from.
-create table tribal_council_gate.council_contact (
+create table if not exists tribal_council_gate.council_contact (
   contact_id bigint generated always as identity primary key,
   nation_key text not null references public.native_nation_registry_v1 (nation_key),
   addressee text not null,
@@ -136,7 +136,7 @@ create table tribal_council_gate.council_contact (
 
 -- People the council names to review its page. A pseudonym is fine; no
 -- legal name is collected. Access is to this one nation only.
-create table tribal_council_gate.council_member (
+create table if not exists tribal_council_gate.council_member (
   member_id bigint generated always as identity primary key,
   nation_key text not null references public.native_nation_registry_v1 (nation_key),
   auth_user_id uuid not null,
@@ -149,12 +149,12 @@ create table tribal_council_gate.council_member (
 );
 -- One active membership per person per nation. Revoked rows stay as history,
 -- so a person can be granted access again (for example, with a new role).
-create unique index council_member_active_uidx
+create unique index if not exists council_member_active_uidx
   on tribal_council_gate.council_member (nation_key, auth_user_id)
   where revoked_at is null;
 
 -- Every council decision, append-only. Applied by record_council_decision.
-create table tribal_council_gate.council_decision (
+create table if not exists tribal_council_gate.council_decision (
   decision_id bigint generated always as identity primary key,
   nation_key text not null references public.native_nation_registry_v1 (nation_key),
   decision_kind text not null check (
@@ -179,11 +179,11 @@ create table tribal_council_gate.council_decision (
     decided_by_member_id is not null or recorded_by_admin is not null
   )
 );
-create index council_decision_nation_idx
+create index if not exists council_decision_nation_idx
   on tribal_council_gate.council_decision (nation_key, decided_at desc);
 
 -- Letters to councils.
-create table tribal_council_gate.outreach_letter (
+create table if not exists tribal_council_gate.outreach_letter (
   letter_id bigint generated always as identity primary key,
   nation_key text not null references public.native_nation_registry_v1 (nation_key),
   contact_id bigint not null references tribal_council_gate.council_contact (contact_id),
@@ -209,7 +209,7 @@ create table tribal_council_gate.outreach_letter (
 );
 
 -- Who saw what. Written by the server on every non-public read and action.
-create table tribal_council_gate.access_log (
+create table if not exists tribal_council_gate.access_log (
   log_id bigint generated always as identity primary key,
   actor_kind text not null check (actor_kind in ('admin', 'council_member', 'system')),
   actor_ref text not null,
@@ -221,24 +221,26 @@ create table tribal_council_gate.access_log (
   aal text,
   accessed_at timestamptz not null default now()
 );
-create index access_log_nation_idx on tribal_council_gate.access_log (nation_key, accessed_at desc);
+create index if not exists access_log_nation_idx on tribal_council_gate.access_log (nation_key, accessed_at desc);
 
 -- The decision record and the access log cannot be rewritten.
-create function tribal_council_gate.refuse_rewrite() returns trigger
+create or replace function tribal_council_gate.refuse_rewrite() returns trigger
 language plpgsql as $$
 begin
   raise exception '% is append-only', tg_table_name using errcode = 'P0001';
 end;
 $$;
+drop trigger if exists council_decision_append_only on tribal_council_gate.council_decision;
 create trigger council_decision_append_only
   before update or delete on tribal_council_gate.council_decision
   for each row execute function tribal_council_gate.refuse_rewrite();
+drop trigger if exists access_log_append_only on tribal_council_gate.access_log;
 create trigger access_log_append_only
   before update or delete on tribal_council_gate.access_log
   for each row execute function tribal_council_gate.refuse_rewrite();
 
 -- Platform sections every page starts with, all locked and private.
-create function tribal_council_gate.open_nation_page(p_nation_key text)
+create or replace function tribal_council_gate.open_nation_page(p_nation_key text)
 returns void language plpgsql as $$
 begin
   insert into tribal_council_gate.section (nation_key, section_key, title, display_order, added_by)
@@ -265,7 +267,7 @@ end;
 $$;
 
 -- Records a council decision and applies it, in one transaction.
-create function tribal_council_gate.record_council_decision(
+create or replace function tribal_council_gate.record_council_decision(
   p_nation_key text,
   p_decision_kind text,
   p_section_key text,
@@ -475,7 +477,7 @@ $$;
 
 -- The only public surface: fields the council confirmed or wrote, in
 -- sections it opened, never superseded, restricted or rejected.
-create view public.tribal_council_gate_public_field_v1
+create or replace view public.tribal_council_gate_public_field_v1
 with (security_invoker = true) as
 select f.nation_key, s.section_key, s.title as section_title, s.display_order as section_order,
        f.field_key, f.value_text, f.language_tag, f.source_posture, f.citation_url, f.citation_title,

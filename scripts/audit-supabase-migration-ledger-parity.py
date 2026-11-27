@@ -33,7 +33,7 @@ APPROVED_REPOSITORY_ONLY = {
     # installation or ledger rewrite is implied by this entry.
     "20261127100000": (
         "20261127100000_tribal_council_gate_v1.sql",
-        "6787ebfc9491334bda626e212855e34fb080d925",
+        "b37fd646138120caac8bc32de53f72cb36f5a0e1",
     ),
     # Tribal TDHE crosswalk (tribe <-> housing entity pairs
     # from the BIA TDHE contact list; v7 hand-check-gated clean
