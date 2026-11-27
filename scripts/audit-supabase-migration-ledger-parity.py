@@ -26,6 +26,15 @@ PRODUCTION_RECEIPTS = (
 # joining statements with one blank line, and ending the file with one newline.
 # The sole comment-only receipt (20260517000000) intentionally gets no terminator.
 APPROVED_REPOSITORY_ONLY = {
+    # Tribal council gate v1 (council-owned Recognition Atlas pages:
+    # sections, fields, decisions, letters, access log). Repository-only
+    # pending the separately approved production installation that
+    # follows the merge. Exact Git blob pinned; no production
+    # installation or ledger rewrite is implied by this entry.
+    "20261125120000": (
+        "20261125120000_tribal_council_gate_v1.sql",
+        "6787ebfc9491334bda626e212855e34fb080d925",
+    ),
     # Tribal TDHE crosswalk (tribe <-> housing entity pairs
     # from the BIA TDHE contact list; v7 hand-check-gated clean
     # set of 314 rows). Repository-only pending the separately

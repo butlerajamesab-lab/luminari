@@ -170,16 +170,57 @@ begin
   end;
   if not v_failed then raise exception 'check 14: letter sent without approval'; end if;
   insert into gate_check_result values ('letters_need_approval', true);
+
+  -- 15. A decision without a real target is refused and leaves no record.
+  select count(*) into v_count from tribal_council_gate.council_decision where nation_key = 'self:duwamish';
+  v_failed := false;
+  begin
+    perform tribal_council_gate.record_council_decision('self:duwamish', 'restrict_field', null, null, '{}', null, 'check', 'check basis');
+  exception when invalid_parameter_value then v_failed := true;
+  end;
+  if not v_failed then raise exception 'check 15: restrict_field without field_id accepted'; end if;
+  v_failed := false;
+  begin
+    perform tribal_council_gate.record_council_decision('self:duwamish', 'lock_section', 'no_such_section', null, '{}', null, 'check', 'check basis');
+  exception when invalid_parameter_value then v_failed := true;
+  end;
+  if not v_failed then raise exception 'check 15: decision on a missing section accepted'; end if;
+  v_failed := false;
+  begin
+    perform tribal_council_gate.record_council_decision('self:duwamish', 'reorder_sections', null, null,
+      '{"section_order": ["identity_core", "no_such_section"]}', null, 'check', 'check basis');
+  exception when invalid_parameter_value then v_failed := true;
+  end;
+  if not v_failed then raise exception 'check 15: reorder naming a missing section accepted'; end if;
+  if (select count(*) from tribal_council_gate.council_decision where nation_key = 'self:duwamish') <> v_count then
+    raise exception 'check 15: a refused decision was recorded';
+  end if;
+  insert into gate_check_result values ('decisions_need_real_targets', true);
+
+  -- 16. A revoked member can be granted access again, e.g. with a new role.
+  update tribal_council_gate.council_member set revoked_at = now() where member_id = v_reviewer;
+  insert into tribal_council_gate.council_member (nation_key, auth_user_id, display_name, member_role, granted_by, granted_basis)
+  select nation_key, auth_user_id, display_name, 'council_approver', 'check', 'check'
+    from tribal_council_gate.council_member where member_id = v_reviewer;
+  v_failed := false;
+  begin
+    insert into tribal_council_gate.council_member (nation_key, auth_user_id, display_name, member_role, granted_by, granted_basis)
+    select nation_key, auth_user_id, display_name, 'council_reviewer', 'check', 'check'
+      from tribal_council_gate.council_member where member_id = v_reviewer;
+  exception when unique_violation then v_failed := true;
+  end;
+  if not v_failed then raise exception 'check 16: two active memberships for one person'; end if;
+  insert into gate_check_result values ('regrant_after_revoke', true);
 end;
 $$;
 
--- 15. The browser roles can read nothing.
+-- 17. The browser roles can read nothing.
 do $$
 begin
   if has_table_privilege('anon', 'tribal_council_gate.field', 'select')
      or has_table_privilege('authenticated', 'tribal_council_gate.field', 'select')
      or has_table_privilege('anon', 'public.tribal_council_gate_public_field_v1', 'select') then
-    raise exception 'check 15: browser role can read the gate directly';
+    raise exception 'check 17: browser role can read the gate directly';
   end if;
 end;
 $$;

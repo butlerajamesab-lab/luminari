@@ -145,9 +145,13 @@ create table tribal_council_gate.council_member (
   granted_at timestamptz not null default now(),
   granted_by text not null,
   granted_basis text not null,
-  revoked_at timestamptz,
-  unique (nation_key, auth_user_id)
+  revoked_at timestamptz
 );
+-- One active membership per person per nation. Revoked rows stay as history,
+-- so a person can be granted access again (for example, with a new role).
+create unique index council_member_active_uidx
+  on tribal_council_gate.council_member (nation_key, auth_user_id)
+  where revoked_at is null;
 
 -- Every council decision, append-only. Applied by record_council_decision.
 create table tribal_council_gate.council_decision (
@@ -297,6 +301,50 @@ begin
   if v_participation = 'withdrawn' and p_decision_kind <> 'resume_participation' then
     raise exception 'nation % has withdrawn; only resume_participation is accepted', p_nation_key
       using errcode = 'P0001';
+  end if;
+
+  -- Every decision must name a real target, or it is refused before anything
+  -- is recorded: a decision that changes nothing must never look like one that did.
+  if p_decision_kind in ('confirm_field', 'correct_field', 'restrict_field', 'replace_field', 'reject_field')
+     and p_field_id is null then
+    raise exception '% needs a field_id', p_decision_kind using errcode = '22023';
+  end if;
+  if p_decision_kind in ('add_field', 'add_section', 'rename_section', 'remove_section',
+                         'unlock_section', 'lock_section', 'grant_public_display', 'revoke_public_display')
+     and p_section_key is null then
+    raise exception '% needs a section_key', p_decision_kind using errcode = '22023';
+  end if;
+  if p_decision_kind = 'add_section' then
+    if exists (select 1 from tribal_council_gate.section
+                where nation_key = p_nation_key and section_key = p_section_key) then
+      raise exception 'section % already exists for %', p_section_key, p_nation_key using errcode = '22023';
+    end if;
+  elsif p_section_key is not null and not exists (
+      select 1 from tribal_council_gate.section
+       where nation_key = p_nation_key and section_key = p_section_key) then
+    raise exception 'section % does not exist for %', p_section_key, p_nation_key using errcode = '22023';
+  end if;
+  if p_decision_kind = 'rename_section' and coalesce(p_payload ->> 'title', '') = '' then
+    raise exception 'rename_section needs payload.title' using errcode = '22023';
+  end if;
+  if p_decision_kind = 'reorder_sections' then
+    if jsonb_typeof(p_payload -> 'section_order') is distinct from 'array'
+       or exists (
+         select 1 from jsonb_array_elements_text(p_payload -> 'section_order') k
+          where not exists (select 1 from tribal_council_gate.section s
+                             where s.nation_key = p_nation_key and s.section_key = k)) then
+      raise exception 'reorder_sections needs payload.section_order naming existing sections'
+        using errcode = '22023';
+    end if;
+  end if;
+  if p_decision_kind = 'set_display_name' and coalesce(p_payload ->> 'display_name', '') = '' then
+    raise exception 'set_display_name needs payload.display_name' using errcode = '22023';
+  end if;
+  if p_decision_kind = 'set_language' and coalesce(p_payload ->> 'language_tag', '') = '' then
+    raise exception 'set_language needs payload.language_tag' using errcode = '22023';
+  end if;
+  if not exists (select 1 from tribal_council_gate.layout where nation_key = p_nation_key) then
+    raise exception 'no page is open for %', p_nation_key using errcode = '22023';
   end if;
 
   if p_field_id is not null then
