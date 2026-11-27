@@ -1,7 +1,7 @@
 /**
  * Tribal council gate router.
  *
- * Server side of the gate in supabase/migrations/20261125120000_tribal_council_gate_v1.sql.
+ * Server side of the gate in supabase/migrations/20261127100000_tribal_council_gate_v1.sql.
  * Three audiences, three surfaces:
  *
  *   admin.*    Luminari admins: see drafts, record a council's decision from

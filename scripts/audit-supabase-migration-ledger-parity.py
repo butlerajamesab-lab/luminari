@@ -31,8 +31,8 @@ APPROVED_REPOSITORY_ONLY = {
     # pending the separately approved production installation that
     # follows the merge. Exact Git blob pinned; no production
     # installation or ledger rewrite is implied by this entry.
-    "20261125120000": (
-        "20261125120000_tribal_council_gate_v1.sql",
+    "20261127100000": (
+        "20261127100000_tribal_council_gate_v1.sql",
         "6787ebfc9491334bda626e212855e34fb080d925",
     ),
     # Tribal TDHE crosswalk (tribe <-> housing entity pairs
