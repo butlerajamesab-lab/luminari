@@ -59,11 +59,11 @@ export default function IntegrityDashboard() {
 
   const integrity = trpc.analyze.getIntakeIntegrityProjection.useQuery(
     { caseId: currentCaseId! },
-    { enabled: !!currentCaseId, refetchInterval: 5000, retry: false },
+    { enabled: !!currentCaseId, refetchInterval: 30000, retry: false },
   );
   const semanticCoverage = trpc.analyze.getIntakeSourceSemanticCoverage.useQuery(
     { caseId: currentCaseId! },
-    { enabled: !!currentCaseId, refetchInterval: 5000, retry: false },
+    { enabled: !!currentCaseId, refetchInterval: 30000, retry: false },
   );
   const documents = trpc.documents.list.useQuery(
     { caseId: currentCaseId! },

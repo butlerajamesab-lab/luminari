@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { supabase } from "@/lib/supabase";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpLink, TRPCClientError } from "@trpc/client";
+import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import type { ComponentType } from "react";
 import superjson from "superjson";
@@ -49,7 +49,7 @@ const queryClient = new QueryClient({
         if (is_non_retryable_runtime_error(error)) return false;
         return failureCount < 2;
       },
-      staleTime: 10000,
+      staleTime: 60000,
     },
     mutations: {
       retry: false,
@@ -191,7 +191,7 @@ globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise
 
 const trpcClient = trpc.createClient({
   links: [
-    httpLink({
+    httpBatchLink({
       url: "/api/trpc",
       transformer: superjson,
       async fetch(input, init) {

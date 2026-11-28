@@ -53,7 +53,7 @@ export default function ExtractionFailures() {
 
   const { data: intakeIntegrity, isLoading: integrityLoading } = trpc.analyze.getIntakeIntegrityProjection.useQuery(
     { caseId: currentCaseId! },
-    { enabled: !!currentCaseId, refetchInterval: 5000 }
+    { enabled: !!currentCaseId, refetchInterval: 30000 }
   );
 
   const integrityByDocumentId = useMemo(() => new Map(

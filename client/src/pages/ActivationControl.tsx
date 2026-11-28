@@ -113,10 +113,10 @@ export function ActivationControl() {
     // Initial fetch
     fetchActivations();
 
-    // Set up polling interval (10 seconds)
+    // Set up polling interval (30 seconds)
     const intervalId = setInterval(() => {
       fetchActivations();
-    }, 10000);
+    }, 30000);
 
     // Cleanup interval on unmount
     return () => clearInterval(intervalId);
