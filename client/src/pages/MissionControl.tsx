@@ -82,7 +82,7 @@ function useDatabaseDiagnostic() {
 
   useEffect(() => {
     load();
-    const timer = window.setInterval(load, 60000);
+    const timer = window.setInterval(load, 300000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -707,7 +707,7 @@ function WorkQueuePanel() {
 /* ── Panel 5: Engine Status (Operating Model) ── */
 function EngineStatusPanel() {
   const { data: sunamStatus } = trpc.system.stats.useQuery(undefined, {
-    refetchInterval: 10000,
+    refetchInterval: 30000,
   });
 
   return (
@@ -940,7 +940,7 @@ function DatasetRow({ ds, triggerMutation, toggleMutation }: {
 }) {
   const runStatus = trpc.ingestion.datasetRunStatus.useQuery(
     { datasetId: ds.stream_id },
-    { refetchInterval: 3000 } // Poll every 3s while visible
+    { refetchInterval: 30000 } // Poll every 30s while visible
   );
 
   const isRunning = runStatus.data?.running ?? false;

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import { TRPCError } from "@trpc/server";
 import { classify_db_error } from "../db";
@@ -231,12 +232,65 @@ export async function fetchSupabaseAuthUser(sessionValue: string, signal?: Abort
   return (await response.json()) as SupabaseAuthUser;
 }
 
+// In-process cache for Supabase identity resolution. createContext runs on
+// every HTTP request, and resolving a session used to cost a live Supabase
+// /auth/v1/user round-trip every time — N requests from one user meant N
+// identical identity checks. Successful resolutions are now reused for a
+// short TTL. Keys are SHA-256 digests of the session token: the raw token
+// is never used as a key, logged, or persisted — the map lives in memory
+// only. Failures (null results, rejections, timeouts) are never cached, so
+// a bad or expired token is re-checked against Supabase on the next request.
+const SUPABASE_AUTH_USER_CACHE_TTL_MS = 60_000;
+const SUPABASE_AUTH_USER_CACHE_MAX_ENTRIES = 500;
+const supabaseAuthUserCache = new Map<
+  string,
+  { user: SupabaseAuthUser; expires_at: number }
+>();
+
+function supabaseAuthUserCacheKey(sessionValue: string): string {
+  return createHash("sha256").update(sessionValue).digest("hex");
+}
+
+function getCachedSupabaseAuthUser(sessionValue: string): SupabaseAuthUser | null {
+  const key = supabaseAuthUserCacheKey(sessionValue);
+  const entry = supabaseAuthUserCache.get(key);
+  if (!entry) return null;
+  if (entry.expires_at <= Date.now()) {
+    supabaseAuthUserCache.delete(key);
+    return null;
+  }
+  // Refresh recency so eviction drops the least recently used entries.
+  supabaseAuthUserCache.delete(key);
+  supabaseAuthUserCache.set(key, entry);
+  return entry.user;
+}
+
+function cacheSupabaseAuthUser(sessionValue: string, user: SupabaseAuthUser): void {
+  const key = supabaseAuthUserCacheKey(sessionValue);
+  supabaseAuthUserCache.delete(key);
+  supabaseAuthUserCache.set(key, {
+    user,
+    expires_at: Date.now() + SUPABASE_AUTH_USER_CACHE_TTL_MS,
+  });
+  while (supabaseAuthUserCache.size > SUPABASE_AUTH_USER_CACHE_MAX_ENTRIES) {
+    const oldest = supabaseAuthUserCache.keys().next().value;
+    if (oldest === undefined) break;
+    supabaseAuthUserCache.delete(oldest);
+  }
+}
+
 async function resolveSupabaseAuthUser(req: CreateExpressContextOptions["req"] | undefined, phases: ContextLookupPhase[]): Promise<SupabaseAuthUser | null> {
   const sessionValue = getForwardedSupabaseSession(req);
   if (!sessionValue) return null;
+  const cachedUser = getCachedSupabaseAuthUser(sessionValue);
+  if (cachedUser) {
+    logContextAuthEvent("supabase_auth_fetch_succeeded", { supabase_user_id: cachedUser.id ?? null, supabase_email: cachedUser.email?.trim().toLowerCase() ?? null, profile_resolution_status: "not_attempted", auth_cache: "hit" });
+    return cachedUser;
+  }
   try {
     const authUser = await withAbortableTimeout((signal) => timeContextPhase("supabase_auth_user_fetch", phases, () => fetchSupabaseAuthUser(sessionValue, signal)), CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS, "tRPC context supabase auth user fetch");
     if (authUser) {
+      cacheSupabaseAuthUser(sessionValue, authUser);
       logContextAuthEvent("supabase_auth_fetch_succeeded", { supabase_user_id: authUser.id ?? null, supabase_email: authUser.email?.trim().toLowerCase() ?? null, profile_resolution_status: "not_attempted" });
     }
     return authUser;
@@ -353,4 +407,7 @@ export async function createContext(opts: ExpressContextInput): Promise<TrpcCont
 export const __testing = {
   resolveProfileFromSupabaseAuthUser,
   sanitizeAuthLogDetails,
+  resolveSupabaseAuthUser,
+  clearSupabaseAuthUserCache: () => supabaseAuthUserCache.clear(),
+  supabaseAuthUserCacheSize: () => supabaseAuthUserCache.size,
 };

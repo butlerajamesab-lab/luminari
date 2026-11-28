@@ -568,8 +568,13 @@ export default function ResourceDirectory() {
   const initial_jurisdiction = (initial_params.get("jurisdiction") || "")
     .trim()
     .toUpperCase();
+  const initial_jurisdiction_value =
+    initial_jurisdiction === "USVI" ? "VI" : initial_jurisdiction;
   const [jurisdiction, set_jurisdiction] = useState(
-    initial_jurisdiction === "USVI" ? "VI" : initial_jurisdiction,
+    initial_jurisdiction_value,
+  );
+  const [jurisdictionDraft, set_jurisdiction_draft] = useState(
+    initial_jurisdiction_value,
   );
   // Only a canonical category key may enter filter state. The summary
   // payload's category list is derived from every distinct value stored
@@ -577,9 +582,10 @@ export default function ResourceDirectory() {
   // composites that are not categories — and a shared URL can carry
   // anything. Non-canonical values are dropped here and again when the
   // search input is built (see @/lib/directory-search).
-  const [category, setCategory] = useState(
-    () => canonicalDirectoryCategory(initial_params.get("category")) ?? "",
-  );
+  const initial_category =
+    canonicalDirectoryCategory(initial_params.get("category")) ?? "";
+  const [category, setCategory] = useState(initial_category);
+  const [categoryDraft, set_category_draft] = useState(initial_category);
   const [page, setPage] = useState(0);
 
   const directoryQuery = trpc.resourceDirectory.search.useQuery(
@@ -624,27 +630,36 @@ export default function ResourceDirectory() {
     window.history.replaceState({}, "", `${window.location.pathname}${suffix}`);
   }, [query, jurisdiction, category]);
 
+  // Filter controls edit drafts only; a search load fires once per user
+  // intent — on Search submit, which commits every draft together — or on
+  // mount when the URL already carries parameters (deep link). Previously
+  // the jurisdiction select wrote straight into the committed state, so
+  // picking a jurisdiction fired a full search load and clicking Search
+  // fired the same search again.
   function submitSearch(event: FormEvent) {
     event.preventDefault();
     setPage(0);
     setQuery(queryDraft.trim());
+    set_jurisdiction(jurisdictionDraft);
+    setCategory(categoryDraft);
   }
 
   function clearFilters() {
     setQueryDraft("");
     setQuery("");
+    set_jurisdiction_draft("");
     set_jurisdiction("");
+    set_category_draft("");
     setCategory("");
     setPage(0);
   }
 
   function chooseCategory(nextCategory: string) {
-    setCategory((current) =>
+    set_category_draft((current) =>
       current === nextCategory
         ? ""
         : (canonicalDirectoryCategory(nextCategory) ?? ""),
     );
-    setPage(0);
   }
 
   return (
@@ -714,10 +729,9 @@ export default function ResourceDirectory() {
                 />
               </label>
               <select
-                value={jurisdiction}
+                value={jurisdictionDraft}
                 onChange={(event) => {
-                  set_jurisdiction(event.target.value);
-                  setPage(0);
+                  set_jurisdiction_draft(event.target.value);
                 }}
                 aria-label="Filter by jurisdiction"
                 className="h-12 rounded-xl border border-white/10 bg-slate-900 px-4 text-sm text-slate-200 outline-none focus:border-emerald-400/50"
@@ -792,10 +806,10 @@ export default function ResourceDirectory() {
                 </p>
               )}
             </div>
-            {category && (
+            {categoryDraft && (
               <button
                 type="button"
-                onClick={() => chooseCategory(category)}
+                onClick={() => chooseCategory(categoryDraft)}
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-white"
               >
                 <X className="h-3.5 w-3.5" />
@@ -809,7 +823,7 @@ export default function ResourceDirectory() {
               const config =
                 CATEGORY_CONFIG[item.id as keyof typeof CATEGORY_CONFIG];
               const Icon = config?.icon ?? HeartPulse;
-              const selected = category === item.id;
+              const selected = categoryDraft === item.id;
               return (
                 <button
                   key={item.id}

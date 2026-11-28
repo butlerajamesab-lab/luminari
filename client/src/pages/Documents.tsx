@@ -91,7 +91,7 @@ export default function Documents() {
   );
   const { data: intakeIntegrity } = trpc.analyze.getIntakeIntegrityProjection.useQuery(
     { caseId: currentCaseId! },
-    { enabled: !!currentCaseId, refetchInterval: 5000 }
+    { enabled: !!currentCaseId, refetchInterval: 30000 }
   );
   const [replaceTarget, setReplaceTarget] = useState<{ id: number; name: string; caseId: number } | null>(null);
 

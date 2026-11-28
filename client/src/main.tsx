@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { supabase } from "@/lib/supabase";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpLink, TRPCClientError } from "@trpc/client";
+import { httpBatchLink, httpLink, splitLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import type { ComponentType } from "react";
 import superjson from "superjson";
@@ -49,7 +49,7 @@ const queryClient = new QueryClient({
         if (is_non_retryable_runtime_error(error)) return false;
         return failureCount < 2;
       },
-      staleTime: 10000,
+      staleTime: 60000,
     },
     mutations: {
       retry: false,
@@ -189,57 +189,85 @@ globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise
   });
 };
 
+/**
+ * Shared fetch for both tRPC links below: attaches the Supabase session
+ * header the invite gate requires, and bounds the long-running runtime
+ * reads (civicGenome.*, uploadSessions.getActive) with a 12 s timeout.
+ */
+async function trpcSessionFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const headers = new Headers(init?.headers);
+  const sessionToken = await getFreshSessionToken();
+
+  if (sessionToken) {
+    headers.set("x-lighthouse-supabase-session", sessionToken);
+  } else {
+    console.warn('[AUTH] tRPC call proceeding without auth token — expect 10001 if route is protected');
+  }
+
+  const request_url = typeof input === "string"
+    ? input
+    : input instanceof URL
+      ? input.href
+      : input.url;
+  const bounded_runtime_read = request_url.includes("civicGenome.")
+    || request_url.includes("uploadSessions.getActive");
+  if (!bounded_runtime_read) {
+    return globalThis.fetch(input, {
+      ...(init ?? {}),
+      headers,
+      credentials: "include",
+    });
+  }
+
+  const controller = new AbortController();
+  const upstream_signal = init?.signal;
+  const forward_abort = () => controller.abort(upstream_signal?.reason);
+  if (upstream_signal?.aborted) forward_abort();
+  else upstream_signal?.addEventListener("abort", forward_abort, { once: true });
+  const timeout = setTimeout(() => {
+    controller.abort(new Error("Lighthouse request timed out after 12000ms"));
+  }, 12_000);
+
+  try {
+    return await globalThis.fetch(input, {
+      ...(init ?? {}),
+      headers,
+      credentials: "include",
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+    upstream_signal?.removeEventListener("abort", forward_abort);
+  }
+}
+
 const trpcClient = trpc.createClient({
   links: [
-    httpLink({
-      url: "/api/trpc",
-      transformer: superjson,
-      async fetch(input, init) {
-        const headers = new Headers(init?.headers);
-        const sessionToken = await getFreshSessionToken();
-
-        if (sessionToken) {
-          headers.set("x-lighthouse-supabase-session", sessionToken);
-        } else {
-          console.warn('[AUTH] tRPC call proceeding without auth token — expect 10001 if route is protected');
-        }
-
-        const request_url = typeof input === "string"
-          ? input
-          : input instanceof URL
-            ? input.href
-            : input.url;
-        const bounded_runtime_read = request_url.includes("civicGenome.")
-          || request_url.includes("uploadSessions.getActive");
-        if (!bounded_runtime_read) {
-          return globalThis.fetch(input, {
-            ...(init ?? {}),
-            headers,
-            credentials: "include",
-          });
-        }
-
-        const controller = new AbortController();
-        const upstream_signal = init?.signal;
-        const forward_abort = () => controller.abort(upstream_signal?.reason);
-        if (upstream_signal?.aborted) forward_abort();
-        else upstream_signal?.addEventListener("abort", forward_abort, { once: true });
-        const timeout = setTimeout(() => {
-          controller.abort(new Error("Lighthouse request timed out after 12000ms"));
-        }, 12_000);
-
-        try {
-          return await globalThis.fetch(input, {
-            ...(init ?? {}),
-            headers,
-            credentials: "include",
-            signal: controller.signal,
-          });
-        } finally {
-          clearTimeout(timeout);
-          upstream_signal?.removeEventListener("abort", forward_abort);
-        }
+    // Notifications must NEVER travel in a mixed batch. The server's
+    // notification-runtime-trpc-middleware
+    // (server/_core/notification-runtime-trpc-middleware.ts) intercepts a
+    // tRPC request only when EVERY procedure path in it belongs to
+    // `notifications` (paths.every(...)); a mixed batch falls through to
+    // the main router, whose legacy notification handlers query quoted
+    // camelCase columns (userId, readAt) against the production snake_case
+    // tables and fail on PostgreSQL. Notification operations therefore
+    // keep the plain single-call link — a notifications-only request is
+    // always intercepted, exactly as before batching — and everything else
+    // uses the batch link. Do not fold notifications into the batch link.
+    splitLink({
+      condition(op) {
+        return op.path === "notifications" || op.path.startsWith("notifications.");
       },
+      true: httpLink({
+        url: "/api/trpc",
+        transformer: superjson,
+        fetch: trpcSessionFetch,
+      }),
+      false: httpBatchLink({
+        url: "/api/trpc",
+        transformer: superjson,
+        fetch: trpcSessionFetch,
+      }),
     }),
   ],
 });

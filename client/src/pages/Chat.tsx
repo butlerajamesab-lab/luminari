@@ -17,7 +17,7 @@ export default function Chat() {
 
   const { data: history, isLoading } = trpc.chat.history.useQuery(
     { caseId: currentCaseId! },
-    { enabled: !!currentCaseId, refetchInterval: 5000 }
+    { enabled: !!currentCaseId, refetchInterval: 30000 }
   );
 
   const sendMessage = trpc.chat.send.useMutation({

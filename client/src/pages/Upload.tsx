@@ -49,7 +49,7 @@ type UploadSummary = {
 function UploadSessionHistory({ caseId }: { caseId: number }) {
   const { data: sessions, isLoading } = trpc.uploadSessions.list.useQuery(
     { caseId },
-    { refetchInterval: 5000 },
+    { refetchInterval: 30000 },
   );
 
   if (isLoading || !sessions || sessions.length === 0) return null;
